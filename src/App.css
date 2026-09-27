@@ -1,0 +1,48 @@
+﻿.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.video-player {
+  margin-top: 2rem;
+}
+
+.video-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.video-picker input {
+  max-width: 100%;
+  font: inherit;
+}
+
+.video-player video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  background-color: #000;
+}
+
+.shot-button {
+  margin-top: 1rem;
+}
+
+.video-player button {
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.video-player button:disabled {
+  cursor: not-allowed;
+}
+
+.event-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
