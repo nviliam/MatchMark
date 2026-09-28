@@ -30,6 +30,7 @@ npm run preview
 - `src/main.tsx`: a React alkalmazás belépési pontja.
 - `src/App.tsx`: az alkalmazás alapkomponense.
 - `src/components/VideoPlayer.tsx`: helyi videó kiválasztása és lejátszása.
+- `src/types/shot.ts`: a lövésesemény, a kimenetel és a testrész típusai.
 - `src/App.css`: a komponens stílusai.
 - `src/index.css`: globális alapstílusok.
 - `public/`: statikus fájlok helye.
@@ -41,9 +42,15 @@ Csak a Vite React–TypeScript sablon függőségeit használjuk.
 
 ## Videóesemények rögzítése
 
-A videó betöltése után a „⚽ Lövés” gomb a videó aktuális időpontjával
-rögzít egy `shot` eseményt. A videó alatt megjelenő lista `MM:SS` formátumban
-mutatja az időpontokat. Egy sorra kattintva a videó az adott jelenethez ugrik.
+A videó betöltése után a „⚽ Lövés” gomb megőrzi a videó aktuális időpontját,
+és megnyitja a lövés adatlapját. A kimenetel (Gól / Kaput talál / Kaput elkerüli /
+Blokkolt) és a testrész (Láb / Fej / Egyéb) kiválasztása után a Mentés gomb
+rögzíti a `ShotEvent` eseményt. A Mégse mentés nélkül bezárja az adatlapot.
+A videó közben tovább játszható: mindig a Lövés gomb megnyomásának időpontját mentjük.
+
+Az esemény mezői: `id`, `type: 'shot'`, `timestamp`, `outcome`, `bodyPart`.
+A lista például `12:34 – Lövés – Kaput talál – Láb` formában jelenik meg.
+Egy sorra kattintva a videó az adott jelenethez ugrik.
 
 Az eseményeket csak React state tárolja: oldalfrissítéskor vagy másik videó
 kiválasztásakor törlődnek. A timestamp másodpercben, a tört részével együtt
