@@ -26,7 +26,7 @@
   background-color: #000;
 }
 
-.shot-button {
+.event-groups {
   margin-top: 1rem;
 }
 
@@ -47,27 +47,54 @@
   list-style: none;
 }
 
-.shot-form {
+.event-form {
   display: grid;
   gap: 1rem;
   margin-top: 1rem;
 }
 
-.shot-form h2 {
+.event-form h2 {
   margin: 0;
   font-size: 1.25rem;
 }
 
-.shot-form fieldset {
+.event-form fieldset {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   min-width: 0;
 }
 
-.shot-form label,
-.shot-form-actions {
+.event-form label,
+.event-form-actions {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.event-form .player-picker {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.player-picker select {
+  max-width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.event-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.event-groups fieldset {
+  min-width: 0;
+}
+
+.event-buttons {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }

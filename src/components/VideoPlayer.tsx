@@ -1,38 +1,15 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import type { BodyPart, ShotEvent, ShotOutcome } from "../types/shot";
-
-const outcomeLabels: Record<ShotOutcome, string> = {
-  goal: "Gól",
-  "on-target": "Kaput talál",
-  "off-target": "Kaput elkerüli",
-  blocked: "Blokkolt",
-};
-
-const bodyPartLabels: Record<BodyPart, string> = {
-  foot: "Láb",
-  head: "Fej",
-  other: "Egyéb",
-};
-
-const outcomes: ShotOutcome[] = ["goal", "on-target", "off-target", "blocked"];
-const bodyParts: BodyPart[] = ["foot", "head", "other"];
-
-function formatTimestamp(timestamp: number) {
-  const totalSeconds = Math.floor(timestamp);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
+﻿import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types/event";
+import EventButtons from "./EventButtons";
+import EventForm from "./EventForm";
+import EventList from "./EventList";
 
 function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [events, setEvents] = useState<ShotEvent[]>([]);
-  const [pendingTimestamp, setPendingTimestamp] = useState<number | null>(null);
-  const [outcome, setOutcome] = useState<ShotOutcome | null>(null);
-  const [bodyPart, setBodyPart] = useState<BodyPart | null>(null);
+  const [events, setEvents] = useState<MatchEvent[]>([]);
+  const [pending, setPending] = useState<PendingEvent | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
@@ -43,148 +20,66 @@ function VideoPlayer() {
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
-
     if (!file) return;
-
     if (!file.type.startsWith("video/")) {
-      setError("Kérlek, videófájlt válassz ki!");
+      setError("Please select a video file.");
       event.currentTarget.value = "";
       return;
     }
-
     setError("");
     setEvents([]);
-    resetShotForm();
+    setPending(null);
     setIsVideoReady(false);
     setVideoUrl(URL.createObjectURL(file));
   }
 
-  function handleShot() {
+  function handleEvent(type: EventType) {
     const video = videoRef.current;
-    if (!video || !isVideoReady || pendingTimestamp !== null) return;
-
-    setPendingTimestamp(video.currentTime);
-    setOutcome(null);
-    setBodyPart(null);
+    if (!video || !isVideoReady || pending) return;
+    setPending({ type, timestamp: video.currentTime });
   }
 
-  function resetShotForm() {
-    setPendingTimestamp(null);
-    setOutcome(null);
-    setBodyPart(null);
-  }
-
-  function handleSaveShot(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (pendingTimestamp === null || !outcome || !bodyPart || !isVideoReady) return;
-
+  function handleSave(playerId: number, details: EventDetails) {
+    if (!pending || !isVideoReady || pending.type !== details.type) return;
+    const timestamp = pending.timestamp;
     setEvents((previousEvents) => [
       ...previousEvents,
-      {
-        id: previousEvents.length + 1,
-        type: "shot",
-        timestamp: pendingTimestamp,
-        outcome,
-        bodyPart,
-      },
+      { ...details, id: previousEvents.length + 1, playerId, timestamp },
     ]);
-    resetShotForm();
+    setPending(null);
   }
 
   function seekToEvent(timestamp: number) {
     const video = videoRef.current;
     if (!video || !isVideoReady) return;
-
     video.currentTime = timestamp;
   }
 
   return (
-    <section className="video-player" aria-label="Videólejátszó">
+    <section className="video-player" aria-label="Video player">
       <label className="video-picker">
-        File feltöltés
+        Choose video
         <input type="file" accept="video/*" onChange={handleFileChange} />
       </label>
-      <p>A videó a saját gépeden marad, nem töltjük fel szerverre.</p>
+      <p>Your video stays on your device. It is never uploaded.</p>
       {error && <p role="alert">{error}</p>}
       {videoUrl && (
-        <video
-          key={videoUrl}
-          ref={videoRef}
-          src={videoUrl}
+        <video key={videoUrl} ref={videoRef} src={videoUrl}
           onLoadedMetadata={() => setIsVideoReady(true)}
-          onError={() => setIsVideoReady(false)}
-          controls
-          playsInline
-          preload="metadata"
-          aria-label="Kiválasztott videó"
-        >
-          A böngésződ nem támogatja a videólejátszást.
+          onError={() => {
+            setIsVideoReady(false);
+            setError("This video could not be played. Please choose a supported video file.");
+          }}
+          controls playsInline preload="metadata" aria-label="Selected video">
+          Your browser does not support video playback.
         </video>
       )}
-      <button
-        className="shot-button"
-        type="button"
-        onClick={handleShot}
-        disabled={!isVideoReady || pendingTimestamp !== null}
-      >
-        ⚽ Lövés
-      </button>
-      {pendingTimestamp !== null && (
-        <form className="shot-form" onSubmit={handleSaveShot}>
-          <h2>Lövés – {formatTimestamp(pendingTimestamp)}</h2>
-          <fieldset>
-            <legend>A lövés kimenetele</legend>
-            {outcomes.map((value) => (
-              <label key={value}>
-                <input
-                  type="radio"
-                  name="outcome"
-                  checked={outcome === value}
-                  onChange={() => setOutcome(value)}
-                  required
-                />
-                {outcomeLabels[value]}
-              </label>
-            ))}
-          </fieldset>
-          <fieldset>
-            <legend>Testrész</legend>
-            {bodyParts.map((value) => (
-              <label key={value}>
-                <input
-                  type="radio"
-                  name="bodyPart"
-                  checked={bodyPart === value}
-                  onChange={() => setBodyPart(value)}
-                  required
-                />
-                {bodyPartLabels[value]}
-              </label>
-            ))}
-          </fieldset>
-          <div className="shot-form-actions">
-            <button type="submit" disabled={!outcome || !bodyPart || !isVideoReady}>
-              Mentés
-            </button>
-            <button type="button" onClick={resetShotForm}>Mégse</button>
-          </div>
-        </form>
+      <EventButtons disabled={!isVideoReady || pending !== null} onSelect={handleEvent} />
+      {pending && (
+        <EventForm pending={pending} disabled={!isVideoReady}
+          onSave={handleSave} onCancel={() => setPending(null)} />
       )}
-      {events.length > 0 && (
-        <ul className="event-list" aria-label="Rögzített lövések">
-          {events.map((event) => (
-            <li key={event.id}>
-              <button
-                type="button"
-                onClick={() => seekToEvent(event.timestamp)}
-                disabled={!isVideoReady}
-              >
-                {formatTimestamp(event.timestamp)} – Lövés – {outcomeLabels[event.outcome]} – {bodyPartLabels[event.bodyPart]}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <EventList events={events} disabled={!isVideoReady} onSeek={seekToEvent} />
     </section>
   );
 }

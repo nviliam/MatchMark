@@ -1,23 +1,20 @@
 ﻿# MatchMark
 
-Egyszerű futballvideó-taggelő alkalmazás utánpótlásedzők, szülők számára.
-A React + TypeScript + Vite alkalmazásban már kiválasztható és lejátszható
-egy helyi videófájl a böngésző alapértelmezett vezérlőivel, szerverre feltöltés nélkül.
+Simple football video tagging for youth coaches. React, TypeScript and Vite;
+no extra libraries, backend or database.
 
-## Futtatás
+## Run
 
-Node.js 22.12+ (vagy 24 LTS) és npm szükséges.
+Use Node.js 22.12+ or 24 LTS.
 
 ```sh
 npm install
 npm run dev
 ```
 
-Windows PowerShellben, ha a végrehajtási házirend blokkolja az npm.ps1 fájlt,
-használd az `npm.cmd` parancsot az `npm` helyett.
-A fejlesztői szerver a terminálban kiírt címen érhető el.
+If PowerShell blocks `npm.ps1`, use `npm.cmd` instead of `npm`.
 
-## Ellenőrzés
+## Checks
 
 ```sh
 npm run lint
@@ -25,35 +22,51 @@ npm run build
 npm run preview
 ```
 
-## Projektstruktúra
+## Tagging workflow
 
-- `src/main.tsx`: a React alkalmazás belépési pontja.
-- `src/App.tsx`: az alkalmazás alapkomponense.
-- `src/components/VideoPlayer.tsx`: helyi videó kiválasztása és lejátszása.
-- `src/types/shot.ts`: a lövésesemény, a kimenetel és a testrész típusai.
-- `src/App.css`: a komponens stílusai.
-- `src/index.css`: globális alapstílusok.
-- `public/`: statikus fájlok helye.
-- `index.html`: HTML belépési pont.
-- `vite.config.ts`: Vite konfiguráció.
-- `tsconfig*.json`: TypeScript konfigurációk.
+1. Choose a local video. It stays on your device and plays with native controls.
+2. Click an event button to capture the current video time.
+3. Select a player and the fields required by that event.
+4. Save to add it to the list, or Cancel to discard it.
+5. Click a recorded event to seek to its original timestamp.
 
-Csak a Vite React–TypeScript sablon függőségeit használjuk.
+The timestamp is captured when the event button is pressed, even if playback
+continues while the form is open. Times are stored in seconds with fractional
+precision and displayed as MM:SS (total minutes).
 
-## Videóesemények rögzítése
+| Group | Event | Required fields besides player |
+| --- | --- | --- |
+| Attacking | Shot | Outcome: Goal / On Target / Off Target / Blocked; Body Part: Foot / Head / Other |
+| Attacking | Pass | Outcome: Completed / Incomplete |
+| Attacking | Key Pass | None |
+| Attacking | Dribble | Outcome: Successful / Unsuccessful |
+| Attacking | Progressive Carry | None |
+| Defending | Tackle | Outcome: Won / Lost |
+| Defending | Interception | None |
+| Defending | Ball Recovery | None |
+| Defending | Duel | Outcome: Won / Lost |
+| Other | Ball Loss | None |
 
-A videó betöltése után a „⚽ Lövés” gomb megőrzi a videó aktuális időpontját,
-és megnyitja a lövés adatlapját. A kimenetel (Gól / Kaput talál / Kaput elkerüli /
-Blokkolt) és a testrész (Láb / Fej / Egyéb) kiválasztása után a Mentés gomb
-rögzíti a `ShotEvent` eseményt. A Mégse mentés nélkül bezárja az adatlapot.
-A videó közben tovább játszható: mindig a Lövés gomb megnyomásának időpontját mentjük.
+All selections start empty. Events are held in React state only: refreshing the
+page or choosing another video clears them. Changing videos also discards the
+open form. The three sample players live in `src/data/players.ts`.
 
-Az esemény mezői: `id`, `type: 'shot'`, `timestamp`, `outcome`, `bodyPart`.
-A lista például `12:34 – Lövés – Kaput talál – Láb` formában jelenik meg.
-Egy sorra kattintva a videó az adott jelenethez ugrik.
+## Structure and model
 
-Az eseményeket csak React state tárolja: oldalfrissítéskor vagy másik videó
-kiválasztásakor törlődnek. A timestamp másodpercben, a tört részével együtt
-marad meg; csak a kijelzés kerekít lefelé egész másodpercre.
+- `src/components/VideoPlayer.tsx`: local video URL lifecycle, video ref, pending
+  timestamp, saved events and seeking.
+- `src/components/EventButtons.tsx`: Attacking / Defending / Other button groups.
+- `src/components/EventForm.tsx`: player selection and type-specific required fields.
+- `src/components/EventList.tsx`: event descriptions and seek buttons.
+- `src/types/event.ts`: shared `BaseEvent` (`id`, `playerId`, `timestamp`) and ten
+  concrete types combined into the `MatchEvent` discriminated union. The `type`
+  field determines which fields exist; only Shot has `bodyPart`, and events
+  without outcomes have no `outcome` property.
+- `src/types/shot.ts`: re-exports the shot types for compatibility.
+- `src/types/player.ts`: player ID, name and shirt number.
+- `src/utils/events.ts`: English labels, outcome options, validated event details
+  and timestamp formatting.
+- `src/App.tsx`, `src/App.css`, `src/index.css`: application shell and styles.
 
-A hosszú távú tervet az `utanpotlas_foci_video_tagging_app_terv.docx` tartalmazza.
+No persistence, statistics, shot maps, authentication or video upload is included.
+The long-term project plan is in `utanpotlas_foci_video_tagging_app_terv.docx`.
