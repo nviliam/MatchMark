@@ -14,10 +14,14 @@ export default function EventList({ events, disabled, onSeek }: Props) {
         return (
           <li key={event.id}>
             <button type="button" disabled={disabled} onClick={() => onSeek(event.timestamp)}>
-              {formatTimestamp(event.timestamp)} – {player ? `#${player.number} ${player.name}` : "Unknown player"}
-              {" – "}{eventLabels[event.type]}
-              {"outcome" in event && ` – ${outcomeLabels[event.outcome]}`}
-              {event.type === "shot" && ` – ${bodyPartLabels[event.bodyPart]}`}
+              <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
+              <span className="event-summary">
+                <strong>{player ? `#${player.number} ${player.name}` : "Unknown player"}</strong>
+                <span>{eventLabels[event.type]}
+                  {"outcome" in event && ` · ${outcomeLabels[event.outcome]}`}
+                  {event.type === "shot" && ` · ${bodyPartLabels[event.bodyPart]}`}
+                </span>
+              </span>
             </button>
           </li>
         );

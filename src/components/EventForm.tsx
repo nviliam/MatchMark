@@ -26,8 +26,11 @@ export default function EventForm({ pending, disabled, onSave, onCancel }: Props
   }
 
   return (
-    <form className="event-form" onSubmit={handleSubmit}>
-      <h2>{eventLabels[pending.type]} – {formatTimestamp(pending.timestamp)}</h2>
+    <form className="event-form panel" aria-label="Event details" onSubmit={handleSubmit}>
+      <div>
+        <p className="eyebrow">Event type</p>
+        <h2>{eventLabels[pending.type]} <span className="timestamp">{formatTimestamp(pending.timestamp)}</span></h2>
+      </div>
       <label className="player-picker">
         Player
         <select value={playerId ?? ""} required onChange={(event) => {
@@ -65,7 +68,7 @@ export default function EventForm({ pending, disabled, onSave, onCancel }: Props
         </fieldset>
       )}
       <div className="event-form-actions">
-        <button type="submit" disabled={disabled || !playerExists || !details}>Save</button>
+        <button className="button-primary" type="submit" disabled={disabled || !playerExists || !details}>Save</button>
         <button type="button" onClick={onCancel}>Cancel</button>
       </div>
     </form>

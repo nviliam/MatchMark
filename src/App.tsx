@@ -5,8 +5,13 @@ import VideoPlayer from "./components/VideoPlayer";
 function App() {
   return (
     <main className="app">
-      <h1>MatchMark</h1>
-      <p>Free football video tagging for youth coaches.</p>
+      <header className="app-header">
+        <div className="brand-mark" aria-hidden="true">M</div>
+        <div>
+          <h1>MatchMark</h1>
+          <p>Football video tagging for youth coaches</p>
+        </div>
+      </header>
       <VideoPlayer />
     </main>
   );

@@ -1,12 +1,28 @@
-﻿:root {
-  font-family: system-ui, sans-serif;
+:root {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
   line-height: 1.5;
-  color: #213547;
-  background-color: #ffffff;
+  color: var(--text-primary);
+  background: var(--background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --background: #f4f6f7;
+  --surface: #ffffff;
+  --text-primary: #172b32;
+  --text-secondary: #596b72;
+  --accent: #17664e;
+  --accent-hover: #104d3b;
+  --accent-soft: #edf5f1;
+  --border: #dce4e5;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgb(23 43 50 / 4%);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
 }
 
 * {
@@ -16,4 +32,69 @@
 body {
   margin: 0;
   min-width: 320px;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button, select, .file-button {
+  min-height: 44px;
+}
+
+button, .file-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+button:focus-visible, select:focus-visible, input:focus-visible, .file-button:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button:disabled, fieldset:disabled button {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.button-primary:hover:not(:disabled), .file-button:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+h1, h2, p {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+  }
 }
