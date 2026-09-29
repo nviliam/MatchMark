@@ -77,7 +77,8 @@
   overflow-wrap: anywhere;
 }
 
-.video-picker-copy > p:last-child {
+.video-picker-copy > h2 + p,
+.video-picker-copy > p + p {
   margin-top: var(--space-2);
 }
 

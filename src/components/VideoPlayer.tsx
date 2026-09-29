@@ -22,9 +22,12 @@ function VideoPlayer() {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("video/")) {
-      setError("Please select a video file.");
-      event.currentTarget.value = "";
+    // Allow selecting the same file again after a playback failure.
+    event.currentTarget.value = "";
+    const isSupportedContainer = file.type === "video/mp4" || file.type === "video/webm"
+      || /\.(mp4|webm)$/i.test(file.name);
+    if (!isSupportedContainer) {
+      setError("Please select an MP4 or WebM video. Recommended format: MP4 (H.264).");
       return;
     }
     setError("");
@@ -33,6 +36,15 @@ function VideoPlayer() {
     setIsVideoReady(false);
     setVideoName(file.name);
     setVideoUrl(URL.createObjectURL(file));
+  }
+
+  function handleVideoError() {
+    setIsVideoReady(false);
+    setVideoUrl(null);
+    setVideoName("");
+    setEvents([]);
+    setPending(null);
+    setError("This video format or codec is not supported by your browser. For best compatibility, use an MP4 video encoded with H.264.");
   }
 
   function handleEvent(type: EventType) {
@@ -64,10 +76,12 @@ function VideoPlayer() {
           <p className="eyebrow">{videoUrl ? "Match video" : "Start your analysis"}</p>
           <h2>{videoUrl ? videoName : "Select match video"}</h2>
           <p>{videoUrl ? "Your video stays on your device." : "Choose a local video file to start tagging."}</p>
+          <p className="privacy-note" id="video-format-hint">Recommended format: MP4 (H.264)</p>
         </div>
         <label className="file-button button-primary">
           <span>{videoUrl ? "Change video" : "Choose video"}</span>
-          <input type="file" accept="video/*" aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
+          <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
+            aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
         </label>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded.</p>}
       </div>
@@ -75,10 +89,7 @@ function VideoPlayer() {
       {videoUrl && (
         <video key={videoUrl} ref={videoRef} src={videoUrl}
           onLoadedMetadata={() => setIsVideoReady(true)}
-          onError={() => {
-            setIsVideoReady(false);
-            setError("This video could not be played. Please choose a supported video file.");
-          }}
+          onError={handleVideoError}
           controls playsInline preload="metadata" aria-label="Selected video">
           Your browser does not support video playback.
         </video>
