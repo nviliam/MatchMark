@@ -4,6 +4,12 @@ import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventList from "./EventList";
 
+const seekShortcuts: Readonly<Record<string, number>> = {
+  Digit2: 1.2,
+  Digit3: 1.5,
+  Digit4: 2,
+};
+
 function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -18,6 +24,31 @@ function VideoPlayer() {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
+
+  useEffect(() => {
+    if (!videoUrl || !isVideoReady) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.repeat || event.defaultPrevented || event.isComposing
+        || event.ctrlKey || event.altKey || event.metaKey) return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement
+        && (target.closest("input, textarea, select") || target.isContentEditable)) return;
+
+      const jumpAmount = seekShortcuts[event.code];
+      const video = videoRef.current;
+      if (typeof jumpAmount !== "number" || !video || video.error
+        || !Number.isFinite(video.duration)) return;
+
+      event.preventDefault();
+      const offset = event.shiftKey ? -jumpAmount : jumpAmount;
+      video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + offset));
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [videoUrl, isVideoReady]);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -90,9 +121,28 @@ function VideoPlayer() {
         <video key={videoUrl} ref={videoRef} src={videoUrl}
           onLoadedMetadata={() => setIsVideoReady(true)}
           onError={handleVideoError}
+          onRateChange={(event) => {
+            if (event.currentTarget.playbackRate !== 1) event.currentTarget.playbackRate = 1;
+          }}
           controls playsInline preload="metadata" aria-label="Selected video">
           Your browser does not support video playback.
         </video>
+      )}
+      {videoUrl && isVideoReady && (
+        <div className="quick-seek" aria-label="Quick seek keyboard shortcuts">
+          <span className="quick-seek-title">Quick seek</span>
+          {(["Forward", "Backward"] as const).map((direction) => (
+            <div className="quick-seek-direction" key={direction}>
+              <span className="quick-seek-direction-label">{direction}</span>
+              {Object.entries(seekShortcuts).map(([code, seconds]) => (
+                <span className="quick-seek-shortcut" key={code}>
+                  <kbd>{direction === "Backward" ? "Shift+" : ""}{code.replace("Digit", "")}</kbd>
+                  {direction === "Backward" ? "−" : "+"}{seconds}s
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       )}
       {videoUrl && (
         <div className="tagging-workspace">
