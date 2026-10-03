@@ -118,62 +118,34 @@ function VideoPlayer() {
       </div>
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (
-        <video key={videoUrl} ref={videoRef} src={videoUrl}
-          onLoadedMetadata={() => setIsVideoReady(true)}
-          onError={handleVideoError}
-          onRateChange={(event) => {
-            if (event.currentTarget.playbackRate !== 1) event.currentTarget.playbackRate = 1;
-          }}
-          controls playsInline preload="metadata" aria-label="Selected video">
-          Your browser does not support video playback.
-        </video>
-      )}
-      {videoUrl && isVideoReady && (
-        <div className="quick-seek" aria-label="Quick seek keyboard shortcuts">
-          <span className="quick-seek-title">Quick seek</span>
-          {(["Forward", "Backward"] as const).map((direction) => (
-            <div className="quick-seek-direction" key={direction}>
-              <span className="quick-seek-direction-label">{direction}</span>
-              {Object.entries(seekShortcuts).map(([code, seconds]) => (
-                <span className="quick-seek-shortcut" key={code}>
-                  <kbd>{direction === "Backward" ? "Shift+" : ""}{code.replace("Digit", "")}</kbd>
-                  {direction === "Backward" ? "−" : "+"}{seconds}s
-                </span>
-              ))}
+        <>
+          <div className="tagging-workspace">
+            <EventButtons disabled={!isVideoReady || pending !== null} onSelect={handleEvent} />
+            <div className="video-stage">
+              <video key={videoUrl} ref={videoRef} src={videoUrl}
+                onLoadedMetadata={() => setIsVideoReady(true)}
+                onError={handleVideoError}
+                onRateChange={(event) => {
+                  if (event.currentTarget.playbackRate !== 1) event.currentTarget.playbackRate = 1;
+                }}
+                controls playsInline preload="metadata" aria-label="Selected video">
+                Your browser does not support video playback.
+              </video>
             </div>
-          ))}
-        </div>
-      )}
-      {videoUrl && (
-        <div className="tagging-workspace">
-          <div className="tagging-controls">
-            <section className="panel" aria-labelledby="tagging-title">
-              <div className="panel-heading">
-                <h2 id="tagging-title">Tag an event</h2>
-                <p>Select an action to mark its moment in the match.</p>
-              </div>
-              <EventButtons disabled={!isVideoReady || pending !== null} onSelect={handleEvent} />
-            </section>
-            {pending && (
-              <EventForm pending={pending} disabled={!isVideoReady}
-                onSave={handleSave} onCancel={() => setPending(null)} />
-            )}
-          </div>
-          <section className="panel history-panel" aria-labelledby="history-title">
-            <div className="history-heading">
-              <h2 id="history-title">Event history</h2>
+            <section className="recent-events" aria-label="Recent events">
+              {events.length === 0 ? (
+                <p>Tag an action to record your first event.</p>
+              ) : (
+                <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady} onSeek={seekToEvent} />
+              )}
               <span className="event-count" aria-label={`${events.length} recorded events`}>{events.length}</span>
-            </div>
-            {events.length === 0 ? (
-              <p className="history-empty">No events yet. Tag an action and save its details to build your match history.</p>
-            ) : (
-              <>
-                <p className="history-hint">Select an event to return to that moment.</p>
-                <EventList events={events} disabled={!isVideoReady} onSeek={seekToEvent} />
-              </>
-            )}
-          </section>
-        </div>
+            </section>
+          </div>
+          {pending && (
+            <EventForm pending={pending} disabled={!isVideoReady}
+              onSave={handleSave} onCancel={() => setPending(null)} />
+          )}
+        </>
       )}
     </section>
   );

@@ -28,7 +28,6 @@ export default function EventForm({ pending, disabled, onSave, onCancel }: Props
   return (
     <form className="event-form panel" aria-label="Event details" onSubmit={handleSubmit}>
       <div>
-        <p className="eyebrow">Event type</p>
         <h2>{eventLabels[pending.type]} <span className="timestamp">{formatTimestamp(pending.timestamp)}</span></h2>
       </div>
       <label className="player-picker">

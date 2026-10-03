@@ -8,7 +8,7 @@ export default function EventList({ events, disabled, onSeek }: Props) {
   if (events.length === 0) return null;
 
   return (
-    <ul className="event-list" aria-label="Recorded events">
+    <ul className="event-list" aria-label="Three most recent events">
       {events.map((event) => {
         const player = players.find((player) => player.id === event.playerId);
         return (
@@ -16,8 +16,8 @@ export default function EventList({ events, disabled, onSeek }: Props) {
             <button type="button" disabled={disabled} onClick={() => onSeek(event.timestamp)}>
               <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
               <span className="event-summary">
-                <strong>{player ? `#${player.number} ${player.name}` : "Unknown player"}</strong>
-                <span>{eventLabels[event.type]}
+                <strong title={player?.name}>{player ? `#${player.number}` : "Unknown player"} {eventLabels[event.type]}</strong>
+                <span>
                   {"outcome" in event && ` · ${outcomeLabels[event.outcome]}`}
                   {event.type === "shot" && ` · ${bodyPartLabels[event.bodyPart]}`}
                 </span>
