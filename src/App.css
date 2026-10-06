@@ -91,7 +91,7 @@
   --rail-size: 52px;
   display: grid;
   grid-template-columns: var(--rail-size) minmax(0, 1fr) var(--rail-size);
-  grid-template-rows: var(--rail-size) minmax(480px, calc(100dvh - 226px)) var(--rail-size);
+  grid-template-rows: var(--rail-size) minmax(220px, 55dvh) auto;
   grid-template-areas: "top top top" "left video right" "recent recent recent";
   border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
 }
@@ -108,7 +108,8 @@
 }
 .video-stage { grid-area: video; min-width: 0; min-height: 0; background: #10191d; }
 .video-stage video { display: block; width: 100%; height: 100%; object-fit: contain; background: #10191d; }
-.recent-events { grid-area: recent; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 8px; border-top: 1px solid var(--border); }
+.bottom-rail { grid-area: recent; min-width: 0; min-height: 0; }
+.recent-events { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 52px; padding: 4px 8px; border-top: 1px solid var(--border); }
 .recent-events > p { font-size: .8rem; flex: 1; }
 .event-count { margin-left: auto; flex-shrink: 0; padding: 2px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 5px; font-size: .75rem; }
 .event-list { display: flex; flex: 1; min-width: 0; gap: 6px; padding: 0; margin: 0; list-style: none; }
@@ -130,6 +131,54 @@
 .event-form-actions { margin-left: auto; }
 .event-form-actions button { padding: 6px 14px; font-size: .8rem; }
 .error-message { padding: 16px; border: 1px solid #e6c3c0; border-radius: 8px; background: #fff5f4; color: #8a2822; }
+
+/* Only the loaded analysis view owns the viewport. Removing the class
+   restores the normal document flow, including after a playback error. */
+body:has(.app-analysis) { overflow: hidden; min-width: 0; }
+.app-analysis {
+  height: 100dvh;
+  padding: 8px;
+  overflow: hidden;
+}
+.app-analysis .video-player {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  gap: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.app-analysis .tagging-workspace {
+  --rail-size: 52px;
+  --side-action-length: clamp(100px, 16dvh, 152px);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  grid-template-rows: 48px minmax(0, 1fr) auto;
+}
+.app-analysis .action-rail { min-height: 0; }
+.app-analysis .action-rail-left .action-slot,
+.app-analysis .action-rail-right .action-slot {
+  height: var(--side-action-length);
+  flex-basis: var(--side-action-length);
+}
+.app-analysis .action-rail-left button,
+.app-analysis .action-rail-right button { width: var(--side-action-length); }
+.app-analysis .video-stage { overflow: hidden; }
+.app-analysis .bottom-rail {
+  /* Fallback for small screens/zoom: any overflow stays within this rail. */
+  max-height: 40dvh;
+  overflow: auto;
+}
+.app-analysis .event-form {
+  gap: 8px 12px;
+  padding: 8px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: none;
+}
+.app-analysis .event-form > * { min-width: 0; max-width: 100%; }
+.app-analysis .event-form fieldset { column-gap: 8px; }
+
 @media (max-width: 899px) {
   .tagging-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(220px, 55dvh) auto; grid-template-areas: "top" "left" "right" "video" "recent"; }
   .action-rail { flex-direction: row; flex-wrap: wrap; padding: 4px; border: 0; border-bottom: 1px solid var(--border); }
@@ -138,6 +187,13 @@
   .recent-events { min-height: 52px; }
   .event-list { flex-wrap: wrap; }
   .event-list li { flex-basis: 100%; }
+  .app-analysis .tagging-workspace {
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  }
+  .app-analysis .action-rail-left .action-slot,
+  .app-analysis .action-rail-right .action-slot { height: auto; flex-basis: auto; }
+  .app-analysis .action-rail-left button,
+  .app-analysis .action-rail-right button { width: auto; }
 }
 @media (max-width: 600px) {
   .app { padding: 8px; }

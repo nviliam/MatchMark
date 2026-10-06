@@ -10,14 +10,18 @@ const seekShortcuts: Readonly<Record<string, number>> = {
   Digit4: 2,
 };
 
-function VideoPlayer() {
+type Props = {
+  isVideoReady: boolean;
+  onVideoReadyChange: (ready: boolean) => void;
+};
+
+function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
   const [error, setError] = useState("");
   const [events, setEvents] = useState<MatchEvent[]>([]);
   const [pending, setPending] = useState<PendingEvent | null>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -102,7 +106,7 @@ function VideoPlayer() {
 
   return (
     <section className="video-player" aria-label="Video player">
-      <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
+      {!isVideoReady && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
         <div className="video-picker-copy">
           <p className="eyebrow">{videoUrl ? "Match video" : "Start your analysis"}</p>
           <h2>{videoUrl ? videoName : "Select match video"}</h2>
@@ -115,7 +119,7 @@ function VideoPlayer() {
             aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
         </label>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded.</p>}
-      </div>
+      </div>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (
         <>
@@ -132,19 +136,21 @@ function VideoPlayer() {
                 Your browser does not support video playback.
               </video>
             </div>
-            <section className="recent-events" aria-label="Recent events">
+            <div className="bottom-rail">
+              <section className="recent-events" aria-label="Recent events">
               {events.length === 0 ? (
                 <p>Tag an action to record your first event.</p>
               ) : (
                 <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady} onSeek={seekToEvent} />
               )}
               <span className="event-count" aria-label={`${events.length} recorded events`}>{events.length}</span>
-            </section>
+              </section>
+              {pending && (
+                <EventForm pending={pending} disabled={!isVideoReady}
+                  onSave={handleSave} onCancel={() => setPending(null)} />
+              )}
+            </div>
           </div>
-          {pending && (
-            <EventForm pending={pending} disabled={!isVideoReady}
-              onSave={handleSave} onCancel={() => setPending(null)} />
-          )}
         </>
       )}
     </section>
