@@ -89,10 +89,11 @@
 .video-picker-compact .file-button { padding: 6px 12px; font-size: .8rem; }
 .tagging-workspace {
   --rail-size: 52px;
+  --bottom-rail-height: 104px;
   display: grid;
   grid-template-columns: var(--rail-size) minmax(0, 1fr) var(--rail-size);
-  grid-template-rows: var(--rail-size) minmax(220px, 55dvh) auto;
-  grid-template-areas: "top top top" "left video right" "recent recent recent";
+  grid-template-rows: var(--rail-size) minmax(220px, 55dvh) var(--bottom-rail-height);
+  grid-template-areas: "top top top" "left video right" "bottom bottom bottom";
   border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
 }
 .action-rail { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
@@ -108,10 +109,16 @@
 }
 .video-stage { grid-area: video; min-width: 0; min-height: 0; background: #10191d; }
 .video-stage video { display: block; width: 100%; height: 100%; object-fit: contain; background: #10191d; }
-.bottom-rail { grid-area: recent; min-width: 0; min-height: 0; }
-.recent-events { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 52px; padding: 4px 8px; border-top: 1px solid var(--border); }
-.recent-events > p { font-size: .8rem; flex: 1; }
-.event-count { margin-left: auto; flex-shrink: 0; padding: 2px 8px; color: var(--accent); background: var(--accent-soft); border-radius: 5px; font-size: .75rem; }
+.bottom-rail {
+  grid-area: bottom;
+  height: var(--bottom-rail-height);
+  min-width: 0;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+  /* Form overflow stays inside the reserved track, including on small screens. */
+  overflow: auto;
+  overscroll-behavior: contain;
+}
 .event-list { display: flex; flex: 1; min-width: 0; gap: 6px; padding: 0; margin: 0; list-style: none; }
 .event-list li { flex: 1; min-width: 0; }
 .event-list button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 8px; text-align: left; font-size: .75rem; }
@@ -154,7 +161,7 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
   height: 100%;
   min-height: 0;
   min-width: 0;
-  grid-template-rows: 48px minmax(0, 1fr) auto;
+  grid-template-rows: 48px minmax(0, 1fr) var(--bottom-rail-height);
 }
 .app-analysis .action-rail { min-height: 0; }
 .app-analysis .action-rail-left .action-slot,
@@ -165,14 +172,12 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
 .app-analysis .action-rail-left button,
 .app-analysis .action-rail-right button { width: var(--side-action-length); }
 .app-analysis .video-stage { overflow: hidden; }
-.app-analysis .bottom-rail {
-  /* Fallback for small screens/zoom: any overflow stays within this rail. */
-  max-height: 40dvh;
-  overflow: auto;
-}
 .app-analysis .event-form {
   gap: 8px 12px;
   padding: 8px;
+  min-height: 100%;
+  align-content: center;
+  border: 0;
   border-radius: 0 0 8px 8px;
   box-shadow: none;
 }
@@ -180,15 +185,14 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
 .app-analysis .event-form fieldset { column-gap: 8px; }
 
 @media (max-width: 899px) {
-  .tagging-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(220px, 55dvh) auto; grid-template-areas: "top" "left" "right" "video" "recent"; }
+  .tagging-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(220px, 55dvh) var(--bottom-rail-height); grid-template-areas: "top" "left" "right" "video" "bottom"; }
   .action-rail { flex-direction: row; flex-wrap: wrap; padding: 4px; border: 0; border-bottom: 1px solid var(--border); }
   .action-rail-left .action-slot, .action-rail-right .action-slot { position: static; width: auto; height: auto; flex: initial; }
   .action-rail-left button, .action-rail-right button { position: static; width: auto; transform: none; }
-  .recent-events { min-height: 52px; }
   .event-list { flex-wrap: wrap; }
   .event-list li { flex-basis: 100%; }
   .app-analysis .tagging-workspace {
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr) var(--bottom-rail-height);
   }
   .app-analysis .action-rail-left .action-slot,
   .app-analysis .action-rail-right .action-slot { height: auto; flex-basis: auto; }

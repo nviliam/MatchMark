@@ -137,19 +137,16 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
               </video>
             </div>
             <div className="bottom-rail">
-              <section className="recent-events" aria-label="Recent events">
-              {events.length === 0 ? (
-                <p>Tag an action to record your first event.</p>
-              ) : (
-                <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady} onSeek={seekToEvent} />
-              )}
-              <span className="event-count" aria-label={`${events.length} recorded events`}>{events.length}</span>
-              </section>
               {pending && (
                 <EventForm pending={pending} disabled={!isVideoReady}
                   onSave={handleSave} onCancel={() => setPending(null)} />
               )}
             </div>
+          </div>
+          {/* Preserve the existing seek binding without a visible history UI.
+              The complete history remains in events, not this three-item view. */}
+          <div hidden>
+            <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady} onSeek={seekToEvent} />
           </div>
         </>
       )}
