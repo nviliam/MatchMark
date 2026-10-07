@@ -81,6 +81,11 @@
   min-width: 0;
 }
 
+.video-picker-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.tagging-workspace[hidden] { display: none; }
+.action-rail-top { position: relative; padding-inline: 64px; }
+.action-rail-top .analysis-exit { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
+
 
 .video-picker-compact { padding: 6px 12px; gap: 12px; }
 .video-picker-compact .eyebrow, .video-picker-compact h2 + p { display: none; }
@@ -89,7 +94,7 @@
 .video-picker-compact .file-button { padding: 6px 12px; font-size: .8rem; }
 .tagging-workspace {
   --rail-size: 52px;
-  --bottom-rail-height: 104px;
+  --bottom-rail-height: 56px;
   display: grid;
   grid-template-columns: var(--rail-size) minmax(0, 1fr) var(--rail-size);
   grid-template-rows: var(--rail-size) minmax(220px, 55dvh) var(--bottom-rail-height);
@@ -156,25 +161,43 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
   grid-template-rows: minmax(0, 1fr);
 }
 .app-analysis .tagging-workspace {
-  --rail-size: 52px;
+  --rail-size: 44px;
+  --top-rail-height: 40px;
   --side-action-length: clamp(100px, 16dvh, 152px);
   height: 100%;
   min-height: 0;
   min-width: 0;
-  grid-template-rows: 48px minmax(0, 1fr) var(--bottom-rail-height);
+  grid-template-rows: var(--top-rail-height) minmax(0, 1fr) var(--bottom-rail-height);
 }
 .app-analysis .action-rail { min-height: 0; }
+.app-analysis .action-rail-top button {
+  min-height: 36px;
+  height: 36px;
+  padding: 4px 12px;
+}
 .app-analysis .action-rail-left .action-slot,
 .app-analysis .action-rail-right .action-slot {
+  width: 38px;
   height: var(--side-action-length);
   flex-basis: var(--side-action-length);
 }
 .app-analysis .action-rail-left button,
-.app-analysis .action-rail-right button { width: var(--side-action-length); }
+.app-analysis .action-rail-right button {
+  width: var(--side-action-length);
+  min-height: 38px;
+  height: 38px;
+  padding: 2px 4px;
+  /* Long labels wrap at word boundaries inside the rotated button. */
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1.15;
+}
+.app-analysis .action-rail button:focus-visible { outline-offset: -3px; }
 .app-analysis .video-stage { overflow: hidden; }
 .app-analysis .event-form {
-  gap: 8px 12px;
-  padding: 8px;
+  gap: 4px 8px;
+  padding: 2px 8px;
   min-height: 100%;
   align-content: center;
   border: 0;
@@ -182,11 +205,25 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
   box-shadow: none;
 }
 .app-analysis .event-form > * { min-width: 0; max-width: 100%; }
-.app-analysis .event-form fieldset { column-gap: 8px; }
+.app-analysis .event-form fieldset { gap: 2px 8px; padding: 0 6px 1px; }
+.app-analysis .event-form legend { line-height: 1.2; }
+.app-analysis .event-form fieldset label { min-height: 30px; }
+.app-analysis .event-form .player-picker { flex-direction: row; align-items: center; gap: 6px; }
+.app-analysis .player-picker select,
+.app-analysis .event-form-actions button { min-height: 36px; padding: 4px 8px; }
+
+@media (min-width: 900px) {
+  /* One compact form row; narrower windows can scroll only the bottom rail. */
+  .app-analysis .event-form { flex-wrap: nowrap; min-width: max-content; }
+  .app-analysis .event-form > * { flex-shrink: 0; }
+  .app-analysis .event-form h2,
+  .app-analysis .event-form fieldset { flex-wrap: nowrap; }
+}
 
 @media (max-width: 899px) {
   .tagging-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(220px, 55dvh) var(--bottom-rail-height); grid-template-areas: "top" "left" "right" "video" "bottom"; }
   .action-rail { flex-direction: row; flex-wrap: wrap; padding: 4px; border: 0; border-bottom: 1px solid var(--border); }
+  .action-rail-top { padding-inline: 64px; }
   .action-rail-left .action-slot, .action-rail-right .action-slot { position: static; width: auto; height: auto; flex: initial; }
   .action-rail-left button, .action-rail-right button { position: static; width: auto; transform: none; }
   .event-list { flex-wrap: wrap; }
@@ -195,7 +232,7 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
     grid-template-rows: auto auto auto minmax(0, 1fr) var(--bottom-rail-height);
   }
   .app-analysis .action-rail-left .action-slot,
-  .app-analysis .action-rail-right .action-slot { height: auto; flex-basis: auto; }
+  .app-analysis .action-rail-right .action-slot { width: auto; height: auto; flex-basis: auto; }
   .app-analysis .action-rail-left button,
   .app-analysis .action-rail-right button { width: auto; }
 }

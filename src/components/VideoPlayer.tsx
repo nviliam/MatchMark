@@ -11,17 +11,26 @@ const seekShortcuts: Readonly<Record<string, number>> = {
 };
 
 type Props = {
-  isVideoReady: boolean;
-  onVideoReadyChange: (ready: boolean) => void;
+  isAnalysisActive: boolean;
+  onAnalysisActiveChange: (active: boolean) => void;
 };
 
-function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Props) {
+function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
   const [error, setError] = useState("");
   const [events, setEvents] = useState<MatchEvent[]>([]);
   const [pending, setPending] = useState<PendingEvent | null>(null);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [resumeTime, setResumeTime] = useState<number | null>(null);
+  const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (resumeTime === null) return;
+    if (isAnalysisActive) videoRef.current?.focus();
+    else resumeButtonRef.current?.focus();
+  }, [isAnalysisActive, resumeTime]);
 
   useEffect(() => {
     return () => {
@@ -30,7 +39,7 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
   }, [videoUrl]);
 
   useEffect(() => {
-    if (!videoUrl || !isVideoReady) return;
+    if (!videoUrl || !isVideoReady || !isAnalysisActive) return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.repeat || event.defaultPrevented || event.isComposing
@@ -52,7 +61,24 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [videoUrl, isVideoReady]);
+  }, [videoUrl, isVideoReady, isAnalysisActive]);
+
+  function handleExit() {
+    const video = videoRef.current;
+    if (!video || !isVideoReady) return;
+    video.pause();
+    setResumeTime(video.currentTime);
+    onAnalysisActiveChange(false);
+  }
+
+  function handleResume() {
+    const video = videoRef.current;
+    if (!video || !isVideoReady || resumeTime === null) return;
+    video.pause();
+    video.currentTime = resumeTime;
+    setError("");
+    onAnalysisActiveChange(true);
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -69,12 +95,16 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
     setEvents([]);
     setPending(null);
     setIsVideoReady(false);
+    setResumeTime(null);
+    onAnalysisActiveChange(false);
     setVideoName(file.name);
     setVideoUrl(URL.createObjectURL(file));
   }
 
   function handleVideoError() {
     setIsVideoReady(false);
+    setResumeTime(null);
+    onAnalysisActiveChange(false);
     setVideoUrl(null);
     setVideoName("");
     setEvents([]);
@@ -84,12 +114,12 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
 
   function handleEvent(type: EventType) {
     const video = videoRef.current;
-    if (!video || !isVideoReady || pending) return;
+    if (!video || !isVideoReady || !isAnalysisActive || pending) return;
     setPending({ type, timestamp: video.currentTime });
   }
 
   function handleSave(playerId: number, details: EventDetails) {
-    if (!pending || !isVideoReady || pending.type !== details.type) return;
+    if (!pending || !isVideoReady || !isAnalysisActive || pending.type !== details.type) return;
     const timestamp = pending.timestamp;
     setEvents((previousEvents) => [
       ...previousEvents,
@@ -100,45 +130,59 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
 
   function seekToEvent(timestamp: number) {
     const video = videoRef.current;
-    if (!video || !isVideoReady) return;
+    if (!video || !isVideoReady || !isAnalysisActive) return;
     video.currentTime = timestamp;
   }
 
   return (
     <section className="video-player" aria-label="Video player">
-      {!isVideoReady && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
+      {!isAnalysisActive && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
         <div className="video-picker-copy">
           <p className="eyebrow">{videoUrl ? "Match video" : "Start your analysis"}</p>
           <h2>{videoUrl ? videoName : "Select match video"}</h2>
           <p>{videoUrl ? "Your video stays on your device." : "Choose a local video file to start tagging."}</p>
           <p className="privacy-note" id="video-format-hint">Recommended format: MP4 (H.264)</p>
         </div>
-        <label className="file-button button-primary">
-          <span>{videoUrl ? "Change video" : "Choose video"}</span>
-          <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
-            aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
-        </label>
+        <div className="video-picker-actions">
+          {videoUrl && isVideoReady && resumeTime !== null && (
+            <button ref={resumeButtonRef} className="button-primary" type="button" onClick={handleResume}>
+              Resume analysis
+            </button>
+          )}
+          <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
+            <span>{videoUrl ? "Change video" : "Choose video"}</span>
+            <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
+              aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
+          </label>
+        </div>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded.</p>}
       </div>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (
         <>
-          <div className="tagging-workspace">
-            <EventButtons disabled={!isVideoReady || pending !== null} onSelect={handleEvent} />
+          {/* Keep video and EventForm mounted while suspended so their state survives Exit. */}
+          <div className="tagging-workspace" hidden={!isAnalysisActive}>
+            <EventButtons disabled={!isVideoReady || !isAnalysisActive || pending !== null}
+              onSelect={handleEvent} onExit={handleExit} />
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
-                onLoadedMetadata={() => setIsVideoReady(true)}
+                onLoadedMetadata={() => {
+                  if (!isVideoReady) {
+                    setIsVideoReady(true);
+                    onAnalysisActiveChange(true);
+                  }
+                }}
                 onError={handleVideoError}
                 onRateChange={(event) => {
                   if (event.currentTarget.playbackRate !== 1) event.currentTarget.playbackRate = 1;
                 }}
-                controls playsInline preload="metadata" aria-label="Selected video">
+                controls playsInline preload="metadata" tabIndex={0} aria-label="Selected video">
                 Your browser does not support video playback.
               </video>
             </div>
             <div className="bottom-rail">
               {pending && (
-                <EventForm pending={pending} disabled={!isVideoReady}
+                <EventForm pending={pending} disabled={!isVideoReady || !isAnalysisActive}
                   onSave={handleSave} onCancel={() => setPending(null)} />
               )}
             </div>
@@ -146,7 +190,7 @@ function VideoPlayer({ isVideoReady, onVideoReadyChange: setIsVideoReady }: Prop
           {/* Preserve the existing seek binding without a visible history UI.
               The complete history remains in events, not this three-item view. */}
           <div hidden>
-            <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady} onSeek={seekToEvent} />
+            <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady || !isAnalysisActive} onSeek={seekToEvent} />
           </div>
         </>
       )}

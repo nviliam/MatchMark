@@ -7,9 +7,9 @@ const rails: { position: string; types: EventType[] }[] = [
   { position: "right", types: ["tackle", "interception", "ball-recovery"] },
 ];
 
-type Props = { disabled: boolean; onSelect: (type: EventType) => void };
+type Props = { disabled: boolean; onSelect: (type: EventType) => void; onExit: () => void };
 
-export default function EventButtons({ disabled, onSelect }: Props) {
+export default function EventButtons({ disabled, onSelect, onExit }: Props) {
   return (
     <>
       {rails.map((rail) => (
@@ -22,6 +22,9 @@ export default function EventButtons({ disabled, onSelect }: Props) {
               </button>
             </div>
           ))}
+          {rail.position === "top" && (
+            <button className="analysis-exit" type="button" onClick={onExit}>Exit</button>
+          )}
         </div>
       ))}
     </>
