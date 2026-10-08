@@ -244,3 +244,40 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
   .action-rail button { padding: 6px 10px; }
   .event-form { gap: 8px; }
 }
+
+/* The workflow occupies the existing fixed track; only its content changes. */
+.app-analysis .event-workflow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: max-content;
+  height: 100%;
+  gap: 12px;
+}
+.workflow-summary, .workflow-step, .saved-event-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: .8rem;
+}
+.workflow-summary { font-weight: 600; }
+.workflow-step-label { color: var(--text-secondary); font-size: .75rem; }
+.app-analysis .workflow-step button {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: .8rem;
+}
+.workflow-step button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.workflow-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.saved-event-summary { min-height: 100%; padding: 4px 12px; width: max-content; }
+.saved-event-label { color: var(--accent); text-transform: uppercase; font-size: .7rem; letter-spacing: .08em; }
+.saved-event-summary button { min-height: 36px; padding: 4px 10px; font-size: .8rem; }
+.saved-event-summary .button-danger { color: #8a2822; border-color: #e6c3c0; }
+.saved-event-summary .button-danger:hover:not(:disabled) { background: #fff5f4; border-color: #8a2822; }
+.saved-event-summary .button-danger-confirm { color: #fff; background: #8a2822; border-color: #8a2822; }
+.saved-event-summary .button-danger-confirm:hover:not(:disabled) { background: #6f201b; border-color: #6f201b; }

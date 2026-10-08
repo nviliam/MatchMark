@@ -1,74 +1,91 @@
-﻿import { useState, type FormEvent } from "react";
+﻿import { useEffect, useRef, useState, type FormEvent } from "react";
 import { players } from "../data/players";
-import type { BodyPart, EventDetails, PendingEvent } from "../types/event";
+import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
 import { bodyPartLabels, createEventDetails, eventLabels, formatTimestamp, outcomeLabels, outcomeOptions } from "../utils/events";
 
 type Props = {
   pending: PendingEvent;
+  initialEvent?: MatchEvent;
   disabled: boolean;
   onSave: (playerId: number, details: EventDetails) => void;
   onCancel: () => void;
 };
 
+type Step = "outcome" | "bodyPart" | "player" | "review";
+const stepLabels: Record<Step, string> = {
+  outcome: "Outcome", bodyPart: "Body Part", player: "Player", review: "Review event",
+};
 const bodyParts: BodyPart[] = ["foot", "head", "other"];
 
-export default function EventForm({ pending, disabled, onSave, onCancel }: Props) {
-  const [playerId, setPlayerId] = useState<number | null>(null);
-  const [outcome, setOutcome] = useState("");
-  const [bodyPart, setBodyPart] = useState<BodyPart | null>(null);
+export default function EventForm({ pending, initialEvent, disabled, onSave, onCancel }: Props) {
+  const steps: Step[] = [];
+  if (outcomeOptions[pending.type].length > 0) steps.push("outcome");
+  if (pending.type === "shot") steps.push("bodyPart");
+  steps.push("player", "review");
+  const [playerId, setPlayerId] = useState<number | null>(initialEvent?.playerId ?? null);
+  const [outcome, setOutcome] = useState<keyof typeof outcomeLabels | "">(initialEvent && "outcome" in initialEvent ? initialEvent.outcome : "");
+  const [bodyPart, setBodyPart] = useState<BodyPart | null>(initialEvent?.type === "shot" ? initialEvent.bodyPart : null);
+  const [stepIndex, setStepIndex] = useState(initialEvent ? steps.length - 1 : 0);
+  const stepRef = useRef<HTMLDivElement | null>(null);
+  const step = steps[stepIndex];
   const details = createEventDetails(pending.type, outcome, bodyPart);
-  const playerExists = players.some((player) => player.id === playerId);
+  const player = players.find((entry) => entry.id === playerId);
+  const summary = [
+    eventLabels[pending.type], outcome && outcomeLabels[outcome],
+    bodyPart && bodyPartLabels[bodyPart], player && `#${player.number} ${player.name}`,
+  ].filter(Boolean).join(" · ");
+
+  useEffect(() => {
+    if (!disabled) stepRef.current?.focus();
+  }, [step, disabled]);
+
+  function advance() {
+    setStepIndex((index) => Math.min(index + 1, steps.length - 1));
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (disabled || !playerExists || playerId === null || !details) return;
-    onSave(playerId, details);
+    if (disabled || step !== "review" || !player || !details) return;
+    onSave(player.id, details);
   }
 
   return (
-    <form className="event-form panel" aria-label="Event details" onSubmit={handleSubmit}>
-      <div>
-        <h2>{eventLabels[pending.type]} <span className="timestamp">{formatTimestamp(pending.timestamp)}</span></h2>
+    <form className="event-form event-workflow panel" aria-label="Event details" onSubmit={handleSubmit}>
+      <div className="workflow-summary">
+        {initialEvent && <span className="workflow-step-label">Editing</span>}
+        <span className="timestamp">{formatTimestamp(pending.timestamp)}</span>
+        <span>{summary}</span>
       </div>
-      <label className="player-picker">
-        Player
-        <select value={playerId ?? ""} required onChange={(event) => {
-          const value = event.currentTarget.value;
-          setPlayerId(value === "" ? null : Number(value));
-        }}>
-          <option value="">Select a player</option>
-          {players.map((player) => (
-            <option key={player.id} value={player.id}>{player.number} – {player.name}</option>
-          ))}
-        </select>
-      </label>
-      {outcomeOptions[pending.type].length > 0 && (
-        <fieldset>
-          <legend>Outcome</legend>
-          {outcomeOptions[pending.type].map((value) => (
-            <label key={value}>
-              <input type="radio" name="outcome" checked={outcome === value}
-                onChange={() => setOutcome(value)} required />
-              {outcomeLabels[value]}
-            </label>
-          ))}
-        </fieldset>
-      )}
-      {pending.type === "shot" && (
-        <fieldset>
-          <legend>Body Part</legend>
-          {bodyParts.map((value) => (
-            <label key={value}>
-              <input type="radio" name="bodyPart" checked={bodyPart === value}
-                onChange={() => setBodyPart(value)} required />
-              {bodyPartLabels[value]}
-            </label>
-          ))}
-        </fieldset>
-      )}
+      <div className="workflow-step" key={step} ref={stepRef} tabIndex={-1}
+        role="group" aria-label={stepLabels[step]}>
+        <span className="workflow-step-label">{stepLabels[step]}</span>
+        {step === "outcome" && outcomeOptions[pending.type].map((value) => (
+          <button key={value} type="button" disabled={disabled} aria-pressed={outcome === value}
+            onClick={() => { setOutcome(value); advance(); }}>
+            {outcomeLabels[value]}
+          </button>
+        ))}
+        {step === "bodyPart" && bodyParts.map((value) => (
+          <button key={value} type="button" disabled={disabled} aria-pressed={bodyPart === value}
+            onClick={() => { setBodyPart(value); advance(); }}>
+            {bodyPartLabels[value]}
+          </button>
+        ))}
+        {step === "player" && players.map((entry) => (
+          <button key={entry.id} type="button" disabled={disabled} aria-pressed={playerId === entry.id}
+            onClick={() => { setPlayerId(entry.id); advance(); }}>
+            #{entry.number} {entry.name}
+          </button>
+        ))}
+      </div>
       <div className="event-form-actions">
-        <button className="button-primary" type="submit" disabled={disabled || !playerExists || !details}>Save</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        {stepIndex > 0 && (
+          <button type="button" disabled={disabled} onClick={() => setStepIndex((index) => index - 1)}>Back</button>
+        )}
+        <button type="button" disabled={disabled} onClick={onCancel}>Cancel</button>
+        {step === "review" && (
+          <button className="button-primary" type="submit" disabled={disabled || !player || !details}>Save</button>
+        )}
       </div>
     </form>
   );
