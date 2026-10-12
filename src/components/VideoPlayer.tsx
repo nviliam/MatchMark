@@ -5,6 +5,7 @@ import EventForm from "./EventForm";
 import EventList from "./EventList";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
+import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -18,11 +19,12 @@ type EventDraft = PendingEvent & (
 );
 
 type Props = {
+  eventShortcuts: EventShortcuts;
   isAnalysisActive: boolean;
   onAnalysisActiveChange: (active: boolean) => void;
 };
 
-function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange }: Props) {
+function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
@@ -35,6 +37,36 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange }: Props) {
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const eventActionsDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
+    || pending !== null || pendingDeleteId !== null;
+
+  const handleEvent = useCallback((type: EventType) => {
+    const video = videoRef.current;
+    if (!video || eventActionsDisabled) return;
+    setShowSavedEvent(false);
+    setPending({ mode: "create", type, timestamp: video.currentTime });
+  }, [eventActionsDisabled]);
+
+  useEffect(() => {
+    if (eventActionsDisabled) return;
+
+    function handleEventKeyDown(event: KeyboardEvent) {
+      if (event.repeat || event.defaultPrevented || event.isComposing
+        || event.ctrlKey || event.altKey || event.metaKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement
+        && (target.closest("input, textarea, select") || target.isContentEditable)) return;
+      // Reserve the physical number keys for Quick Seek, including shifted variants.
+      if (Object.hasOwn(seekShortcuts, event.code)) return;
+      const type = findEventShortcut(eventShortcuts, event.key);
+      if (!type) return;
+      event.preventDefault();
+      handleEvent(type);
+    }
+
+    window.addEventListener("keydown", handleEventKeyDown);
+    return () => window.removeEventListener("keydown", handleEventKeyDown);
+  }, [eventActionsDisabled, eventShortcuts, handleEvent]);
 
   useEffect(() => {
     if (resumeTime === null) return;
@@ -148,13 +180,6 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange }: Props) {
     setError("This video format or codec is not supported by your browser. For best compatibility, use an MP4 video encoded with H.264.");
   }
 
-  function handleEvent(type: EventType) {
-    const video = videoRef.current;
-    if (!video || !isVideoReady || !isAnalysisActive || pending || pendingDeleteId !== null) return;
-    setShowSavedEvent(false);
-    setPending({ mode: "create", type, timestamp: video.currentTime });
-  }
-
   function handleEdit() {
     if (!savedEvent || pending || pendingDeleteId !== null || !isVideoReady || !isAnalysisActive) return;
     setPending({ mode: "edit", type: savedEvent.type, timestamp: savedEvent.timestamp, original: savedEvent });
@@ -227,7 +252,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange }: Props) {
         <>
           {/* Keep video and EventForm mounted while suspended so their state survives Exit. */}
           <div className="tagging-workspace" hidden={!isAnalysisActive}>
-            <EventButtons disabled={!isVideoReady || !isAnalysisActive || pending !== null || pendingDeleteId !== null}
+            <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
               onSelect={handleEvent} onExit={handleExit} />
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}

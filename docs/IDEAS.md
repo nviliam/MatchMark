@@ -159,10 +159,29 @@ megjelenítés rejtett, nem foglal helyet a layoutban.
 
 ### 6. Billentyűparancsok az eseményekhez
 
-**Állapot: ötlet.** A meglévő Quick Seek videóugrásokat kezel, nem eseményrögzítést.
+**Állapot: részben elkészült.** Mind a 10 esemény indítható billentyűvel;
+a felhasználói testreszabás még későbbi feladat.
 
-- Ötletek
-  Legyen egy custom/egyéb gomb, ahová a felhasználó a timestamphez egy egyéni leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
+- [x] Az alapértelmezett kiosztás követi a jelenlegi action rail sorrendjét:
+  - Felül: `Q` → Pass, `W` → Key Pass, `E` → Shot, `R` → Duel, `T` → Ball Loss.
+  - Balra: `A` → Dribble, `Y` → Progressive Carry.
+  - Jobbra: `Z` → Tackle, `H` → Interception, `N` → Ball Recovery.
+- [x] Minden event action gombon külön, kompakt shortcut badge jelenik meg.
+- [x] A működés és a badge ugyanabból a központi konfigurációból származik
+      (`src/config/eventShortcuts.ts`), az aktuális mappinget az App React state-ben tartja.
+- [x] A kattintás és a shortcut ugyanazt az eseményindító handlert használja,
+      azonos timestamp-rögzítéssel és specifikációs folyamattal.
+- [x] A shortcut csak betöltött videónál, analysis mode-ban és engedélyezett
+      action gombok mellett működik; draft, edit és delete confirmation alatt tiltott.
+- [x] A billentyűismétlés, a formmezőben vagy contenteditable elemben gépelés,
+      valamint a Ctrl / Alt / Meta kombináció nem indít eseményt.
+- [x] A kis- és nagybetűk egységes kezelése mellett az `é` és a `.` is használható
+      konfigurált billentyűként; a meglévő Quick Seek változatlanul működik.
+- [x] A későbbi testreszabás architekturálisan elő van készítve: a mapping
+      state-ből, propsokon keresztül jut a handlerhez és a gombokhoz.
+- [ ] Felhasználó által módosítható shortcutok és shortcut-settings felület.
+- [ ] A felhasználói shortcut-beállítások megőrzése oldalfrissítés után (persistence).
 
-* Probléma: tagging közben sok egérmozgás szükséges.
-* [ ] Mind a 10 eseményhez customizálható saját shortcut.
+További ötlet:
+- [ ] Legyen egy custom/egyéb gomb, ahová a felhasználó a timestamphez egy egyéni
+      leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
