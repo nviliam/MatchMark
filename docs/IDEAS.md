@@ -139,21 +139,76 @@ A Delete UI valódi böngészős ellenőrzése még hátravan.
 
 - Függőség: a lépésenkénti specifikációs folyamat kialakítása.
 
-### 5. Eseménytörténet és click-to-seek külön panelben
+### 5. Events panel, szűrés és visszanézés
 
-**Állapot: ötlet.** A History panel még nincs megvalósítva. A teljes mentett eseménylista
-már React state-ben marad, és a click-to-seek kezelő is megvan; a korábbi Recent Events
-megjelenítés rejtett, nem foglal helyet a layoutban.
+**Állapot: részben elkészült.** Az Events panel alapverziója elkészült;
+a szűrés és a Review mode még ötlet. A teljes mentett eseménylista React state-ben marad,
+és a panel a meglévő click-to-seek kezelőt használja.
 
-- [ ] Az Exit mellett legyen History gomb, amely kompakt, bezárható panelt
-      nyit meg a videó fölött, a videó egy részét továbbra is láthatóan hagyva.
+#### 5.1 Events panel
+
+Az alapműködés szimulált komponens-/videótesztekkel ellenőrizve. Az overlay és a saját
+scroll CSS-megvalósítása elkészült, de valódi böngészős vizuális ellenőrzésük még hátravan;
+ezért az első két pont egyelőre nincs kipipálva.
+
+- [ ] Az Exit mellett legyen `Events` gomb, amely kompakt, bezárható overlay/panelt
+      nyit meg a videó fölött úgy, hogy a videó jelentős része továbbra is látható maradjon.
 - [ ] A panel eseménylistája saját területén belül legyen görgethető;
       az elemzői oldal továbbra is maradjon fix, görgetésmentes.
-- [ ] A teljes mentett eseménytörténet legyen elérhető a panelben.
-- [ ] Egy eseményre kattintva a videó ugorjon annak időpontjára, és a panel záródjon be.
-- [ ] Félkész esemény rögzítése közben a History legyen letiltva, hogy ne szakítsa
-      meg a specifikációs folyamatot.
-- Függőség: a fix elemzői nézet és az alsó sáv új specifikációs folyamata.
+- [x] A teljes mentett eseménylista legyen elérhető a panelben.
+- [x] Egy eseményre kattintva a videó ugorjon annak időpontjára, és a panel záródjon be.
+- [x] Félkész esemény rögzítése, Edit vagy Delete confirmation közben az `Events`
+      legyen letiltva, hogy ne szakítsa meg az aktuális workflow-t.
+
+Megvalósult viselkedés: timestamp szerint növekvő lista, teljes játékosnév és eseményadatok,
+üres listánál `No events yet.`. A bezáró gomb és az Escape csak a panelt zárja;
+az Exit szintén bezárja, Resume után zárva marad. A panel nyitva tartása alatt
+az event actionök és a Saved summary Edit/Delete gombjai tiltottak, a Quick Seek használható.
+A listára kattintás pontosan az eredeti timestampre ugrik, és nem indít automatikus lejátszást.
+
+#### 5.2 Event type szerinti szűrés
+
+- [ ] Az Events panelben lehessen eseménytípus szerint szűrni.
+- [ ] Legyen `All` opció és külön szűrő mind a 10 jelenlegi event type-hoz.
+- [ ] Az aktív filter legyen vizuálisan egyértelműen jelölve.
+- [ ] A panel mutassa a szűrés eredményeként látható események számát.
+- [ ] A szűrés frontend oldalon, a meglévő React state alapján történjen;
+      ne igényeljen adatbázist vagy backendet.
+
+#### 5.3 Player szerinti szűrés
+
+- [ ] Az Events panelben lehessen játékos szerint is szűrni.
+- [ ] Legyen `All players` opció.
+- [ ] A Player filter és az Event type filter egymással kombinálható legyen.
+- [ ] Például lehessen csak egy adott játékos összes lövését vagy passzát megjeleníteni.
+
+#### 5.4 Szűrt eseménysor visszanézése
+
+- [ ] A szűrt eseményekből lehessen `Review events` módot indítani.
+- [ ] Review módban az események időrendben legyenek egymás után visszanézhetők.
+- [ ] Legyen `Previous` és `Next` vezérlés.
+- [ ] Jelenjen meg az aktuális pozíció, például `3 / 8`.
+- [ ] Az aktuális eventre váltáskor a videó automatikusan ugorjon az eseményhez.
+- [ ] A Review mode-ból lehessen egyértelműen kilépni anélkül, hogy a szűrési állapot elveszne.
+
+#### 5.5 Context lead-in
+
+- [ ] Review módban a videó ne pontosan az event timestampjén induljon,
+      hanem néhány másodperccel előtte, hogy az esemény kialakulása is látható legyen.
+- [ ] Első verzióban használható fix, például 3 másodperces lead-in.
+- [ ] A seek soha ne menjen 0 másodperc alá.
+- [ ] A lead-in későbbi felhasználói testreszabása külön fejlesztés lehet.
+
+#### 5.6 Technikai és költségszempontok
+
+- [ ] Az Events panel, a szűrés és a Review mode első verziója kizárólag
+      a meglévő lokális videóra és React state-ben tárolt eventekre épüljön.
+- [ ] Ne legyen szükség videófeltöltésre, backend videófeldolgozásra vagy új külső csomagra.
+- [ ] A struktúra később legyen kompatibilis tartós adatmentéssel
+      (például Firebase / Firestore), de ez ne legyen előfeltétele az első verziónak.
+
+- Függőség: a fix elemzői nézet, a lépésenkénti specifikációs workflow
+  és a stabil mentett event state.
 
 ## Közepes prioritás
 

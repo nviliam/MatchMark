@@ -2,7 +2,7 @@
 import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types/event";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
-import EventList from "./EventList";
+import EventsPanel from "./EventsPanel";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
@@ -35,10 +35,23 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   const [resumeTime, setResumeTime] = useState<number | null>(null);
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const eventActionsDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
+  const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const eventsDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
     || pending !== null || pendingDeleteId !== null;
+  const eventActionsDisabled = eventsDisabled || isEventsOpen;
+
+  const handleCloseEvents = useCallback(() => {
+    setIsEventsOpen(false);
+    eventsButtonRef.current?.focus();
+  }, []);
+
+  function handleOpenEvents() {
+    if (eventsDisabled) return;
+    setIsEventsOpen(true);
+  }
 
   const handleEvent = useCallback((type: EventType) => {
     const video = videoRef.current;
@@ -116,22 +129,24 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   }, [pending, pendingDeleteId]);
 
   useEffect(() => {
-    if ((!pending && pendingDeleteId === null) || !isAnalysisActive) return;
+    if ((!pending && pendingDeleteId === null && !isEventsOpen) || !isAnalysisActive) return;
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.repeat || event.isComposing || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
       event.preventDefault();
-      handleCancel();
+      if (pending || pendingDeleteId !== null) handleCancel();
+      else handleCloseEvents();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [pending, pendingDeleteId, isAnalysisActive, handleCancel]);
+  }, [pending, pendingDeleteId, isEventsOpen, isAnalysisActive, handleCancel, handleCloseEvents]);
 
   function handleExit() {
     const video = videoRef.current;
     if (!video || !isVideoReady) return;
     video.pause();
     setResumeTime(video.currentTime);
+    setIsEventsOpen(false);
     onAnalysisActiveChange(false);
   }
 
@@ -157,6 +172,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
     }
     setError("");
     setEvents([]);
+    setIsEventsOpen(false);
     setPendingDeleteId(null);
     setShowSavedEvent(false);
     setPending(null);
@@ -168,6 +184,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   }
 
   function handleVideoError() {
+    setIsEventsOpen(false);
     setIsVideoReady(false);
     setResumeTime(null);
     onAnalysisActiveChange(false);
@@ -181,13 +198,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   }
 
   function handleEdit() {
-    if (!savedEvent || pending || pendingDeleteId !== null || !isVideoReady || !isAnalysisActive) return;
+    if (!savedEvent || eventActionsDisabled) return;
     setPending({ mode: "edit", type: savedEvent.type, timestamp: savedEvent.timestamp, original: savedEvent });
     setShowSavedEvent(false);
   }
 
   function handleRequestDelete() {
-    if (!savedEvent || pending || pendingDeleteId !== null || !isVideoReady || !isAnalysisActive) return;
+    if (!savedEvent || eventActionsDisabled) return;
     setPendingDeleteId(savedEvent.id);
   }
 
@@ -220,8 +237,10 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
 
   function seekToEvent(timestamp: number) {
     const video = videoRef.current;
-    if (!video || !isVideoReady || !isAnalysisActive) return;
+    if (!video || eventsDisabled) return;
     video.currentTime = timestamp;
+    setIsEventsOpen(false);
+    video.focus();
   }
 
   return (
@@ -253,7 +272,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
           {/* Keep video and EventForm mounted while suspended so their state survives Exit. */}
           <div className="tagging-workspace" hidden={!isAnalysisActive}>
             <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
-              onSelect={handleEvent} onExit={handleExit} />
+              onSelect={handleEvent} onExit={handleExit} onOpenEvents={handleOpenEvents}
+              eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef} />
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
                 onLoadedMetadata={() => {
@@ -269,6 +289,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
                 controls playsInline preload="metadata" tabIndex={0} aria-label="Selected video">
                 Your browser does not support video playback.
               </video>
+              {isEventsOpen && isAnalysisActive && (
+                <EventsPanel events={events} onClose={handleCloseEvents} onSeek={seekToEvent} />
+              )}
             </div>
             <div className="bottom-rail">
               {!pending && savedEvent && (pendingDeleteId !== null ? (
@@ -276,18 +299,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
                   onCancel={handleCancel} onConfirm={handleConfirmDelete} />
               ) : (
                 <SavedEventSummary event={savedEvent} onEdit={handleEdit} onDelete={handleRequestDelete}
-                  disabled={!isVideoReady || !isAnalysisActive} />
+                  disabled={!isVideoReady || !isAnalysisActive || isEventsOpen} />
               ))}
               {pending && (
                 <EventForm pending={pending} initialEvent={pending.mode === "edit" ? pending.original : undefined} disabled={!isVideoReady || !isAnalysisActive}
                   onSave={handleSave} onCancel={handleCancel} />
               )}
             </div>
-          </div>
-          {/* Preserve the existing seek binding without a visible history UI.
-              The complete history remains in events, not this three-item view. */}
-          <div hidden>
-            <EventList events={events.slice(-3).reverse()} disabled={!isVideoReady || !isAnalysisActive} onSeek={seekToEvent} />
           </div>
         </>
       )}

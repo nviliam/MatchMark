@@ -1,4 +1,5 @@
 import type { EventType } from "../types/event";
+import type { Ref } from "react";
 import type { EventShortcuts } from "../config/eventShortcuts";
 import { eventLabels } from "../utils/events";
 
@@ -8,9 +9,19 @@ const rails: { position: string; types: EventType[] }[] = [
   { position: "right", types: ["tackle", "interception", "ball-recovery"] },
 ];
 
-type Props = { disabled: boolean; shortcuts: EventShortcuts; onSelect: (type: EventType) => void; onExit: () => void };
+type Props = {
+  disabled: boolean;
+  shortcuts: EventShortcuts;
+  onSelect: (type: EventType) => void;
+  onExit: () => void;
+  onOpenEvents: () => void;
+  eventsDisabled: boolean;
+  isEventsOpen: boolean;
+  eventsButtonRef: Ref<HTMLButtonElement>;
+};
 
-export default function EventButtons({ disabled, shortcuts, onSelect, onExit }: Props) {
+export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
+  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef }: Props) {
   return (
     <>
       {rails.map((rail) => (
@@ -26,7 +37,12 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit }: 
             </div>
           ))}
           {rail.position === "top" && (
-            <button className="analysis-exit" type="button" onClick={onExit}>Exit</button>
+            <div className="analysis-controls">
+              <button ref={eventsButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isEventsOpen} aria-controls={isEventsOpen ? "events-panel" : undefined}
+                aria-haspopup="dialog" onClick={onOpenEvents}>Events</button>
+              <button className="analysis-exit" type="button" onClick={onExit}>Exit</button>
+            </div>
           )}
         </div>
       ))}
