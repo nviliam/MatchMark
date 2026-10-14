@@ -151,9 +151,9 @@ Az alapműködés szimulált komponens-/videótesztekkel ellenőrizve. Az overla
 scroll CSS-megvalósítása elkészült, de valódi böngészős vizuális ellenőrzésük még hátravan;
 ezért az első két pont egyelőre nincs kipipálva.
 
-- [ ] Az Exit mellett legyen `Events` gomb, amely kompakt, bezárható overlay/panelt
+- [x] Az Exit mellett legyen `Events` gomb, amely kompakt, bezárható overlay/panelt
       nyit meg a videó fölött úgy, hogy a videó jelentős része továbbra is látható maradjon.
-- [ ] A panel eseménylistája saját területén belül legyen görgethető;
+- [x] A panel eseménylistája saját területén belül legyen görgethető;
       az elemzői oldal továbbra is maradjon fix, görgetésmentes.
 - [x] A teljes mentett eseménylista legyen elérhető a panelben.
 - [x] Egy eseményre kattintva a videó ugorjon annak időpontjára, és a panel záródjon be.
@@ -238,5 +238,6 @@ a felhasználói testreszabás még későbbi feladat.
 - [ ] A felhasználói shortcut-beállítások megőrzése oldalfrissítés után (persistence).
 
 További ötlet:
+
 - [ ] Legyen egy custom/egyéb gomb, ahová a felhasználó a timestamphez egy egyéni
       leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
