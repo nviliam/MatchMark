@@ -83,7 +83,7 @@
 
 .video-picker-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .tagging-workspace[hidden] { display: none; }
-.action-rail-top { position: relative; padding-inline: 140px; }
+.action-rail-top { position: relative; padding-inline: 4px 220px; }
 .analysis-controls { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; }
 .analysis-controls button[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent); }
 .action-rail-top .analysis-exit {
@@ -147,7 +147,7 @@
 }
 .video-stage { position: relative; grid-area: video; min-width: 0; min-height: 0; background: #10191d; }
 .video-stage video { display: block; width: 100%; height: 100%; object-fit: contain; background: #10191d; }
-.events-panel {
+.events-panel, .shortcut-settings {
   position: absolute;
   z-index: 1;
   top: 8px;
@@ -165,9 +165,9 @@
   border-radius: 8px;
   box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
 }
-.events-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-.events-panel-header h2 { font-size: .8rem; }
-.events-panel-header button { min-height: 32px; width: 32px; padding: 2px; font-size: 1.1rem; }
+.events-panel-header, .shortcut-settings-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.events-panel-header h2, .shortcut-settings-header h2 { font-size: .8rem; }
+.events-panel-header button, .shortcut-settings-header button { min-height: 32px; width: 32px; padding: 2px; font-size: 1.1rem; }
 .events-panel-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 6px; }
 .events-empty { padding: 8px; font-size: .8rem; }
 .bottom-rail {
@@ -287,8 +287,9 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
 @media (max-width: 899px) {
   .tagging-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(220px, 55dvh) var(--bottom-rail-height); grid-template-areas: "top" "left" "right" "video" "bottom"; }
   .action-rail { flex-direction: row; flex-wrap: wrap; padding: 4px; border: 0; border-bottom: 1px solid var(--border); }
-  .action-rail-top { padding: 4px 140px 4px 4px; }
-  .events-panel { width: min(360px, calc(100% - 16px)); }
+  .action-rail-top { padding: 4px; }
+  .analysis-controls { position: static; transform: none; flex-basis: 100%; order: -1; justify-content: flex-end; }
+  .events-panel, .shortcut-settings { width: min(360px, calc(100% - 16px)); }
   .action-rail-left .action-slot, .action-rail-right .action-slot { position: static; width: auto; height: auto; flex: initial; }
   .action-rail-left button, .action-rail-right button { position: static; width: auto; transform: none; }
   .app-analysis .tagging-workspace {
@@ -344,3 +345,15 @@ body:has(.app-analysis) { overflow: hidden; min-width: 0; }
 .saved-event-summary .button-danger:hover:not(:disabled) { background: #fff5f4; border-color: #8a2822; }
 .saved-event-summary .button-danger-confirm { color: #fff; background: #8a2822; border-color: #8a2822; }
 .saved-event-summary .button-danger-confirm:hover:not(:disabled) { background: #6f201b; border-color: #6f201b; }
+
+/* Shortcut editing is an overlay: only its list scrolls, never the cockpit. */
+.shortcut-settings-hint { padding: 8px 10px; font-size: .75rem; }
+.shortcut-settings-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px; }
+.shortcut-settings-list { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.shortcut-settings-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .8rem; }
+.shortcut-settings-list button { min-height: 36px; min-width: 48px; padding: 4px 8px; font-size: .75rem; }
+.shortcut-settings-list button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.shortcut-settings-list kbd { font: inherit; font-weight: 700; }
+.shortcut-settings-footer { flex-shrink: 0; display: grid; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--border); }
+.shortcut-settings-footer p { font-size: .75rem; }
+.shortcut-settings-footer button { min-height: 36px; padding: 4px 8px; font-size: .75rem; }

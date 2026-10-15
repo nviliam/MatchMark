@@ -1,6 +1,6 @@
 import type { EventType } from "../types/event";
 import type { Ref } from "react";
-import type { EventShortcuts } from "../config/eventShortcuts";
+import { formatShortcutKey, normalizeShortcutKey, type EventShortcuts } from "../config/eventShortcuts";
 import { eventLabels } from "../utils/events";
 
 const rails: { position: string; types: EventType[] }[] = [
@@ -18,10 +18,13 @@ type Props = {
   eventsDisabled: boolean;
   isEventsOpen: boolean;
   eventsButtonRef: Ref<HTMLButtonElement>;
+  onOpenSettings: () => void;
+  isSettingsOpen: boolean;
+  settingsButtonRef: Ref<HTMLButtonElement>;
 };
 
 export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
-  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef }: Props) {
+  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef, onOpenSettings, isSettingsOpen, settingsButtonRef }: Props) {
   return (
     <>
       {rails.map((rail) => (
@@ -30,9 +33,9 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
           {rail.types.map((type) => (
             <div className="action-slot" key={type}>
               <button className="event-action" type="button" disabled={disabled}
-                aria-keyshortcuts={shortcuts[type]} onClick={() => onSelect(type)}>
+                aria-keyshortcuts={normalizeShortcutKey(shortcuts[type])} onClick={() => onSelect(type)}>
                 <span className="event-action-label">{eventLabels[type]}</span>
-                <kbd className="shortcut-badge" aria-hidden="true">{shortcuts[type].toUpperCase()}</kbd>
+                <kbd className="shortcut-badge" aria-hidden="true">{formatShortcutKey(shortcuts[type])}</kbd>
               </button>
             </div>
           ))}
@@ -41,6 +44,9 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
               <button ref={eventsButtonRef} type="button" disabled={eventsDisabled}
                 aria-expanded={isEventsOpen} aria-controls={isEventsOpen ? "events-panel" : undefined}
                 aria-haspopup="dialog" onClick={onOpenEvents}>Events</button>
+              <button ref={settingsButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isSettingsOpen} aria-controls={isSettingsOpen ? "shortcut-settings" : undefined}
+                aria-haspopup="dialog" onClick={onOpenSettings}>Settings</button>
               <button className="analysis-exit" type="button" onClick={onExit}>Exit</button>
             </div>
           )}

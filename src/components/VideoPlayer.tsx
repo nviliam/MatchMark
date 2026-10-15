@@ -3,6 +3,7 @@ import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventsPanel from "./EventsPanel";
+import ShortcutSettings from "./ShortcutSettings";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
@@ -20,11 +21,12 @@ type EventDraft = PendingEvent & (
 
 type Props = {
   eventShortcuts: EventShortcuts;
+  onEventShortcutsChange: (shortcuts: EventShortcuts) => void;
   isAnalysisActive: boolean;
   onAnalysisActiveChange: (active: boolean) => void;
 };
 
-function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts }: Props) {
+function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts, onEventShortcutsChange }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
@@ -35,22 +37,35 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   const [resumeTime, setResumeTime] = useState<number | null>(null);
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [isEventsOpen, setIsEventsOpen] = useState(false);
+  const [overlay, setOverlay] = useState<"events" | "settings" | null>(null);
+  const isEventsOpen = overlay === "events";
+  const isSettingsOpen = overlay === "settings";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
   const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const eventsDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
     || pending !== null || pendingDeleteId !== null;
-  const eventActionsDisabled = eventsDisabled || isEventsOpen;
+  const eventActionsDisabled = eventsDisabled || overlay !== null;
 
   const handleCloseEvents = useCallback(() => {
-    setIsEventsOpen(false);
+    setOverlay(null);
     eventsButtonRef.current?.focus();
   }, []);
 
   function handleOpenEvents() {
     if (eventsDisabled) return;
-    setIsEventsOpen(true);
+    setOverlay("events");
+  }
+
+  const handleCloseSettings = useCallback(() => {
+    setOverlay(null);
+    settingsButtonRef.current?.focus();
+  }, []);
+
+  function handleOpenSettings() {
+    if (eventsDisabled) return;
+    setOverlay("settings");
   }
 
   const handleEvent = useCallback((type: EventType) => {
@@ -129,24 +144,25 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   }, [pending, pendingDeleteId]);
 
   useEffect(() => {
-    if ((!pending && pendingDeleteId === null && !isEventsOpen) || !isAnalysisActive) return;
+    if ((!pending && pendingDeleteId === null && overlay === null) || !isAnalysisActive) return;
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.repeat || event.isComposing || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
       event.preventDefault();
       if (pending || pendingDeleteId !== null) handleCancel();
+      else if (isSettingsOpen) handleCloseSettings();
       else handleCloseEvents();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [pending, pendingDeleteId, isEventsOpen, isAnalysisActive, handleCancel, handleCloseEvents]);
+  }, [pending, pendingDeleteId, overlay, isSettingsOpen, isAnalysisActive, handleCancel, handleCloseEvents, handleCloseSettings]);
 
   function handleExit() {
     const video = videoRef.current;
     if (!video || !isVideoReady) return;
     video.pause();
     setResumeTime(video.currentTime);
-    setIsEventsOpen(false);
+    setOverlay(null);
     onAnalysisActiveChange(false);
   }
 
@@ -172,7 +188,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
     }
     setError("");
     setEvents([]);
-    setIsEventsOpen(false);
+    setOverlay(null);
     setPendingDeleteId(null);
     setShowSavedEvent(false);
     setPending(null);
@@ -184,7 +200,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
   }
 
   function handleVideoError() {
-    setIsEventsOpen(false);
+    setOverlay(null);
     setIsVideoReady(false);
     setResumeTime(null);
     onAnalysisActiveChange(false);
@@ -239,7 +255,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
     const video = videoRef.current;
     if (!video || eventsDisabled) return;
     video.currentTime = timestamp;
-    setIsEventsOpen(false);
+    setOverlay(null);
     video.focus();
   }
 
@@ -273,7 +289,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
           <div className="tagging-workspace" hidden={!isAnalysisActive}>
             <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
               onSelect={handleEvent} onExit={handleExit} onOpenEvents={handleOpenEvents}
-              eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef} />
+              eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef}
+              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef} />
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
                 onLoadedMetadata={() => {
@@ -292,6 +309,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
               {isEventsOpen && isAnalysisActive && (
                 <EventsPanel events={events} onClose={handleCloseEvents} onSeek={seekToEvent} />
               )}
+              {isSettingsOpen && isAnalysisActive && (
+                <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />
+              )}
             </div>
             <div className="bottom-rail">
               {!pending && savedEvent && (pendingDeleteId !== null ? (
@@ -299,7 +319,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts 
                   onCancel={handleCancel} onConfirm={handleConfirmDelete} />
               ) : (
                 <SavedEventSummary event={savedEvent} onEdit={handleEdit} onDelete={handleRequestDelete}
-                  disabled={!isVideoReady || !isAnalysisActive || isEventsOpen} />
+                  disabled={eventActionsDisabled} />
               ))}
               {pending && (
                 <EventForm pending={pending} initialEvent={pending.mode === "edit" ? pending.original : undefined} disabled={!isVideoReady || !isAnalysisActive}

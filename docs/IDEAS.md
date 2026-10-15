@@ -214,8 +214,9 @@ A listára kattintás pontosan az eredeti timestampre ugrik, és nem indít auto
 
 ### 6. Billentyűparancsok az eseményekhez
 
-**Állapot: részben elkészült.** Mind a 10 esemény indítható billentyűvel;
-a felhasználói testreszabás még későbbi feladat.
+**Állapot: elkészült, szimulált működési ellenőrzéssel.** Mind a 10 esemény
+billentyűje testreszabható; a kiosztás localStorage-ban megmarad.
+A Settings megjelenésének és a tényleges böngészős page reloadnak az ellenőrzése még hátravan.
 
 - [x] Az alapértelmezett kiosztás követi a jelenlegi action rail sorrendjét:
   - Felül: `Q` → Pass, `W` → Key Pass, `E` → Shot, `R` → Duel, `T` → Ball Loss.
@@ -232,10 +233,41 @@ a felhasználói testreszabás még későbbi feladat.
       valamint a Ctrl / Alt / Meta kombináció nem indít eseményt.
 - [x] A kis- és nagybetűk egységes kezelése mellett az `é` és a `.` is használható
       konfigurált billentyűként; a meglévő Quick Seek változatlanul működik.
-- [x] A későbbi testreszabás architekturálisan elő van készítve: a mapping
-      state-ből, propsokon keresztül jut a handlerhez és a gombokhoz.
-- [ ] Felhasználó által módosítható shortcutok és shortcut-settings felület.
-- [ ] A felhasználói shortcut-beállítások megőrzése oldalfrissítés után (persistence).
+- [x] A testreszabás a meglévő architektúrát használja: az App központi state-jéből
+      ugyanaz a mapping jut a Settingshez, a handlerhez, a badge-ekhez és az `aria-keyshortcuts` értékekhez.
+- [x] Felhasználó által módosítható shortcutok és shortcut-settings felület.
+      Az Events / Exit melletti Settings gomb kompakt, saját görgetésű overlayt nyit,
+      a cockpit méretezésének változtatása nélkül. Egyszerre csak egy overlay lehet nyitva.
+- [x] Egy shortcutra kattintva a következő érvényes billentyű válik az új értékké.
+      A közös NFC + lowercase normalizálás case-insensitive kezelést ad;
+      a UI nagybetűvel jeleníti meg a billentyűket. Az Escape először a key capture-t,
+      azon kívül a panelt zárja be.
+- [x] Duplicate- és reserved-key ellenőrzés inline hibával: két event nem használhat
+      azonos billentyűt, a `2`, `3`, `4` és fizikai Shift-változataik Quick Seekhez rezerváltak.
+      Enter, Tab, Backspace, modifier-only billentyű és Ctrl / Alt / Meta kombináció nem rendelhető eventhez.
+- [x] Settings alatt az event shortcutok tiltottak; key capture alatt a Quick Seek sem fut.
+      Draft, Edit és Delete confirmation alatt a Settings nem nyitható meg.
+- [x] Reset to defaults: az eredeti, immutable `DEFAULT_EVENT_SHORTCUTS` alapján
+      új runtime mapping áll elő, a UI, a keyboard handler és a tárolt érték azonnali frissítésével.
+- [x] A felhasználói shortcut-beállítások megőrzése oldalfrissítés után (persistence).
+      Megvalósítva és storage round-trip / szimulált App-újracsatolás teszttel ellenőrizve;
+      a tényleges böngészős reload ellenőrzése külön, alább maradt nyitva.
+      Tárolás: `matchmark:event-shortcuts` localStorage-kulcs, teljes event type → normalizált billentyű JSON objektum.
+- [x] A betöltés az egész konfigurációt validálja: pontosan a 10 ismert event,
+      string értékek, engedélyezett és egyedi billentyűk szükségesek.
+      Hibás JSON, hiányzó/ismeretlen event, duplicate, reserved vagy rossz típus esetén
+      default mapping töltődik be, majd felülírja a hibás értéket. A storage-hozzáférés hibája nem állítja le az appot.
+- [x] Exit bezárja a Settings panelt; Resume zárt panellel, változatlan konfigurációval folytatódik.
+- [ ] Valódi böngészőben ellenőrizni a Settings overlay illeszkedését, saját scrollját,
+      valamint Shot `E → S` és Pass `Q → F` után a page reloadot, a badge-eket és a shortcutok működését.
+- [ ] Opcionális account/backend alapú settings sync és eszközök közötti megőrzés: külön jövőbeli fejlesztés.
+
+Ellenőrzés: `node --test tests/eventShortcuts.test.mjs` (8 teszt), lint és build sikeres.
+Külön szimulált komponensellenőrzés lefedi a key capture-t, az ütközéseket,
+a badge/aria/handler szinkront, az App újraindítását megmaradó storage mellett,
+a resetet, mind a 10 event click/keyboard workflow-ját, a hat Quick Seek shortcutot,
+Back/Save/Cancel/Escape, Edit/Delete, Events click-to-seek és Exit/Resume regressziókat.
+Ezek nem helyettesítik a valódi böngészős vizuális és page reload ellenőrzést.
 
 További ötlet:
 

@@ -1,13 +1,17 @@
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import VideoPlayer from "./components/VideoPlayer";
-import { DEFAULT_EVENT_SHORTCUTS, type EventShortcuts } from "./config/eventShortcuts";
+import { loadEventShortcuts, persistEventShortcuts } from "./config/eventShortcuts";
 
 function App() {
   const [isAnalysisActive, setIsAnalysisActive] = useState(false);
-  // A future settings UI can update this session configuration via its state setter.
-  const [eventShortcuts] = useState<EventShortcuts>(() => ({ ...DEFAULT_EVENT_SHORTCUTS }));
+  const [eventShortcuts, setEventShortcuts] = useState(loadEventShortcuts);
+
+  useEffect(() => {
+    // Also replace corrupt/old storage with a complete, validated configuration on startup.
+    persistEventShortcuts(eventShortcuts);
+  }, [eventShortcuts]);
 
   return (
     <main className={isAnalysisActive ? "app app-analysis" : "app"}>
@@ -19,7 +23,7 @@ function App() {
         </div>
       </header>}
       <VideoPlayer isAnalysisActive={isAnalysisActive} onAnalysisActiveChange={setIsAnalysisActive}
-        eventShortcuts={eventShortcuts} />
+        eventShortcuts={eventShortcuts} onEventShortcutsChange={setEventShortcuts} />
     </main>
   );
 }
