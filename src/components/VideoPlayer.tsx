@@ -1,5 +1,6 @@
-﻿import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types/event";
+import { getFilteredEvents, type EventTypeFilter } from "../utils/eventFiltering";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventsPanel from "./EventsPanel";
@@ -38,6 +39,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [overlay, setOverlay] = useState<"events" | "settings" | null>(null);
+  const [selectedEventType, setSelectedEventType] = useState<EventTypeFilter>("all");
+  const filteredEvents = useMemo(() => getFilteredEvents(events, selectedEventType), [events, selectedEventType]);
   const isEventsOpen = overlay === "events";
   const isSettingsOpen = overlay === "settings";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
@@ -188,6 +191,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     }
     setError("");
     setEvents([]);
+    setSelectedEventType("all");
     setOverlay(null);
     setPendingDeleteId(null);
     setShowSavedEvent(false);
@@ -200,6 +204,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }
 
   function handleVideoError() {
+    setSelectedEventType("all");
     setOverlay(null);
     setIsVideoReady(false);
     setResumeTime(null);
@@ -307,7 +312,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                 Your browser does not support video playback.
               </video>
               {isEventsOpen && isAnalysisActive && (
-                <EventsPanel events={events} onClose={handleCloseEvents} onSeek={seekToEvent} />
+                <EventsPanel events={filteredEvents} totalEventCount={events.length}
+                  selectedEventType={selectedEventType} onEventTypeChange={setSelectedEventType}
+                  onClose={handleCloseEvents} onSeek={seekToEvent} />
               )}
               {isSettingsOpen && isAnalysisActive && (
                 <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />

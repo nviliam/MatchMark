@@ -1,6 +1,6 @@
 ﻿import { players } from "../data/players";
 import type { MatchEvent } from "../types/event";
-import { bodyPartLabels, eventLabels, formatTimestamp, outcomeLabels } from "../utils/events";
+import { bodyPartLabels, getEventLabel, formatTimestamp, outcomeLabels } from "../utils/events";
 
 type Props = { event: MatchEvent; onEdit: () => void; onDelete: () => void; disabled: boolean };
 
@@ -8,7 +8,7 @@ export default function SavedEventSummary({ event, onEdit, onDelete, disabled }:
   const player = players.find((entry) => entry.id === event.playerId);
   const summary = [
     player ? `#${player.number} ${player.name}` : "Unknown player",
-    eventLabels[event.type],
+    getEventLabel(event.type),
     "outcome" in event && outcomeLabels[event.outcome],
     event.type === "shot" && bodyPartLabels[event.bodyPart],
   ].filter(Boolean).join(" · ");

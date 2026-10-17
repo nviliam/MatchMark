@@ -1,11 +1,6 @@
 ﻿import type { BodyPart, EventDetails, EventType } from "../types/event";
 
-export const eventLabels: Record<EventType, string> = {
-  shot: "Shot", pass: "Pass", "key-pass": "Key Pass", dribble: "Dribble",
-  "progressive-carry": "Progressive Carry", tackle: "Tackle",
-  interception: "Interception", "ball-recovery": "Ball Recovery",
-  duel: "Duel", "ball-loss": "Ball Loss",
-};
+export { getEventLabel } from "../config/eventDefinitions.ts";
 
 export const outcomeLabels = {
   goal: "Goal", "on-target": "On Target", "off-target": "Off Target", blocked: "Blocked",

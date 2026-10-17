@@ -1,7 +1,7 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from "react";
 import { players } from "../data/players";
 import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
-import { bodyPartLabels, createEventDetails, eventLabels, formatTimestamp, outcomeLabels, outcomeOptions } from "../utils/events";
+import { bodyPartLabels, createEventDetails, getEventLabel, formatTimestamp, outcomeLabels, outcomeOptions } from "../utils/events";
 
 type Props = {
   pending: PendingEvent;
@@ -31,7 +31,7 @@ export default function EventForm({ pending, initialEvent, disabled, onSave, onC
   const details = createEventDetails(pending.type, outcome, bodyPart);
   const player = players.find((entry) => entry.id === playerId);
   const summary = [
-    eventLabels[pending.type], outcome && outcomeLabels[outcome],
+    getEventLabel(pending.type), outcome && outcomeLabels[outcome],
     bodyPart && bodyPartLabels[bodyPart], player && `#${player.number} ${player.name}`,
   ].filter(Boolean).join(" · ");
 

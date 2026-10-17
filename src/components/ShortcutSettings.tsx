@@ -4,7 +4,7 @@ import {
   DEFAULT_EVENT_SHORTCUTS, EVENT_SHORTCUT_TYPES, findEventShortcut, formatShortcutKey,
   getShortcutKeyError, normalizeShortcutKey, type EventShortcuts,
 } from "../config/eventShortcuts";
-import { eventLabels } from "../utils/events";
+import { getEventLabel } from "../utils/events";
 
 type Props = {
   shortcuts: EventShortcuts;
@@ -51,7 +51,7 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props
       const key = normalizeShortcutKey(event.key);
       const assignedTo = findEventShortcut(shortcuts, key);
       if (assignedTo && assignedTo !== eventType) {
-        setError(`${formatShortcutKey(key)} is already assigned to ${eventLabels[assignedTo]}.`);
+        setError(`${formatShortcutKey(key)} is already assigned to ${getEventLabel(assignedTo)}.`);
         return;
       }
       onChange({ ...shortcuts, [eventType]: key });
@@ -83,8 +83,8 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props
         <ul className="shortcut-settings-list" aria-label="Event shortcuts">
           {EVENT_SHORTCUT_TYPES.map((type) => (
             <li key={type}>
-              <span>{eventLabels[type]}</span>
-              <button type="button" aria-label={`Change ${eventLabels[type]} shortcut`}
+              <span>{getEventLabel(type)}</span>
+              <button type="button" aria-label={`Change ${getEventLabel(type)} shortcut`}
                 aria-pressed={waitingFor === type} aria-describedby={waitingFor === type ? "shortcut-settings-status" : undefined}
                 onClick={() => { setWaitingFor(type); setError(""); }}>
                 {waitingFor === type ? "Press a key…" : <kbd>{formatShortcutKey(shortcuts[type])}</kbd>}
@@ -95,7 +95,7 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props
       </div>
       <div className="shortcut-settings-footer">
         <p id="shortcut-settings-status" role="status" aria-live="polite">
-          {error || (waitingFor ? `Waiting for a key for ${eventLabels[waitingFor]}.` : "Changes apply immediately.")}
+          {error || (waitingFor ? `Waiting for a key for ${getEventLabel(waitingFor)}.` : "Changes apply immediately.")}
         </p>
         <button type="button" onClick={resetDefaults}>Reset to defaults</button>
       </div>

@@ -1,6 +1,6 @@
 ﻿import { players } from "../data/players";
 import type { MatchEvent } from "../types/event";
-import { bodyPartLabels, eventLabels, formatTimestamp, outcomeLabels } from "../utils/events";
+import { bodyPartLabels, getEventLabel, formatTimestamp, outcomeLabels } from "../utils/events";
 
 type Props = { events: MatchEvent[]; disabled: boolean; onSeek: (timestamp: number) => void };
 
@@ -19,7 +19,7 @@ export default function EventList({ events, disabled, onSeek }: Props) {
                 <strong>{player ? `#${player.number} ${player.name}` : "Unknown player"}</strong>
               </span>
               <span className="event-list-details">
-                {eventLabels[event.type]}
+                {getEventLabel(event.type)}
                 {"outcome" in event && ` · ${outcomeLabels[event.outcome]}`}
                 {event.type === "shot" && ` · ${bodyPartLabels[event.bodyPart]}`}
               </span>
