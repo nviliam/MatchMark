@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef } from "react";
 import type { MatchEvent } from "../types/event";
-import { eventLabels, formatTimestamp } from "../utils/events";
+import { getEventLabel, formatTimestamp } from "../utils/events";
 
 type Props = {
   event: MatchEvent;
@@ -20,7 +20,7 @@ export default function DeleteEventConfirmation({ event, disabled, onCancel, onC
     <div className="saved-event-summary" role="group" aria-label="Delete this event?">
       <strong>Delete this event?</strong>
       <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
-      <span>{eventLabels[event.type]}</span>
+      <span>{getEventLabel(event.type)}</span>
       <button ref={cancelRef} type="button" disabled={disabled} onClick={onCancel}>Cancel</button>
       <button className="button-danger-confirm" type="button" disabled={disabled} onClick={onConfirm}>Delete</button>
     </div>

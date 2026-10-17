@@ -1,13 +1,13 @@
 import type { EventType } from "../types/event";
 import type { Ref } from "react";
+import { EVENT_DEFINITIONS, ORDERED_EVENT_TYPES } from "../config/eventDefinitions";
 import { formatShortcutKey, normalizeShortcutKey, type EventShortcuts } from "../config/eventShortcuts";
-import { eventLabels } from "../utils/events";
+import { getEventLabel } from "../utils/events";
 
-const rails: { position: string; types: EventType[] }[] = [
-  { position: "top", types: ["pass", "key-pass", "shot", "duel", "ball-loss"] },
-  { position: "left", types: ["dribble", "progressive-carry"] },
-  { position: "right", types: ["tackle", "interception", "ball-recovery"] },
-];
+const rails = (["top", "left", "right"] as const).map((position) => ({
+  position,
+  types: ORDERED_EVENT_TYPES.filter((type) => EVENT_DEFINITIONS[type].rail === position),
+}));
 
 type Props = {
   disabled: boolean;
@@ -34,7 +34,7 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
             <div className="action-slot" key={type}>
               <button className="event-action" type="button" disabled={disabled}
                 aria-keyshortcuts={normalizeShortcutKey(shortcuts[type])} onClick={() => onSelect(type)}>
-                <span className="event-action-label">{eventLabels[type]}</span>
+                <span className="event-action-label">{getEventLabel(type)}</span>
                 <kbd className="shortcut-badge" aria-hidden="true">{formatShortcutKey(shortcuts[type])}</kbd>
               </button>
             </div>

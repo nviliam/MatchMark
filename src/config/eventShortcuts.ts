@@ -1,5 +1,7 @@
 import type { EventType } from "../types/event";
 
+import { ORDERED_EVENT_TYPES } from "./eventDefinitions.ts";
+
 export type EventShortcuts = Readonly<Record<EventType, string>>;
 
 export const DEFAULT_EVENT_SHORTCUTS: EventShortcuts = Object.freeze({
@@ -15,7 +17,7 @@ export const DEFAULT_EVENT_SHORTCUTS: EventShortcuts = Object.freeze({
   "ball-recovery": "n",
 });
 
-export const EVENT_SHORTCUT_TYPES = Object.freeze(Object.keys(DEFAULT_EVENT_SHORTCUTS) as EventType[]);
+export const EVENT_SHORTCUT_TYPES = ORDERED_EVENT_TYPES;
 export const EVENT_SHORTCUTS_STORAGE_KEY = "matchmark:event-shortcuts";
 
 export function normalizeShortcutKey(key: string): string {

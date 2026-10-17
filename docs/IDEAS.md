@@ -141,8 +141,8 @@ A Delete UI valódi böngészős ellenőrzése még hátravan.
 
 ### 5. Events panel, szűrés és visszanézés
 
-**Állapot: részben elkészült.** Az Events panel alapverziója elkészült;
-a szűrés és a Review mode még ötlet. A teljes mentett eseménylista React state-ben marad,
+**Állapot: részben elkészült.** Az Events panel és az event type szerinti szűrés elkészült;
+a Player filter és a Review mode még ötlet. A teljes mentett eseménylista React state-ben marad,
 és a panel a meglévő click-to-seek kezelőt használja.
 
 #### 5.1 Events panel
@@ -168,12 +168,36 @@ A listára kattintás pontosan az eredeti timestampre ugrik, és nem indít auto
 
 #### 5.2 Event type szerinti szűrés
 
-- [ ] Az Events panelben lehessen eseménytípus szerint szűrni.
-- [ ] Legyen `All` opció és külön szűrő mind a 10 jelenlegi event type-hoz.
+**Állapot: elkészült, automatizált működési ellenőrzéssel.** A kompakt `Event type`
+select az aktív értéket mutatja; a valódi böngészős vizuális ellenőrzés még hátravan.
+
+- [x] Az Events panelben lehessen eseménytípus szerint szűrni.
+- [x] Legyen `All` opció és külön szűrő mind a központi konfigurációban szereplő event type-hoz.
 - [ ] Az aktív filter legyen vizuálisan egyértelműen jelölve.
-- [ ] A panel mutassa a szűrés eredményeként látható események számát.
-- [ ] A szűrés frontend oldalon, a meglévő React state alapján történjen;
+      A select aktuális értékének működése tesztelt; a vizuális ellenőrzés még hátravan.
+- [x] A panel mutassa a szűrés eredményeként látható események számát.
+- [x] A szűrés frontend oldalon, a meglévő React state alapján történjen;
       ne igényeljen adatbázist vagy backendet.
+
+Megvalósult felépítés:
+- A `src/config/eventDefinitions.ts` a UI label, a megjelenítési sorrend és a rail-elhelyezés
+  közös konfigurációja. A filter, az action gombok és a Shortcut Settings ebből kapják
+  a típuslistát/sorrendet és a labelt; ismeretlen ID megjelenítése: `Unknown event`.
+- A mentett event továbbra is stabil `type` ID-t tartalmaz (például `shot`),
+  eventenként tárolt UI label nélkül. Az adatmodell és a korábbi ID-k nem változtak.
+  A label későbbi átnevezése nem igényli a mentett adatok átírását; ez előkészíti
+  az eventtípusok módosítását és a későbbi persistence/backend integrációt.
+- A filter a VideoPlayer session-szintű React state-je; alapértéke `All`.
+  Bezárás, újranyitás, Settingsre váltás és Exit/Resume alatt megmarad;
+  videócsere vagy videóhiba esetén `All`-ra áll vissza. Nincs filter persistence.
+- A `getFilteredEvents` helper szűrt, timestamp szerint rendezett listát ad vissza;
+  nem módosítja az eredeti eseménylistát vagy az event objektumokat. A VideoPlayer
+  `useMemo`-val számolja a `filteredEvents` értékét, a count ennek a hosszából származik.
+  Ez a lista később Player filterrel bővíthető és a Review számára is átadható.
+- Üres munkamenet: `No events yet.`; találat nélküli filter: `No events match this filter.`.
+  A click-to-seek továbbra is az eredeti timestampet és a meglévő handlert használja.
+- Ellenőrzés: `npm test` (szűrés, immutabilitás, dinamikus metadata, szimulált panel-lifecycle
+  és seek, shortcut/persistence regressziók), lint és build sikeres.
 
 #### 5.3 Player szerinti szűrés
 
@@ -258,7 +282,7 @@ A Settings megjelenésének és a tényleges böngészős page reloadnak az elle
       Hibás JSON, hiányzó/ismeretlen event, duplicate, reserved vagy rossz típus esetén
       default mapping töltődik be, majd felülírja a hibás értéket. A storage-hozzáférés hibája nem állítja le az appot.
 - [x] Exit bezárja a Settings panelt; Resume zárt panellel, változatlan konfigurációval folytatódik.
-- [ ] Valódi böngészőben ellenőrizni a Settings overlay illeszkedését, saját scrollját,
+- [x] Valódi böngészőben ellenőrizni a Settings overlay illeszkedését, saját scrollját,
       valamint Shot `E → S` és Pass `Q → F` után a page reloadot, a badge-eket és a shortcutok működését.
 - [ ] Opcionális account/backend alapú settings sync és eszközök közötti megőrzés: külön jövőbeli fejlesztés.
 
