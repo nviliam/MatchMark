@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from "react";
 import { players } from "../data/players";
+import { formatPlayerLabel } from "../utils/players";
 import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
 import { bodyPartLabels, createEventDetails, getEventLabel, formatTimestamp, outcomeLabels, outcomeOptions } from "../utils/events";
 
@@ -32,7 +33,7 @@ export default function EventForm({ pending, initialEvent, disabled, onSave, onC
   const player = players.find((entry) => entry.id === playerId);
   const summary = [
     getEventLabel(pending.type), outcome && outcomeLabels[outcome],
-    bodyPart && bodyPartLabels[bodyPart], player && `#${player.number} ${player.name}`,
+    bodyPart && bodyPartLabels[bodyPart], player && formatPlayerLabel(player),
   ].filter(Boolean).join(" · ");
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export default function EventForm({ pending, initialEvent, disabled, onSave, onC
         {step === "player" && players.map((entry) => (
           <button key={entry.id} type="button" disabled={disabled} aria-pressed={playerId === entry.id}
             onClick={() => { setPlayerId(entry.id); advance(); }}>
-            #{entry.number} {entry.name}
+            {formatPlayerLabel(entry)}
           </button>
         ))}
       </div>

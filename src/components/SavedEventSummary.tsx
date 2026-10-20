@@ -1,5 +1,6 @@
 ﻿import { players } from "../data/players";
 import type { MatchEvent } from "../types/event";
+import { formatPlayerLabel } from "../utils/players";
 import { bodyPartLabels, getEventLabel, formatTimestamp, outcomeLabels } from "../utils/events";
 
 type Props = { event: MatchEvent; onEdit: () => void; onDelete: () => void; disabled: boolean };
@@ -7,7 +8,7 @@ type Props = { event: MatchEvent; onEdit: () => void; onDelete: () => void; disa
 export default function SavedEventSummary({ event, onEdit, onDelete, disabled }: Props) {
   const player = players.find((entry) => entry.id === event.playerId);
   const summary = [
-    player ? `#${player.number} ${player.name}` : "Unknown player",
+    formatPlayerLabel(player),
     getEventLabel(event.type),
     "outcome" in event && outcomeLabels[event.outcome],
     event.type === "shot" && bodyPartLabels[event.bodyPart],

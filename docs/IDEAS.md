@@ -187,24 +187,66 @@ Megvalósult felépítés:
   eventenként tárolt UI label nélkül. Az adatmodell és a korábbi ID-k nem változtak.
   A label későbbi átnevezése nem igényli a mentett adatok átírását; ez előkészíti
   az eventtípusok módosítását és a későbbi persistence/backend integrációt.
-- A filter a VideoPlayer session-szintű React state-je; alapértéke `All`.
+- A filter a VideoPlayer session-szintű, közös `filters` React state-jének része; alapértéke `All`.
   Bezárás, újranyitás, Settingsre váltás és Exit/Resume alatt megmarad;
   videócsere vagy videóhiba esetén `All`-ra áll vissza. Nincs filter persistence.
 - A `getFilteredEvents` helper szűrt, timestamp szerint rendezett listát ad vissza;
   nem módosítja az eredeti eseménylistát vagy az event objektumokat. A VideoPlayer
   `useMemo`-val számolja a `filteredEvents` értékét, a count ennek a hosszából származik.
-  Ez a lista később Player filterrel bővíthető és a Review számára is átadható.
-- Üres munkamenet: `No events yet.`; találat nélküli filter: `No events match this filter.`.
+  Az 5.3-mal már a Player filtert is figyelembe veszi, és később a Review számára is átadható.
+- Üres munkamenet: `No events yet.`; találat nélküli kombináció: `No events match these filters.`.
   A click-to-seek továbbra is az eredeti timestampet és a meglévő handlert használja.
 - Ellenőrzés: `npm test` (szűrés, immutabilitás, dinamikus metadata, szimulált panel-lifecycle
   és seek, shortcut/persistence regressziók), lint és build sikeres.
 
 #### 5.3 Player szerinti szűrés
 
-- [ ] Az Events panelben lehessen játékos szerint is szűrni.
-- [ ] Legyen `All players` opció.
-- [ ] A Player filter és az Event type filter egymással kombinálható legyen.
-- [ ] Például lehessen csak egy adott játékos összes lövését vagy passzát megjeleníteni.
+**Állapot: elkészült, automatizált működési ellenőrzéssel.** A valódi böngészős
+vizuális ellenőrzés még hátravan.
+
+- [x] Az Events panelben lehessen játékos szerint is szűrni.
+- [x] Legyen `All players` opció.
+- [x] A Player filter és az Event type filter egymással kombinálható legyen.
+- [x] Például lehessen csak egy adott játékos összes lövését vagy passzát megjeleníteni.
+- [ ] Böngészőben ellenőrizni a két kompakt select illeszkedését, az aktív értékek
+      olvashatóságát és a panel saját görgetését a fix analysis layoutban.
+
+Megvalósult felépítés:
+
+- A játékoslista központi forrása továbbra is `src/data/players.ts`. A VideoPlayer
+  ezt adja át az EventsPanelnek; a select opciói dinamikusan készülnek belőle.
+  A filter nem feltételez fix játékosszámot vagy konkrét neveket/mezszámokat.
+- A filter stabil `playerId` alapján működik: a jelenlegi numerikus ID-k és a domain
+  típusok változatlanok. A név és a mezszám kizárólag display adat; az event struktúra
+  továbbra is csak a `playerId` kapcsolatot tárolja, player label nélkül.
+- A közös `formatPlayerLabel` helper (`src/utils/players.ts`) a filterben, az event
+  listában, a specifikációs workflow-ban és a Saved összefoglalóban is használatos.
+  Ismert játékos: `#9 Kovács Péter`; mezszám nélkül csak a név;
+  nem feloldható playerId esetén `Unknown player` jelenik meg.
+- A VideoPlayer lokális `filters` state-je `{ eventType, playerId }` formájú.
+  A külön `PlayerFilter` típus `Player["id"] | "all"`; az `all` kizárólag UI-érték,
+  nem mesterséges domain player. Nincs globális filter state vagy localStorage persistence.
+- A `getFilteredEvents(events, filters)` mindkét feltételt AND logikával alkalmazza,
+  és timestamp szerint növekvő listát ad vissza. A `filteredEvents` továbbra is
+  `useMemo`-val képzett adat, az `events` és a teljes `filters` objektum függvényében;
+  nincs külön lista- vagy count state. A találatszám `filteredEvents.length`.
+- Mindkét filter megmarad panelbezárás/újranyitás, Settingsre váltás és Exit/Resume
+  alatt. Új videó vagy videóhiba ugyanazzal a `resetEventFilters` helperrel állítja
+  vissza őket `All` / `All players` értékre. Page reload után nem maradnak meg.
+- A szűrés nem módosítja az eredeti event arrayt, az event objektumokat vagy a rostert.
+  A click-to-seek továbbra is az eredeti timestampet és a meglévő `seekToEvent` handlert
+  használja; a kattintás bezárja a panelt, automatikus lejátszás nélkül.
+- Ez az egyetlen közös `filteredEvents` lista lesz az 5.4 Review mode bemenete;
+  Review, roster-szerkesztés és backend most nem készült.
+
+Ellenőrzés: `npm test` (19 teszt), lint és build sikeres. A tesztek lefedik az
+All/All, csak típus, csak játékos és kombinált szűrést (például Shot + #9, Pass + #7),
+a találat nélküli állapotot, a countot, a filterváltásokat, az immutabilitást,
+a 18 játékosos dinamikus opciólistát, az azonos nevű/mezszámú játékosok külön ID-it
+és a hiányzó mezszám / ismeretlen player fallbacket. A panel-lifecycle, a kombinált
+click-to-seek, a Settings és Exit/Resume alatti megőrzés, a videócsere/hiba miatti
+közös reset és a workflow/shortcut regressziók szimulált komponensellenőrzéssel futottak;
+ez nem helyettesíti a valódi böngészős vizuális ellenőrzést.
 
 #### 5.4 Szűrt eseménysor visszanézése
 

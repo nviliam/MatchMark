@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types/event";
-import { getFilteredEvents, type EventTypeFilter } from "../utils/eventFiltering";
+import { DEFAULT_EVENT_FILTERS, getFilteredEvents, type EventFilters } from "../utils/eventFiltering";
+import { players } from "../data/players";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventsPanel from "./EventsPanel";
@@ -39,8 +40,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [overlay, setOverlay] = useState<"events" | "settings" | null>(null);
-  const [selectedEventType, setSelectedEventType] = useState<EventTypeFilter>("all");
-  const filteredEvents = useMemo(() => getFilteredEvents(events, selectedEventType), [events, selectedEventType]);
+  const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
+  const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
   const isEventsOpen = overlay === "events";
   const isSettingsOpen = overlay === "settings";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
@@ -178,6 +179,10 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     onAnalysisActiveChange(true);
   }
 
+  function resetEventFilters() {
+    setFilters(DEFAULT_EVENT_FILTERS);
+  }
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
@@ -191,7 +196,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     }
     setError("");
     setEvents([]);
-    setSelectedEventType("all");
+    resetEventFilters();
     setOverlay(null);
     setPendingDeleteId(null);
     setShowSavedEvent(false);
@@ -204,7 +209,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }
 
   function handleVideoError() {
-    setSelectedEventType("all");
+    resetEventFilters();
     setOverlay(null);
     setIsVideoReady(false);
     setResumeTime(null);
@@ -313,7 +318,10 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               </video>
               {isEventsOpen && isAnalysisActive && (
                 <EventsPanel events={filteredEvents} totalEventCount={events.length}
-                  selectedEventType={selectedEventType} onEventTypeChange={setSelectedEventType}
+                  selectedEventType={filters.eventType}
+                  onEventTypeChange={(eventType) => setFilters((previous) => ({ ...previous, eventType }))}
+                  players={players} selectedPlayerId={filters.playerId}
+                  onPlayerChange={(playerId) => setFilters((previous) => ({ ...previous, playerId }))}
                   onClose={handleCloseEvents} onSeek={seekToEvent} />
               )}
               {isSettingsOpen && isAnalysisActive && (
