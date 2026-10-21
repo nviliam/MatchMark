@@ -137,22 +137,26 @@
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.action-rail-top .analysis-exit {
+.action-rail-top .analysis-exit,
+.review-controls .analysis-exit {
   background: rgb(138 40 34 / 10%);
   border-color: rgb(138 40 34 / 32%);
   color: #8a2822;
 }
-.action-rail-top .analysis-exit:hover:not(:disabled) {
+.action-rail-top .analysis-exit:hover:not(:disabled),
+.review-controls .analysis-exit:hover:not(:disabled) {
   background: rgb(138 40 34 / 18%);
   border-color: rgb(138 40 34 / 56%);
   color: #6f201b;
 }
-.action-rail-top .analysis-exit:active:not(:disabled) {
+.action-rail-top .analysis-exit:active:not(:disabled),
+.review-controls .analysis-exit:active:not(:disabled) {
   background: rgb(138 40 34 / 24%);
   border-color: #8a2822;
   color: #6f201b;
 }
-.action-rail-top .analysis-exit:focus-visible {
+.action-rail-top .analysis-exit:focus-visible,
+.review-controls .analysis-exit:focus-visible {
   outline-color: #8a2822;
 }
 
@@ -823,4 +827,42 @@ body:has(.app-analysis) {
   min-height: 36px;
   padding: 4px 8px;
   font-size: 0.75rem;
+}
+
+/* Review navigation occupies the existing fixed-height bottom rail. */
+.events-panel-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+}
+.events-panel-footer button {
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.review-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 100%;
+  width: max-content;
+  padding: 4px 12px;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.review-controls button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+.review-position { font-variant-numeric: tabular-nums; }
+.review-controls:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Release all three action-rail tracks to the video at every viewport width. */
+.app-analysis .tagging-workspace-review {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--bottom-rail-height);
+  grid-template-areas: "video" "bottom";
 }

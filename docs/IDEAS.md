@@ -141,8 +141,8 @@ A Delete UI valódi böngészős ellenőrzése még hátravan.
 
 ### 5. Events panel, szűrés és visszanézés
 
-**Állapot: részben elkészült.** Az Events panel és az event type szerinti szűrés elkészült;
-a Player filter és a Review mode még ötlet. A teljes mentett eseménylista React state-ben marad,
+**Állapot: részben elkészült.** Az Events panel, a kombinált Event type + Player szűrés
+és a Review mode elkészült; a context lead-in még hátravan. A teljes mentett eseménylista React state-ben marad,
 és a panel a meglévő click-to-seek kezelőt használja.
 
 #### 5.1 Events panel
@@ -236,8 +236,8 @@ Megvalósult felépítés:
 - A szűrés nem módosítja az eredeti event arrayt, az event objektumokat vagy a rostert.
   A click-to-seek továbbra is az eredeti timestampet és a meglévő `seekToEvent` handlert
   használja; a kattintás bezárja a panelt, automatikus lejátszás nélkül.
-- Ez az egyetlen közös `filteredEvents` lista lesz az 5.4 Review mode bemenete;
-  Review, roster-szerkesztés és backend most nem készült.
+- Ez az egyetlen közös `filteredEvents` lista az 5.4 Review mode bemenete is;
+  roster-szerkesztés és backend továbbra sem készült.
 
 Ellenőrzés: `npm test` (19 teszt), lint és build sikeres. A tesztek lefedik az
 All/All, csak típus, csak játékos és kombinált szűrést (például Shot + #9, Pass + #7),
@@ -250,12 +250,78 @@ ez nem helyettesíti a valódi böngészős vizuális ellenőrzést.
 
 #### 5.4 Szűrt eseménysor visszanézése
 
-- [ ] A szűrt eseményekből lehessen `Review events` módot indítani.
-- [ ] Review módban az események időrendben legyenek egymás után visszanézhetők.
-- [ ] Legyen `Previous` és `Next` vezérlés.
-- [ ] Jelenjen meg az aktuális pozíció, például `3 / 8`.
-- [ ] Az aktuális eventre váltáskor a videó automatikusan ugorjon az eseményhez.
-- [ ] A Review mode-ból lehessen egyértelműen kilépni anélkül, hogy a szűrési állapot elveszne.
+**Állapot: elkészült, szimulált komponens-/videóellenőrzéssel.** A valódi böngészős
+vizuális ellenőrzés még hátravan.
+
+- [x] A szűrt eseményekből lehessen `Review events` módot indítani.
+- [x] Review módban az események időrendben legyenek egymás után visszanézhetők.
+- [x] Legyen `Previous` és `Next` vezérlés.
+- [x] Jelenjen meg az aktuális pozíció, például `3 / 8`.
+- [x] Az aktuális eventre váltáskor a videó automatikusan ugorjon az eseményhez.
+- [x] A Review mode-ból lehessen egyértelműen kilépni anélkül, hogy a szűrési állapot elveszne.
+- [ ] Valódi böngészőben ellenőrizni a Review indítógombot, a panel saját scrollját,
+      az alsó navigáció illeszkedését, a Review alatt megnövelt videóterületet,
+      a normál layout visszaállását és az oldalgörgetés hiányát.
+
+Megvalósult felépítés:
+
+- Az Events panel `Review N events` gombja az aktuális Event type + Player filterekből
+  származó egyetlen `filteredEvents` listát használja. Üres listánál disabled;
+  egyetlen találatnál is indítható. Indításkor a panel bezár, az index 0-ra kerül.
+- A Review state a VideoPlayer lokális `reviewIndex: number | null` állapota:
+  `null` jelenti a kikapcsolt Review-t. Nincs külön `reviewEvents`, event- vagy
+  timestamp-másolat; az aktuális esemény mindig `filteredEvents[reviewIndex]`.
+- A külön `ReviewControls` komponens a meglévő, fix 56 px-es bottom rail tartalmát
+  váltja fel: Previous, 1-től induló pozíció, Next, közös utilitykkel formázott
+  eseményösszefoglaló és Exit Review. Az alkalmazás Exit gombja is ide kerül Review
+  alatt, ugyanazzal a meglévő Exit handlerrel, hogy a felső rail nélkül is elérhető legyen.
+- A `tagging-workspace-review` class kizárólag a Review state-ből származik.
+  Review alatt az `EventButtons` nem renderelődik, így a top/left/right event action
+  rail és a shortcut badge-ek sincsenek jelen. A Grid egyetlen rugalmas oszlopra
+  és két sorra vált: `minmax(0, 1fr)` videó + változatlan, 56 px-es alsó rail.
+  A felső és oldalsó trackek helyét a videó kapja, `object-fit: contain` mellett.
+  Az analysis nézet továbbra is `100dvh`, oldalgörgetés nélkül; szűk helyen csak
+  az alsó sáv belseje görgethető. Review-n kívül a normál analysis layout változatlan.
+- Exit Review, Escape, app Exit, videócsere vagy videóhiba után a normál action
+  railek és badge-ek automatikusan visszatérnek. Nincs külön rail-visibility state,
+  és a layout-finomítás nem módosítja az indexet, a szűrést vagy a navigációs/seek logikát.
+- Az index vagy az aktuális esemény változását figyelő effect a közös `seekVideo`
+  helperen át pontosan az eredeti timestampre seekel. A meglévő click-to-seek is
+  ezt a helpert használja. Nincs context lead-in, autoplay vagy automatikus léptetés;
+  a natív HTML5 play/pause vezérlés továbbra is használható.
+- Az első eseménynél Previous, az utolsónál Next disabled; nincs körbefordulás.
+  Egyetlen eseménynél `1 / 1` látszik, mindkét navigációs gomb tiltott.
+- Review alatt Events, Settings és minden event action / event shortcut tiltott;
+  a Saved Edit/Delete felület helyét a ReviewControls veszi át. Így a felhasználó
+  nem módosíthatja a filtereket vagy az eseménylistát navigáció közben.
+- Nincs deep copy snapshot. Ha külső frissítés mégis megváltoztatja a listát,
+  az aktuális index az új listából számítódik; az új aktuális eseményhez új seek tartozik.
+  Ha az index már nem érvényes vagy a lista kiürül, a Review biztonságosan bezárul.
+- A hat Quick Seek shortcut Review alatt is működik; nem változtatja az indexet,
+  és egy közönséges újrarenderelés nem seekel vissza az eventhez. Previous/Next
+  számára most nem készült új keyboard shortcut.
+- Exit Review és Escape bezárja a Review-t, változatlan eventekkel és filterekkel;
+  visszatér az előző Saved összefoglaló, ha volt ilyen. Az Escape prioritása:
+  a shortcut capture előbb elfogyasztja a saját Escape-jét; a közös handlerben
+  draft/edit/delete megszakítás, Review kilépés, majd overlay-bezárás következik.
+  Ezek a workflow-k a UI-ban kölcsönösen kizárják egymást.
+- Az alkalmazás Exit gombja pause-ol és bezárja a Review-t; Resume után a filterek
+  és a videópozíció megmaradnak, de a Review zárva marad. Videócsere vagy videóhiba
+  a meglévő közös resetben a filtereket és a Review indexet is visszaállítja.
+- A Review nem persistent, az event adatmodell változatlan; a navigáció nem módosítja
+  az `events`, `filteredEvents` vagy `players` tartalmát. Backend nem készült.
+
+Ellenőrzés: `npm test` (26 teszt), lint és build sikeres. Az új tesztek lefedik a
+kombináltan szűrt 4 esemény időrendi bejárását, a pontos seeket, a boundaryket,
+az üres/egyelemű listát, az adat- és referencia-integritást, a Quick Seeket,
+a Review alatti tiltásokat, az Escape prioritásait, az Exit/Resume-ot, a videócsere/hiba
+miatti resetet és a külső listafrissítések defenzív kezelését. A teszthelper most
+megőrzi a memo/callback referenciákat, és szimulálja a key-capture prioritását is.
+A layout-tesztek ellenőrzik az event csoportok és badge-ek eltűnését/visszatérését,
+a Review layout class váltását, a bottom rail megmaradását, a videóforrás megőrzését
+és az alsó app Exit / Resume működését. A videó tényleges pixelmérete és a responsive
+megjelenés böngészőben még nincs ellenőrizve.
+A szimulált ellenőrzés nem helyettesíti a valódi böngészős vizuális tesztet.
 
 #### 5.5 Context lead-in
 

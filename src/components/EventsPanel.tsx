@@ -16,10 +16,11 @@ type Props = {
   onPlayerChange: (playerId: PlayerFilter) => void;
   onClose: () => void;
   onSeek: (timestamp: number) => void;
+  onStartReview: () => void;
 };
 
 export default function EventsPanel({ events, totalEventCount, selectedEventType, onEventTypeChange,
-  players, selectedPlayerId, onPlayerChange, onClose, onSeek }: Props) {
+  players, selectedPlayerId, onPlayerChange, onClose, onSeek, onStartReview }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => { closeButtonRef.current?.focus(); }, []);
@@ -58,6 +59,11 @@ export default function EventsPanel({ events, totalEventCount, selectedEventType
         {totalEventCount > 0 && events.length === 0
           ? <p className="events-empty">No events match these filters.</p>
           : <EventList events={events} disabled={false} onSeek={onSeek} />}
+      </div>
+      <div className="events-panel-footer">
+        <button type="button" disabled={events.length === 0} onClick={onStartReview}>
+          Review {events.length} {events.length === 1 ? "event" : "events"}
+        </button>
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import EventsPanel from "./EventsPanel";
 import ShortcutSettings from "./ShortcutSettings";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
+import ReviewControls from "./ReviewControls";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
@@ -42,15 +43,53 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [overlay, setOverlay] = useState<"events" | "settings" | null>(null);
   const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
   const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
+  // Review owns an index only; the existing filtered list remains its source of truth.
+  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
+  const isReviewMode = reviewIndex !== null;
+  const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
   const isEventsOpen = overlay === "events";
   const isSettingsOpen = overlay === "settings";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
   const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const eventsDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
+  const workflowDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
     || pending !== null || pendingDeleteId !== null;
+  // Guarded adjustment for external list/session changes: discard an invalid Review
+  // before committing its UI, rather than scheduling a second render from an effect.
+  if (reviewIndex !== null && (!currentReviewEvent || workflowDisabled)) {
+    setReviewIndex(null);
+  }
+  const eventsDisabled = workflowDisabled || isReviewMode;
   const eventActionsDisabled = eventsDisabled || overlay !== null;
+
+  const seekVideo = useCallback((timestamp: number) => {
+    const video = videoRef.current;
+    if (!video || workflowDisabled) return;
+    video.currentTime = timestamp;
+  }, [workflowDisabled]);
+
+  const handleExitReview = useCallback(() => {
+    setReviewIndex(null);
+    videoRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (currentReviewEvent) seekVideo(currentReviewEvent.timestamp);
+  }, [reviewIndex, currentReviewEvent, seekVideo]);
+
+  function handleStartReview() {
+    if (eventsDisabled || !isEventsOpen || filteredEvents.length === 0) return;
+    setReviewIndex(0);
+    setOverlay(null);
+  }
+
+  function handleReviewStep(direction: -1 | 1) {
+    if (reviewIndex === null || workflowDisabled) return;
+    const nextIndex = reviewIndex + direction;
+    if (nextIndex < 0 || nextIndex >= filteredEvents.length) return;
+    setReviewIndex(nextIndex);
+  }
 
   const handleCloseEvents = useCallback(() => {
     setOverlay(null);
@@ -148,24 +187,28 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }, [pending, pendingDeleteId]);
 
   useEffect(() => {
-    if ((!pending && pendingDeleteId === null && overlay === null) || !isAnalysisActive) return;
+    if ((!pending && pendingDeleteId === null && overlay === null && !isReviewMode) || !isAnalysisActive) return;
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.repeat || event.isComposing || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
       event.preventDefault();
+      // Shortcut capture consumes Escape in its capture listener before this handler.
       if (pending || pendingDeleteId !== null) handleCancel();
+      else if (isReviewMode) handleExitReview();
       else if (isSettingsOpen) handleCloseSettings();
       else handleCloseEvents();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [pending, pendingDeleteId, overlay, isSettingsOpen, isAnalysisActive, handleCancel, handleCloseEvents, handleCloseSettings]);
+  }, [pending, pendingDeleteId, overlay, isSettingsOpen, isAnalysisActive, isReviewMode,
+    handleCancel, handleCloseEvents, handleCloseSettings, handleExitReview]);
 
   function handleExit() {
     const video = videoRef.current;
     if (!video || !isVideoReady) return;
     video.pause();
     setResumeTime(video.currentTime);
+    setReviewIndex(null);
     setOverlay(null);
     onAnalysisActiveChange(false);
   }
@@ -181,6 +224,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   function resetEventFilters() {
     setFilters(DEFAULT_EVENT_FILTERS);
+    setReviewIndex(null);
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -236,14 +280,14 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   function handleConfirmDelete() {
     if (pendingDeleteId === null || savedEvent?.id !== pendingDeleteId
-      || pending || !isVideoReady || !isAnalysisActive) return;
+      || pending || !isVideoReady || !isAnalysisActive || isReviewMode) return;
     setEvents((previousEvents) => previousEvents.filter((event) => event.id !== pendingDeleteId));
     setPendingDeleteId(null);
     videoRef.current?.focus();
   }
 
   function handleSave(playerId: number, details: EventDetails) {
-    if (!pending || !isVideoReady || !isAnalysisActive || pending.type !== details.type) return;
+    if (!pending || !isVideoReady || !isAnalysisActive || isReviewMode || pending.type !== details.type) return;
     const timestamp = pending.timestamp;
     if (pending.mode === "edit") {
       const editedId = pending.original.id;
@@ -264,7 +308,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   function seekToEvent(timestamp: number) {
     const video = videoRef.current;
     if (!video || eventsDisabled) return;
-    video.currentTime = timestamp;
+    seekVideo(timestamp);
     setOverlay(null);
     video.focus();
   }
@@ -296,11 +340,11 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
       {videoUrl && (
         <>
           {/* Keep video and EventForm mounted while suspended so their state survives Exit. */}
-          <div className="tagging-workspace" hidden={!isAnalysisActive}>
-            <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
+          <div className={`tagging-workspace${isReviewMode ? " tagging-workspace-review" : ""}`} hidden={!isAnalysisActive}>
+            {!isReviewMode && <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
               onSelect={handleEvent} onExit={handleExit} onOpenEvents={handleOpenEvents}
               eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef}
-              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef} />
+              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef} />}
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
                 onLoadedMetadata={() => {
@@ -319,17 +363,26 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               {isEventsOpen && isAnalysisActive && (
                 <EventsPanel events={filteredEvents} totalEventCount={events.length}
                   selectedEventType={filters.eventType}
-                  onEventTypeChange={(eventType) => setFilters((previous) => ({ ...previous, eventType }))}
+                  onEventTypeChange={(eventType) => {
+                    if (!eventsDisabled) setFilters((previous) => ({ ...previous, eventType }));
+                  }}
                   players={players} selectedPlayerId={filters.playerId}
-                  onPlayerChange={(playerId) => setFilters((previous) => ({ ...previous, playerId }))}
-                  onClose={handleCloseEvents} onSeek={seekToEvent} />
+                  onPlayerChange={(playerId) => {
+                    if (!eventsDisabled) setFilters((previous) => ({ ...previous, playerId }));
+                  }}
+                  onClose={handleCloseEvents} onSeek={seekToEvent} onStartReview={handleStartReview} />
               )}
               {isSettingsOpen && isAnalysisActive && (
                 <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />
               )}
             </div>
             <div className="bottom-rail">
-              {!pending && savedEvent && (pendingDeleteId !== null ? (
+              {isReviewMode && currentReviewEvent && (
+                <ReviewControls event={currentReviewEvent} index={reviewIndex} total={filteredEvents.length}
+                  onPrevious={() => handleReviewStep(-1)} onNext={() => handleReviewStep(1)}
+                  onExit={handleExitReview} onAppExit={handleExit} />
+              )}
+              {!isReviewMode && !pending && savedEvent && (pendingDeleteId !== null ? (
                 <DeleteEventConfirmation event={savedEvent} disabled={!isVideoReady || !isAnalysisActive}
                   onCancel={handleCancel} onConfirm={handleConfirmDelete} />
               ) : (

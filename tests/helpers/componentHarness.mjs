@@ -8,7 +8,7 @@ import * as jsx from "react/jsx-runtime";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 export function createHarness(transformSource = source => source) {
-  const cache = new Map(), listeners = new Set();
+  const cache = new Map(), listeners = new Set(), capturePhase = new Map();
   let current;
   const media = { currentTime: 0, duration: 1000, paused: true, error: null, pause() { this.paused = true; }, focus() {} };
   class Element { closest() { return null; } }
@@ -19,8 +19,12 @@ export function createHarness(transformSource = source => source) {
       return [ctx.states[index], value => { ctx.states[index] = typeof value === "function" ? value(ctx.states[index]) : value; }];
     },
     useRef() { const ctx = current, index = ctx.r++; return ctx.refs[index] ??= { current: ctx.video && index === 0 ? media : { focus() {} } }; },
-    useCallback(fn) { return fn; },
-    useMemo(fn) { return fn(); },
+    useCallback(fn, deps) { return hooks.useMemo(() => fn, deps); },
+    useMemo(fn, deps) {
+      const ctx = current, index = ctx.m++, old = ctx.memos[index];
+      if (!old || deps.some((value, i) => !Object.is(value, old.deps[i]))) ctx.memos[index] = { deps, value: fn() };
+      return ctx.memos[index].value;
+    },
     useEffect(fn, deps) {
       const ctx = current, index = ctx.e++, old = ctx.effects[index];
       if (!old || deps.some((value, i) => !Object.is(value, old.deps[i]))) {
@@ -44,20 +48,27 @@ export function createHarness(transformSource = source => source) {
     };
     vm.runInNewContext(code, {
       exports: module.exports, require, HTMLElement: Element,
-      window: { addEventListener: (_, fn) => listeners.add(fn), removeEventListener: (_, fn) => listeners.delete(fn) },
+      window: {
+        addEventListener: (_, fn, capture = false) => { listeners.add(fn); capturePhase.set(fn, capture); },
+        removeEventListener: (_, fn) => { listeners.delete(fn); capturePhase.delete(fn); },
+      },
       URL: { createObjectURL: () => "blob:video", revokeObjectURL() {} },
     }, { filename });
     return module.exports;
   }
-  const context = (video = false) => ({ video, states: [], refs: [], effects: [] });
+  const context = (video = false) => ({ video, states: [], refs: [], effects: [], memos: [] });
   function render(Component, props, ctx = context()) {
-    current = ctx; ctx.s = ctx.r = ctx.e = 0; ctx.jobs = [];
+    current = ctx; ctx.s = ctx.r = ctx.e = ctx.m = 0; ctx.jobs = [];
     const result = Component(props); ctx.jobs.forEach(job => job()); return result;
   }
   function press(key, extra = {}) {
     const event = { key, code: `Key${key.toUpperCase()}`, target: new Element(), defaultPrevented: false,
-      preventDefault() { this.defaultPrevented = true; }, ...extra };
-    [...listeners].forEach(listener => listener(event));
+      preventDefault() { this.defaultPrevented = true; },
+      stopImmediatePropagation() { this.propagationStopped = true; }, ...extra };
+    for (const listener of [...listeners].sort((a, b) => Number(capturePhase.get(b)) - Number(capturePhase.get(a)))) {
+      listener(event);
+      if (event.propagationStopped) break;
+    }
   }
   function dispose(ctx) { ctx.effects.forEach(effect => effect.cleanup?.()); }
   return { load, render, context, media, press, dispose, listeners };
