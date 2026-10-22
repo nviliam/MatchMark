@@ -385,11 +385,11 @@ nem történt meg; a komponensellenőrzések szimulált videóelemmel futottak.
 
 #### 6.1 Event model refactor és konfigurációvezérelt event rendszer
 
-**Állapot: részben elkészült; a további refaktor tervezett.** A jelenlegi
-eventtípusok még nem véglegesek. A `src/config/eventDefinitions.ts` már központi
-forrása az ID-khoz tartozó UI labelnek, sorrendnek és rail-elhelyezésnek.
-A következő cél, hogy az event-specifikus mezőket és a specifikációs workflow-t
-is deklaratív definíciók vezéreljék.
+**Állapot: részben elkészült; a jelenlegi működést megőrző metadata/workflow-refaktor
+elkészült.** A jelenlegi eventkészlet továbbra sem végleges. A
+`src/config/eventDefinitions.ts` a UI- és workflow-metadata központi forrása;
+az eventtípusok funkcionális újratervezése, a migration és a backend előtti
+véglegesítés későbbi feladat.
 
 - [x] Minden event type-nak legyen stabil belső ID-ja és külön display labelje.
 - [x] Az event action gombok a központi event-definíciókból generálódjanak.
@@ -397,19 +397,77 @@ is deklaratív definíciók vezéreljék.
 - [x] A keyboard shortcut rendszer ugyanazokat a stabil event ID-kat használja.
 - [x] A Review mode ne függjön konkrét eventtípusoktól.
 - [x] Event label átnevezése ne igényelje a korábban mentett eventek módosítását.
-- [ ] Az eventhez tartozó mezők és opciók ne legyenek több komponensben
+- [x] Az eventhez tartozó mezők és opciók ne legyenek több komponensben
       szétszórtan hardcode-olva.
-- [ ] Az event-specifikus mezők deklaratív konfigurációból legyenek leírhatók
-      (például outcome, body part, subtype).
+- [x] A jelenlegi event-specifikus mezők deklaratív konfigurációból legyenek
+      leírhatók: Outcome és Body Part. Új mező vagy subtype nem került be.
 - [ ] Új event type hozzáadása lehetőleg csak a központi konfiguráció és a hozzá
       tartozó domain-típus módosítását igényelje.
+      A UI már a definíciókból dolgozik, de új domain eseménynél a típusbiztos
+      factory és a default shortcut mapping bővítése is szükséges.
 - [ ] Meglévő event type megszüntetésére vagy átalakítására később legyen
       migration stratégia.
-- [ ] A refaktor során a rendszer maradjon TypeScript-szinten típusbiztos;
+- [x] A refaktor során a rendszer maradjon TypeScript-szinten típusbiztos;
       ne általános `Record<string, unknown>` alapú eventmodellre épüljön.
 - [ ] A backend/persistence bevezetése előtt az eventmodell legyen kellően stabil.
 
-Tervezett adatfolyam:
+Megvalósult felépítés:
+
+- Az `EventDefinition` stabil `id`, külön `label`, `category`, `rail`, `order`,
+  `playerRequired` és rendezett `fields` metadatát tartalmaz. A kulcs és az ID
+  egyezését, valamint az eventhez megengedett mezőket/opció-ID-kat a TypeScript
+  a meglévő domain union alapján ellenőrzi. A kategória leíró metadata:
+  `possession`, `defending` vagy `contest`; nem vezet be új UI-csoportosítást
+  vagy workflow-elágazást, és nem kerül a mentett eseménybe.
+- Az `EventFieldDefinition` az `outcome` / `bodyPart` ID szerint típusozott union;
+  mezőnként label, required flag és típusos `{ id, label }` opciólista tartozik hozzá.
+  Minden jelenlegi mező kötelező. A Shot Outcome → Body Part, a Pass / Dribble /
+  Tackle / Duel Outcome mezőt kap, a többi event `fields: []` definíciót használ.
+  A Tackle és Duel közös Won/Lost opciólistája egyszer szerepel a konfigurációban.
+- Az `EventForm` lépéssorrendje a `fields` listából, majd a `playerRequired`
+  alapján külön Player lépésből és a változatlan Save előtti Review event lépésből áll.
+  A mezőcímkék, opciógombok és választásjelölések a definíciót használják;
+  nincs eventtípushoz kötött Shot-ág a formban. A Back, Save, Cancel, Edit prefill
+  és az eredeti timestamp megőrzése változatlan.
+- Az action gombok railje/sorrendje/labelje, az Events filter és a Shortcut Settings
+  eventlistája/labelje ugyanebből a konfigurációból készül. A default billentyűk
+  továbbra is az `eventShortcuts.ts` stabil EventType → key mappingjében vannak;
+  a shortcut storage és a Quick Seek nem változott.
+- A közös `formatEventDetails` a definíciók mezősorrendjével és option labeljeivel
+  formázza az Events listát, a Saved összefoglalót, a ReviewControls tartalmát és
+  az edit/create workflow összefoglalóját. A játékosmegjelenítés továbbra is a
+  közös `formatPlayerLabel` helpert használja. Ismeretlen runtime ID-nál a lookup
+  biztonságosan tér vissza; az `Unknown event` fallback megmaradt.
+- A `MatchEvent` discriminated union és a mentett event struktúrája változatlan.
+  A `createEventDetails` domain factory `switch`-e megmaradt: ez hozza létre az
+  eventtípushoz illő objektumot `as MatchEvent` cast nélkül. Az outcome-validáció
+  már a közös meződefiníciók opcióit ellenőrzi; metadata nem kerül a mentett adatba.
+  Minden jelenlegi event továbbra is kötelező `playerId` kapcsolatot tárol;
+  későbbi opcionális játékoshoz a domain és a factory módosítása is szükséges.
+- Migration és Custom event nem készült. Új mezőfajtához a domain típusok és
+  a típusos field-kezelés bővítése is kell; nem készült általános form builder
+  vagy felhasználó által definiálható eventséma.
+
+Audit: a mezősorrend és Shot-specifikus lépés az `EventForm`-ban, az opciók és
+labelek a `utils/events.ts`-ben és a formban, az eseményrészletek formázása pedig
+az EventList / SavedEventSummary / ReviewControls komponensekben volt ismételve.
+Ezeket a központi field metadata és a közös formatter váltotta fel. A domain union,
+a típusbiztos factory elágazásai és a default shortcut mapping szándékosan maradtak.
+A konkrét eventekre épülő tesztadatok továbbra is regressziós referenciák;
+a dinamikus metadata teszt fixture-ja az új definícióalakhoz igazodott.
+
+Ellenőrzés: `npm test` (47 teszt), lint és build sikeres. A 16 új teszt lefedi
+a tíz definíció teljességét, egyedi ID-it, az eredeti label/sorrend/rail/opció
+kiosztást, minden event create/edit workflow-ját, a Backet, prefillt, kézi Save-et,
+Cancelt, a required mezők és a Player validációját, a domain-only factory-outputot,
+a közös formázást és az ismeretlen runtime event fallbackjét. Tesztbeli
+metadata-módosítás ellenőrzi a mezősorrend és labelek átvezetését a fogyasztókhoz;
+egy fordítási teszt hibás ID/field/opció és hiányos domain objektum esetén is
+ellenőrzi a TypeScript-korlátokat. A meglévő filter-, shortcut-, Review lead-in-,
+seek-, Escape-, Exit/Resume- és reset-regressziók is zöldek. A komponensellenőrzések
+szimulált hookokkal/videóval futottak; valódi böngészős vizuális teszt nem történt.
+
+Adatfolyam:
 
 ```text
 Event definitions

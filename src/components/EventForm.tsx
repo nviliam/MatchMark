@@ -2,7 +2,8 @@
 import { players } from "../data/players";
 import { formatPlayerLabel } from "../utils/players";
 import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
-import { bodyPartLabels, createEventDetails, getEventLabel, formatTimestamp, outcomeLabels, outcomeOptions } from "../utils/events";
+import { createEventDetails, formatEventDetails, formatTimestamp } from "../utils/events";
+import { EVENT_DEFINITIONS, isEventFieldOption, type EventDefinition, type EventFieldDefinition, type EventFieldId } from "../config/eventDefinitions";
 
 type Props = {
   pending: PendingEvent;
@@ -12,28 +13,26 @@ type Props = {
   onCancel: () => void;
 };
 
-type Step = "outcome" | "bodyPart" | "player" | "review";
-const stepLabels: Record<Step, string> = {
-  outcome: "Outcome", bodyPart: "Body Part", player: "Player", review: "Review event",
-};
-const bodyParts: BodyPart[] = ["foot", "head", "other"];
+type Step = EventFieldId | "player" | "review";
+type Outcome = Extract<MatchEvent, { outcome: string }>["outcome"];
 
 export default function EventForm({ pending, initialEvent, disabled, onSave, onCancel }: Props) {
-  const steps: Step[] = [];
-  if (outcomeOptions[pending.type].length > 0) steps.push("outcome");
-  if (pending.type === "shot") steps.push("bodyPart");
-  steps.push("player", "review");
+  const definition: EventDefinition = EVENT_DEFINITIONS[pending.type];
+  const steps: Step[] = definition.fields.map((field) => field.id);
+  if (definition.playerRequired) steps.push("player");
+  steps.push("review");
   const [playerId, setPlayerId] = useState<number | null>(initialEvent?.playerId ?? null);
-  const [outcome, setOutcome] = useState<keyof typeof outcomeLabels | "">(initialEvent && "outcome" in initialEvent ? initialEvent.outcome : "");
-  const [bodyPart, setBodyPart] = useState<BodyPart | null>(initialEvent?.type === "shot" ? initialEvent.bodyPart : null);
+  const [outcome, setOutcome] = useState<Outcome | "">(initialEvent && "outcome" in initialEvent ? initialEvent.outcome : "");
+  const [bodyPart, setBodyPart] = useState<BodyPart | null>(initialEvent && "bodyPart" in initialEvent ? initialEvent.bodyPart : null);
   const [stepIndex, setStepIndex] = useState(initialEvent ? steps.length - 1 : 0);
   const stepRef = useRef<HTMLDivElement | null>(null);
   const step = steps[stepIndex];
+  const field = definition.fields.find((entry) => entry.id === step);
+  const stepLabel = field?.label ?? (step === "player" ? "Player" : "Review event");
   const details = createEventDetails(pending.type, outcome, bodyPart);
   const player = players.find((entry) => entry.id === playerId);
   const summary = [
-    getEventLabel(pending.type), outcome && outcomeLabels[outcome],
-    bodyPart && bodyPartLabels[bodyPart], player && formatPlayerLabel(player),
+    formatEventDetails({ type: pending.type, outcome, bodyPart }), player && formatPlayerLabel(player),
   ].filter(Boolean).join(" · ");
 
   useEffect(() => {
@@ -42,6 +41,13 @@ export default function EventForm({ pending, initialEvent, disabled, onSave, onC
 
   function advance() {
     setStepIndex((index) => Math.min(index + 1, steps.length - 1));
+  }
+
+  function selectFieldOption(field: EventFieldDefinition, value: string) {
+    if (field.id === "outcome" && isEventFieldOption(field, value)) setOutcome(value);
+    else if (field.id === "bodyPart" && isEventFieldOption(field, value)) setBodyPart(value);
+    else return;
+    advance();
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -58,18 +64,13 @@ export default function EventForm({ pending, initialEvent, disabled, onSave, onC
         <span>{summary}</span>
       </div>
       <div className="workflow-step" key={step} ref={stepRef} tabIndex={-1}
-        role="group" aria-label={stepLabels[step]}>
-        <span className="workflow-step-label">{stepLabels[step]}</span>
-        {step === "outcome" && outcomeOptions[pending.type].map((value) => (
-          <button key={value} type="button" disabled={disabled} aria-pressed={outcome === value}
-            onClick={() => { setOutcome(value); advance(); }}>
-            {outcomeLabels[value]}
-          </button>
-        ))}
-        {step === "bodyPart" && bodyParts.map((value) => (
-          <button key={value} type="button" disabled={disabled} aria-pressed={bodyPart === value}
-            onClick={() => { setBodyPart(value); advance(); }}>
-            {bodyPartLabels[value]}
+        role="group" aria-label={stepLabel}>
+        <span className="workflow-step-label">{stepLabel}</span>
+        {field && field.options.map((option) => (
+          <button key={option.id} type="button" disabled={disabled}
+            aria-pressed={(field.id === "outcome" ? outcome : bodyPart) === option.id}
+            onClick={() => selectFieldOption(field, option.id)}>
+            {option.label}
           </button>
         ))}
         {step === "player" && players.map((entry) => (

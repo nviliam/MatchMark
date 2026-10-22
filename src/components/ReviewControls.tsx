@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { MatchEvent } from "../types/event";
 import { players } from "../data/players";
 import { formatPlayerLabel } from "../utils/players";
-import { bodyPartLabels, formatTimestamp, getEventLabel, outcomeLabels } from "../utils/events";
+import { formatEventDetails, formatTimestamp } from "../utils/events";
 
 type Props = {
   event: MatchEvent;
@@ -27,10 +27,7 @@ export default function ReviewControls({ event, index, total, onPrevious, onNext
       <button type="button" disabled={index >= total - 1} onClick={onNext}>Next</button>
       <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
       <span>{formatPlayerLabel(player)}</span>
-      <span>{getEventLabel(event.type)}
-        {"outcome" in event && ` · ${outcomeLabels[event.outcome]}`}
-        {event.type === "shot" && ` · ${bodyPartLabels[event.bodyPart]}`}
-      </span>
+      <span>{formatEventDetails(event)}</span>
       <button type="button" onClick={onExit}>Exit Review</button>
     </div>
   );

@@ -5,7 +5,7 @@ import { createHarness, nodes, text } from "./helpers/componentHarness.mjs";
 
 test("panel options, labels and action placement follow metadata, including an added definition", () => {
   const h = createHarness((source, filename) => filename.endsWith("eventDefinitions.ts")
-    ? source.replace('label: "Shot"', 'label: "Attempt"').replace('  pass: {', '  experimental: { label: "New event", order: 5, rail: "left" },\n  pass: {')
+    ? source.replace('label: "Shot"', 'label: "Attempt"').replace('  pass: {', '  experimental: { id: "experimental", label: "New event", category: "possession", order: 5, rail: "left", playerRequired: true, fields: [] },\n  pass: {')
     : source);
   const Panel = h.load("src/components/EventsPanel.tsx").default;
   const Buttons = h.load("src/components/EventButtons.tsx").default;
