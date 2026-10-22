@@ -5,6 +5,7 @@ import { getEventLabel, isEventType, ORDERED_EVENT_TYPES } from "../config/event
 import type { EventTypeFilter, PlayerFilter } from "../utils/eventFiltering";
 import { formatPlayerLabel } from "../utils/players";
 import EventList from "./EventList";
+import PanelCloseIcon from "./PanelCloseIcon";
 
 type Props = {
   events: MatchEvent[];
@@ -29,7 +30,9 @@ export default function EventsPanel({ events, totalEventCount, selectedEventType
     <section className="events-panel" id="events-panel" role="dialog" aria-labelledby="events-panel-title">
       <header className="events-panel-header">
         <h2 id="events-panel-title">Events <span className="events-count" role="status" aria-live="polite">· {events.length}</span></h2>
-        <button ref={closeButtonRef} type="button" aria-label="Close events" onClick={onClose}>×</button>
+        <button className="panel-close-button" ref={closeButtonRef} type="button" aria-label="Close events" onClick={onClose}>
+          <PanelCloseIcon />
+        </button>
       </header>
       <label className="events-filter">
         <span>Event type</span>

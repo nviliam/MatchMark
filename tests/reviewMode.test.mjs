@@ -111,7 +111,7 @@ test("Review locks mutations, overlays and event shortcuts while all six Quick S
   assert(!s.component(s.Buttons));
   const reviewUI = s.h.render(s.Review, s.review());
   assert.equal(nodes(reviewUI, node => node.type === "kbd").length, 0);
-  assert(s.control("Exit").props.onClick); assert(s.control("Exit").props.disabled !== true);
+  assert(s.control("Exit Review")); assert.equal(s.control("Exit"), undefined);
   assert(!s.component(s.Summary)); assert(!s.component(s.Form)); assert(!s.component(s.Delete));
   assert(!s.component(s.Panel)); assert(!s.component(s.Settings));
   s.press("s"); assert(!s.component(s.Form)); assert.equal(s.position(), "1 / 4");
@@ -127,15 +127,15 @@ test("Review locks mutations, overlays and event shortcuts while all six Quick S
   s.dispose();
 });
 
-test("app Exit/Resume and video replacement/error reset ephemeral Review but preserve session filters appropriately", () => {
+test("Exit Review restores app Exit/Resume; video replacement/error still resets Review and filters", () => {
   const s = setup(); seed(s); s.open(); s.filter("shot", 1); s.start(); s.next();
   s.press("3", { code: "Digit3" }); const position = s.h.media.currentTime;
-  s.h.media.paused = false; s.control("Exit").props.onClick(); s.update();
+  s.h.media.paused = false; s.exitReview(); s.buttons().onExit(); s.update();
   assert(!s.review()); assert(s.h.media.paused);
   s.resume(); assert(!s.review()); assert(s.component(s.Buttons)); assert.equal(s.h.media.currentTime, position);
   s.open(); assert.equal(s.panel().selectedEventType, "shot"); assert.equal(s.panel().selectedPlayerId, 1);
   s.start(); assert.equal(s.position(), "1 / 4");
-  s.control("Exit").props.onClick(); s.update(); s.upload(); s.ready(); s.open();
+  s.exitReview(); s.buttons().onExit(); s.update(); s.upload(); s.ready(); s.open();
   assert(!s.review()); assert.equal(s.panel().selectedEventType, "all"); assert.equal(s.panel().selectedPlayerId, "all");
   s.panel().onClose(); s.update(); s.add("shot", 1, 3.25); s.open(); s.filter("shot", 1); s.start();
   nodes(s.tree, node => node.type === "video")[0].props.onError(); s.update();
@@ -191,6 +191,7 @@ test("Review layout omits all action rails and restores normal groups/badges on 
     const controls = s.h.render(s.Buttons, s.buttons());
     assert.deepEqual(nodes(controls, node => node.props?.role === "group").map(node => node.props["aria-label"]), ["top actions", "left actions", "right actions"]);
     assert.equal(nodes(controls, node => node.type === "kbd").length, 10);
+    assert(nodes(controls, node => node.type === "button" && text(node) === "Exit")[0]);
   };
   const video = nodes(s.tree, node => node.type === "video")[0];
   normal(); s.open(); s.start();

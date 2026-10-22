@@ -5,6 +5,7 @@ import {
   getShortcutKeyError, normalizeShortcutKey, type EventShortcuts,
 } from "../config/eventShortcuts";
 import { getEventLabel } from "../utils/events";
+import PanelCloseIcon from "./PanelCloseIcon";
 
 type Props = {
   shortcuts: EventShortcuts;
@@ -74,7 +75,9 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props
       aria-labelledby="shortcut-settings-title" aria-describedby="shortcut-settings-hint">
       <header className="shortcut-settings-header">
         <h2 id="shortcut-settings-title">Keyboard shortcuts</h2>
-        <button ref={closeButtonRef} type="button" aria-label="Close keyboard shortcuts" onClick={onClose}>×</button>
+        <button className="panel-close-button" ref={closeButtonRef} type="button" aria-label="Close keyboard shortcuts" onClick={onClose}>
+          <PanelCloseIcon />
+        </button>
       </header>
       <p className="shortcut-settings-hint" id="shortcut-settings-hint">
         Select a shortcut, then press a key. Esc cancels key capture.

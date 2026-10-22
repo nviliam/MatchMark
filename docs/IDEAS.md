@@ -275,8 +275,8 @@ Megvalósult felépítés:
   timestamp-másolat; az aktuális esemény mindig `filteredEvents[reviewIndex]`.
 - A külön `ReviewControls` komponens a meglévő, fix 56 px-es bottom rail tartalmát
   váltja fel: Previous, 1-től induló pozíció, Next, közös utilitykkel formázott
-  eseményösszefoglaló és Exit Review. Az alkalmazás Exit gombja is ide kerül Review
-  alatt, ugyanazzal a meglévő Exit handlerrel, hogy a felső rail nélkül is elérhető legyen.
+  eseményösszefoglaló és Exit Review. Review alatt nincs külön app Exit gomb;
+  Exit Review után a normál analysis nézetben, a felső railen ismét elérhető.
 - A `tagging-workspace-review` class kizárólag a Review state-ből származik.
   Review alatt az `EventButtons` nem renderelődik, így a top/left/right event action
   rail és a shortcut badge-ek sincsenek jelen. A Grid egyetlen rugalmas oszlopra
@@ -308,7 +308,7 @@ Megvalósult felépítés:
   a shortcut capture előbb elfogyasztja a saját Escape-jét; a közös handlerben
   draft/edit/delete megszakítás, Review kilépés, majd overlay-bezárás következik.
   Ezek a workflow-k a UI-ban kölcsönösen kizárják egymást.
-- Az alkalmazás Exit gombja pause-ol és bezárja a Review-t; Resume után a filterek
+- Az alkalmazás Exit handlere változatlan; a gomb Review-n kívül érhető el. Resume után a filterek
   és a videópozíció megmaradnak, de a Review zárva marad. Videócsere vagy videóhiba
   a meglévő közös resetben a filtereket és a Review indexet is visszaállítja.
 - A Review nem persistent, az event adatmodell változatlan; a navigáció nem módosítja
@@ -322,7 +322,7 @@ miatti resetet és a külső listafrissítések defenzív kezelését. A teszthe
 megőrzi a memo/callback referenciákat, és szimulálja a key-capture prioritását is.
 A layout-tesztek ellenőrzik az event csoportok és badge-ek eltűnését/visszatérését,
 a Review layout class váltását, a bottom rail megmaradását, a videóforrás megőrzését
-és az alsó app Exit / Resume működését. A videó tényleges pixelmérete és a responsive
+és az Exit Review utáni normál app Exit / Resume működését. A videó tényleges pixelmérete és a responsive
 megjelenés böngészőben még nincs ellenőrizve.
 A szimulált ellenőrzés nem helyettesíti a valódi böngészős vizuális tesztet.
 
@@ -444,3 +444,5 @@ További ötlet:
       leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
 
       A játékosok customizálhatósága. A felhasználó fel tudjon venni új játékosokat (név, mezszám), tudja a jelenlegieket szerkeszteni, illetve tudjon törölni is.
+
+      A keyboard shortcuts listába jelenítsd meg a előre és hátra tekerést is, mert egyébként a felhasználó nem tud róluk. Ezek is legyenek állíthatóak. A default maradjon a jelenlegi.

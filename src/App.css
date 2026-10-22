@@ -137,26 +137,22 @@
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.action-rail-top .analysis-exit,
-.review-controls .analysis-exit {
+.action-rail-top .analysis-exit {
   background: rgb(138 40 34 / 10%);
   border-color: rgb(138 40 34 / 32%);
   color: #8a2822;
 }
-.action-rail-top .analysis-exit:hover:not(:disabled),
-.review-controls .analysis-exit:hover:not(:disabled) {
+.action-rail-top .analysis-exit:hover:not(:disabled) {
   background: rgb(138 40 34 / 18%);
   border-color: rgb(138 40 34 / 56%);
   color: #6f201b;
 }
-.action-rail-top .analysis-exit:active:not(:disabled),
-.review-controls .analysis-exit:active:not(:disabled) {
+.action-rail-top .analysis-exit:active:not(:disabled) {
   background: rgb(138 40 34 / 24%);
   border-color: #8a2822;
   color: #6f201b;
 }
-.action-rail-top .analysis-exit:focus-visible,
-.review-controls .analysis-exit:focus-visible {
+.action-rail-top .analysis-exit:focus-visible {
   outline-color: #8a2822;
 }
 
@@ -309,12 +305,17 @@
 .shortcut-settings-header h2 {
   font-size: 0.8rem;
 }
-.events-panel-header button,
-.shortcut-settings-header button {
+.panel-close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 32px;
   min-height: 32px;
   width: 32px;
-  padding: 2px;
-  font-size: 1.1rem;
+  height: 32px;
+  line-height: 1;
+  padding: 0;
 }
 .events-panel-content {
   min-height: 0;

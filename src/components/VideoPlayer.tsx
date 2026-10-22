@@ -382,7 +382,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               {isReviewMode && currentReviewEvent && (
                 <ReviewControls event={currentReviewEvent} index={reviewIndex} total={filteredEvents.length}
                   onPrevious={() => handleReviewStep(-1)} onNext={() => handleReviewStep(1)}
-                  onExit={handleExitReview} onAppExit={handleExit} />
+                  onExit={handleExitReview} />
               )}
               {!isReviewMode && !pending && savedEvent && (pendingDeleteId !== null ? (
                 <DeleteEventConfirmation event={savedEvent} disabled={!isVideoReady || !isAnalysisActive}

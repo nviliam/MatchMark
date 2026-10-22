@@ -11,10 +11,9 @@ type Props = {
   onPrevious: () => void;
   onNext: () => void;
   onExit: () => void;
-  onAppExit: () => void;
 };
 
-export default function ReviewControls({ event, index, total, onPrevious, onNext, onExit, onAppExit }: Props) {
+export default function ReviewControls({ event, index, total, onPrevious, onNext, onExit }: Props) {
   const controlsRef = useRef<HTMLDivElement | null>(null);
   const player = players.find((entry) => entry.id === event.playerId);
 
@@ -33,7 +32,6 @@ export default function ReviewControls({ event, index, total, onPrevious, onNext
         {event.type === "shot" && ` · ${bodyPartLabels[event.bodyPart]}`}
       </span>
       <button type="button" onClick={onExit}>Exit Review</button>
-      <button className="analysis-exit" type="button" aria-label="Exit analysis" onClick={onAppExit}>Exit</button>
     </div>
   );
 }

@@ -50,7 +50,7 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   const press = (key, extra) => { h.press(key, extra); update(); };
   const upload = () => { nodes(tree, n => n.type === "input")[0].props.onChange({ currentTarget: { files: [{ name: "video.mp4", type: "video/mp4" }], value: "video.mp4" } }); update(); };
   const ready = () => { nodes(tree, n => n.type === "video")[0].props.onLoadedMetadata(); update(); };
-  const close = () => { component(Panel).props.onClose(); update(); };
+  const close = () => { nodes(panel(), n => n.props?.["aria-label"] === "Close events")[0].props.onClick(); update(); };
   const count = expected => {
     assert.equal(component(Panel).props.events.length, expected);
     assert.equal(text(nodes(panel(), n => n.props?.role === "status")[0]), `\u00b7 ${expected}`);
@@ -101,6 +101,10 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   assert.equal(h.media.currentTime, 45.125); assert(h.media.paused); assert(!component(Panel));
   open(); count(2);
   component(Buttons).props.onOpenSettings(); update(); assert(component(Settings)); assert(!component(Panel));
+  const settingsUI = h.render(Settings, component(Settings).props);
+  nodes(settingsUI, n => n.props?.["aria-label"] === "Close keyboard shortcuts")[0].props.onClick(); update();
+  assert(!component(Settings));
+  component(Buttons).props.onOpenSettings(); update();
   open(); assert.equal(component(Panel).props.selectedEventType, "shot");
   component(Buttons).props.onExit(); update();
   nodes(tree, n => n.type === "button" && text(n) === "Resume analysis")[0].props.onClick(); update();
