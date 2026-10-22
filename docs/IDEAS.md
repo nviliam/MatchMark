@@ -6,7 +6,7 @@ Ha egy ötlet konkrét fejlesztési feladattá válik, GitHub issue készülhet 
 Az alábbi sorrend javasolt megvalósítási sorrend is: először az elemzői nézet
 kerete, majd az eseményrögzítés folyamata készüljön el.
 
-Állapotok: **elkészült**, **részben elkészült**, **ötlet**.
+Állapotok: **elkészült**, **részben elkészült**, **tervezett**, **ötlet**.
 A kipipált részfeladatok már megvalósultak; az üres jelölők a hátralévő munkát jelzik.
 
 ## Magas prioritás
@@ -381,7 +381,115 @@ nem történt meg; a komponensellenőrzések szimulált videóelemmel futottak.
 
 ## Közepes prioritás
 
-### 6. Billentyűparancsok az eseményekhez
+### 6. Event rendszer továbbfejlesztése és testreszabhatósága
+
+#### 6.1 Event model refactor és konfigurációvezérelt event rendszer
+
+**Állapot: részben elkészült; a további refaktor tervezett.** A jelenlegi
+eventtípusok még nem véglegesek. A `src/config/eventDefinitions.ts` már központi
+forrása az ID-khoz tartozó UI labelnek, sorrendnek és rail-elhelyezésnek.
+A következő cél, hogy az event-specifikus mezőket és a specifikációs workflow-t
+is deklaratív definíciók vezéreljék.
+
+- [x] Minden event type-nak legyen stabil belső ID-ja és külön display labelje.
+- [x] Az event action gombok a központi event-definíciókból generálódjanak.
+- [x] A filterek automatikusan a központi event-definíciókból készüljenek.
+- [x] A keyboard shortcut rendszer ugyanazokat a stabil event ID-kat használja.
+- [x] A Review mode ne függjön konkrét eventtípusoktól.
+- [x] Event label átnevezése ne igényelje a korábban mentett eventek módosítását.
+- [ ] Az eventhez tartozó mezők és opciók ne legyenek több komponensben
+      szétszórtan hardcode-olva.
+- [ ] Az event-specifikus mezők deklaratív konfigurációból legyenek leírhatók
+      (például outcome, body part, subtype).
+- [ ] Új event type hozzáadása lehetőleg csak a központi konfiguráció és a hozzá
+      tartozó domain-típus módosítását igényelje.
+- [ ] Meglévő event type megszüntetésére vagy átalakítására később legyen
+      migration stratégia.
+- [ ] A refaktor során a rendszer maradjon TypeScript-szinten típusbiztos;
+      ne általános `Record<string, unknown>` alapú eventmodellre épüljön.
+- [ ] A backend/persistence bevezetése előtt az eventmodell legyen kellően stabil.
+
+Tervezett adatfolyam:
+
+```text
+Event definitions
+      ↓
+Action buttons → Specification workflow → Saved event
+                                             ↓
+                                  Events list → Filters → Review
+
+Event definitions → Shortcuts → Action buttons
+```
+
+#### 6.2 Custom / Other event
+
+**Állapot: ötlet.** Legyen lehetőség olyan esemény rögzítésére is, amely nem fér bele
+egyik előre definiált event type-ba sem.
+
+- [ ] Legyen külön Custom / Other event type stabil belső ID-val.
+- [ ] Custom event mentésekor a felhasználó adhasson egy rövid egyéni leírást.
+- [ ] A leírás legyen kötelező.
+- [ ] A leírás hossza legyen korlátozott, hogy ne váljon általános jegyzetmezővé
+      (például 120–200 karakter).
+- [ ] Játékos hozzárendelése legyen opcionális.
+- [ ] A custom event ugyanúgy kerüljön be az Events listába.
+- [ ] A custom event legyen használható Review mode-ban.
+- [ ] Lehessen Custom eventre szűrni.
+- [ ] A mentett adat stabil event type ID-t és a felhasználó által megadott
+      `description` mezőt tartalmazzon.
+- [ ] A custom event UI labelje ne legyen redundánsan minden eventben eltárolva.
+- [ ] A Custom event később exportnál vagy backend persistence-nél is kezelhető legyen.
+- Függőség: a 6.1 konfigurációvezérelt eventmodell és a 7. rosterkezelés;
+  az opcionális játékos-hozzárendelést ezekkel összhangban kell kialakítani.
+
+### 7. Player / roster management
+
+**Állapot: tervezett.** A jelenlegi `src/data/players.ts` tesztadat-forrás.
+A cél, hogy a felhasználó saját meccskeretet tudjon összeállítani és kezelni.
+A meglévő dinamikus Player filter és közös játékosmegjelenítés erre építési alapot ad.
+
+- [ ] A felhasználó vehessen fel új játékost.
+- [ ] Új játékosnál legalább név legyen megadható.
+- [ ] A mezszám legyen opcionális.
+- [ ] Meglévő játékos neve és mezszáma szerkeszthető legyen.
+- [ ] Szerkesztéskor a játékos stabil `playerId` értéke ne változzon.
+- [ ] Játékos törölhető legyen.
+- [ ] Törlés előtt legyen megerősítés.
+- [ ] Törlés előtt jelenjen meg, hány event hivatkozik az adott játékosra.
+- [ ] Már eventekben használt játékos törlése ne történjen észrevétlenül.
+- [ ] A rendszer rosterkezelés közben is kezelje biztonságosan azt az esetet,
+      ha egy event `playerId` értéke már nem található az aktuális rosterben.
+- [ ] Az `Unknown player` fallback továbbra is működjön.
+- [ ] A Player filter automatikusan az aktuális, szerkeszthető rosterből dolgozzon.
+- [ ] Az event-specifikációs workflow automatikusan az aktuális rosterből dolgozzon.
+- [ ] A Review mode player-megjelenítése automatikusan az aktuális rosterből dolgozzon.
+- [ ] A rosterkezelés se építsen fix játékosszámra vagy konkrét nevekre.
+- [ ] A roster struktúrája később backendből is betölthető legyen az UI jelentős
+      átírása nélkül.
+- [ ] Később megfontolható active/inactive player státusz a hard delete helyett.
+
+Tervezett kapcsolat:
+
+```text
+Roster / Players
+      ↓
+stable playerId
+      ↓
+Saved events
+      ↓
+Filters / Review / Display
+```
+
+### 8. Keyboard shortcuts továbbfejlesztése
+
+**Állapot: részben elkészült.** Az event shortcutok már módosíthatók és
+localStorage-ban megmaradnak. A következő cél a videóvezérlési shortcutok
+beemelése ugyanebbe a rendszerbe.
+
+Az alábbi blokk az elkészült event shortcutok működését dokumentálja;
+a 8.1–8.4 pontok a tervezett bővítéseket tartalmazzák.
+
+**Meglévő event shortcutok**
 
 **Állapot: elkészült, szimulált működési ellenőrzéssel.** Mind a 10 esemény
 billentyűje testreszabható; a kiosztás localStorage-ban megmarad.
@@ -429,7 +537,6 @@ A Settings megjelenésének és a tényleges böngészős page reloadnak az elle
 - [x] Exit bezárja a Settings panelt; Resume zárt panellel, változatlan konfigurációval folytatódik.
 - [x] Valódi böngészőben ellenőrizni a Settings overlay illeszkedését, saját scrollját,
       valamint Shot `E → S` és Pass `Q → F` után a page reloadot, a badge-eket és a shortcutok működését.
-- [ ] Opcionális account/backend alapú settings sync és eszközök közötti megőrzés: külön jövőbeli fejlesztés.
 
 Ellenőrzés: `node --test tests/eventShortcuts.test.mjs` (8 teszt), lint és build sikeres.
 Külön szimulált komponensellenőrzés lefedi a key capture-t, az ütközéseket,
@@ -438,11 +545,76 @@ a resetet, mind a 10 event click/keyboard workflow-ját, a hat Quick Seek shortc
 Back/Save/Cancel/Escape, Edit/Delete, Events click-to-seek és Exit/Resume regressziókat.
 Ezek nem helyettesítik a valódi böngészős vizuális és page reload ellenőrzést.
 
-További ötlet:
+#### 8.1 Video control shortcutok megjelenítése
 
-- [ ] Legyen egy custom/egyéb gomb, ahová a felhasználó a timestamphez egy egyéni
-      leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
+- [ ] A Shortcut Settings az event shortcutok mellett jelenítse meg a Quick Seek
+      vezérléseket is.
+- [ ] A Settings legyen legalább két logikai csoportra bontva:
+      `EVENT SHORTCUTS` és `VIDEO CONTROLS`.
+- [ ] A felhasználó egyértelműen lássa, hogy a Quick Seek funkciók léteznek.
+- [ ] A beállítási felület bevezetésekor a jelenlegi defaultok maradjanak:
 
-      A játékosok customizálhatósága. A felhasználó fel tudjon venni új játékosokat (név, mezszám), tudja a jelenlegieket szerkeszteni, illetve tudjon törölni is.
+| Időlépés | Előre | Hátra |
+| --- | --- | --- |
+| 1.2 s | `2` → +1.2 s | `Shift+2` → -1.2 s |
+| 1.5 s | `3` → +1.5 s | `Shift+3` → -1.5 s |
+| 2.0 s | `4` → +2.0 s | `Shift+4` → -2.0 s |
 
-      A keyboard shortcuts listába jelenítsd meg a előre és hátra tekerést is, mert egyébként a felhasználó nem tud róluk. Ezek is legyenek állíthatóak. A default maradjon a jelenlegi.
+#### 8.2 Video control shortcutok testreszabása
+
+- [ ] A forward és backward seek shortcutok is legyenek módosíthatók.
+- [ ] Az összes shortcut közös collision detectiont használjon.
+- [ ] Egy billentyű vagy kombináció egyszerre csak egy actionhöz tartozhasson.
+- [ ] Az event shortcut és video control shortcut se ütközhessen egymással.
+- [ ] A jelenlegi key capture és normalizálási logika legyen újrahasznosítva.
+- [ ] A shortcutok továbbra is localStorage-ban maradjanak meg oldalfrissítés után.
+- [ ] Legyen `Reset all shortcuts to defaults` az összes actionre.
+- [ ] Később opcionálisan lehessen külön csak az Event vagy csak a Video Controls
+      csoportot resetelni.
+
+A jelenlegi fix Quick Seek reserved-key ellenőrzést a közös ütközésvizsgálatnak
+kell felváltania; az alapértelmezett kiosztás ettől még változatlan marad.
+
+#### 8.3 Egységes shortcut action modell
+
+- [ ] A shortcut rendszer ne kizárólag EventType → key mappingre épüljön.
+- [ ] Legyen stabil, általános action-azonosítás, például:
+
+```text
+event.pass
+event.shot
+event.tackle
+
+seek.forward.small
+seek.forward.medium
+seek.forward.large
+
+seek.backward.small
+seek.backward.medium
+seek.backward.large
+```
+
+- [ ] A Settings, keyboard handler, collision detection és persistence ugyanazokat
+      az action ID-kat használja.
+- [ ] Új shortcut action később újabb párhuzamos rendszer létrehozása nélkül
+      hozzáadható legyen.
+
+#### 8.4 Későbbi video control testreszabás
+
+- [ ] A seek időlépések (1.2 / 1.5 / 2.0 s) testreszabhatósága külön későbbi
+      fejlesztés legyen.
+- [ ] Első körben csak a billentyűk legyenek módosíthatók.
+- [ ] Backend/account alapú shortcut sync és eszközök közötti megőrzés külön
+      későbbi fejlesztés maradjon.
+
+## Következő fejlesztések javasolt sorrendje
+
+1. Event model / event definitions refactor (6.1).
+2. Player / roster management (7.).
+3. Custom / Other event (6.2).
+4. Keyboard shortcut rendszer bővítése (8.1–8.3, közös action modellre építve).
+5. Backend / persistence; a későbbi opcionális beállítások külön ütemezhetők.
+
+Az eventtípusok és a roster még változni fognak. Ezeket célszerű a tartós
+adatmentés bevezetése előtt stabilizálni, hogy később ne kelljen nagy
+adatmigrációkat és kompatibilitási javításokat végezni.
