@@ -142,7 +142,8 @@ A Delete UI valódi böngészős ellenőrzése még hátravan.
 ### 5. Events panel, szűrés és visszanézés
 
 **Állapot: részben elkészült.** Az Events panel, a kombinált Event type + Player szűrés
-és a Review mode elkészült; a context lead-in még hátravan. A teljes mentett eseménylista React state-ben marad,
+és a Review mode fix context lead-innel elkészült; a lead-in testreszabása későbbi feladat.
+A teljes mentett eseménylista React state-ben marad,
 és a panel a meglévő click-to-seek kezelőt használja.
 
 #### 5.1 Events panel
@@ -180,6 +181,7 @@ select az aktív értéket mutatja; a valódi böngészős vizuális ellenőrzé
       ne igényeljen adatbázist vagy backendet.
 
 Megvalósult felépítés:
+
 - A `src/config/eventDefinitions.ts` a UI label, a megjelenítési sorrend és a rail-elhelyezés
   közös konfigurációja. A filter, az action gombok és a Shortcut Settings ebből kapják
   a típuslistát/sorrendet és a labelt; ismeretlen ID megjelenítése: `Unknown event`.
@@ -208,7 +210,7 @@ vizuális ellenőrzés még hátravan.
 - [x] Legyen `All players` opció.
 - [x] A Player filter és az Event type filter egymással kombinálható legyen.
 - [x] Például lehessen csak egy adott játékos összes lövését vagy passzát megjeleníteni.
-- [ ] Böngészőben ellenőrizni a két kompakt select illeszkedését, az aktív értékek
+- [x] Böngészőben ellenőrizni a két kompakt select illeszkedését, az aktív értékek
       olvashatóságát és a panel saját görgetését a fix analysis layoutban.
 
 Megvalósult felépítés:
@@ -259,7 +261,7 @@ vizuális ellenőrzés még hátravan.
 - [x] Jelenjen meg az aktuális pozíció, például `3 / 8`.
 - [x] Az aktuális eventre váltáskor a videó automatikusan ugorjon az eseményhez.
 - [x] A Review mode-ból lehessen egyértelműen kilépni anélkül, hogy a szűrési állapot elveszne.
-- [ ] Valódi böngészőben ellenőrizni a Review indítógombot, a panel saját scrollját,
+- [x] Valódi böngészőben ellenőrizni a Review indítógombot, a panel saját scrollját,
       az alsó navigáció illeszkedését, a Review alatt megnövelt videóterületet,
       a normál layout visszaállását és az oldalgörgetés hiányát.
 
@@ -286,8 +288,9 @@ Megvalósult felépítés:
   railek és badge-ek automatikusan visszatérnek. Nincs külön rail-visibility state,
   és a layout-finomítás nem módosítja az indexet, a szűrést vagy a navigációs/seek logikát.
 - Az index vagy az aktuális esemény változását figyelő effect a közös `seekVideo`
-  helperen át pontosan az eredeti timestampre seekel. A meglévő click-to-seek is
-  ezt a helpert használja. Nincs context lead-in, autoplay vagy automatikus léptetés;
+  helperen át seekel; az 5.5-től kizárólag Review alatt 3 másodperces lead-innel.
+  A normál Events click-to-seek ugyanazt az alacsony szintű helpert használja,
+  de továbbra is pontosan az eredeti timestampre ugrik. Nincs autoplay vagy automatikus léptetés;
   a natív HTML5 play/pause vezérlés továbbra is használható.
 - Az első eseménynél Previous, az utolsónál Next disabled; nincs körbefordulás.
   Egyetlen eseménynél `1 / 1` látszik, mindkét navigációs gomb tiltott.
@@ -325,11 +328,45 @@ A szimulált ellenőrzés nem helyettesíti a valódi böngészős vizuális tes
 
 #### 5.5 Context lead-in
 
-- [ ] Review módban a videó ne pontosan az event timestampjén induljon,
+**Állapot: elkészült, automatizált helper- és szimulált komponens-/videóellenőrzéssel.**
+
+- [x] Review módban a videó ne pontosan az event timestampjén induljon,
       hanem néhány másodperccel előtte, hogy az esemény kialakulása is látható legyen.
-- [ ] Első verzióban használható fix, például 3 másodperces lead-in.
-- [ ] A seek soha ne menjen 0 másodperc alá.
-- [ ] A lead-in későbbi felhasználói testreszabása külön fejlesztés lehet.
+- [x] Első verzióban fix, 3 másodperces lead-in legyen.
+- [x] A seek soha ne menjen 0 másodperc alá.
+- [x] A lead-in későbbi felhasználói testreszabása külön fejlesztés legyen:
+      a paraméterezhető helper és ennek dokumentálása elkészült, settings UI nem készült.
+- [ ] A későbbi lead-in settings UI megvalósítása külön feladat.
+
+Megvalósult felépítés:
+
+- A `REVIEW_LEAD_IN_SECONDS = 3` konstans egyetlen központi helye a
+  `src/config/review.ts`. A `src/utils/review.ts` tiszta
+  `getReviewSeekTime(timestamp, leadIn)` helpere számolja a célt:
+  `Math.max(0, timestamp - leadIn)`, fölösleges kerekítés és duration-clamp nélkül.
+- A helper negatív/nem véges timestampnél 0-ra esik vissza; negatív vagy nem véges
+  lead-in esetén 0 másodperces offsetet használ, így hibás lead-in sem seekel előre.
+- Kizárólag a Review aktuális eseményét figyelő effect használja a lead-int.
+  Start, Previous és Next ugyanazon az útvonalon jut a meglévő `seekVideo` helperhez;
+  nincs külön lead-in logika az egyes navigációs gombokhoz.
+- A normál Events panel click-to-seekje változatlan: pontosan `event.timestamp`.
+  A Quick Seek szintén változatlan, mindig az aktuális `video.currentTime` értékéhez
+  képest mozog; a lead-in helperhez nincs bekötve. Autoplay továbbra sincs.
+- A ReviewControls az eredeti event timestampet mutatja. A mentett adatmodell,
+  az event objektumok, az index, a kombinált filterek, a count és a boundaryk
+  változatlanok; nem tárolunk `leadIn`, `reviewSeekTime` vagy `contextStart` mezőt.
+- Exit Review megtartja az aktuális videópozíciót és a filtereket; újraindításkor
+  ismét az első szűrt esemény lead-in pontjára ugrik. A helper explicit `leadIn`
+  paramétere később más értékeket is fogadhat; most nincs settings UI, persistence
+  vagy felhasználónkénti beállítás.
+
+Ellenőrzés: `npm test` (31 teszt), lint és build sikeres. Az új tesztek lefedik a
+0 / 1.5 / 1.8 / 3 / 3.1 másodperces edge case-eket, a törtértékeket approximate
+assertionnel, az eltérő lead-in paramétereket, a hibás inputokat, a Review start / Next /
+Previous útvonalat, a 0-ra clampet, az exact Events click-to-seek regressziót,
+az eredeti summary timestampet, az eventek változatlanságát, az Exit / újraindítást
+és a relatív Quick Seeket. Az új lead-in valódi böngészős lejátszási ellenőrzése
+nem történt meg; a komponensellenőrzések szimulált videóelemmel futottak.
 
 #### 5.6 Technikai és költségszempontok
 
@@ -405,3 +442,5 @@ További ötlet:
 
 - [ ] Legyen egy custom/egyéb gomb, ahová a felhasználó a timestamphez egy egyéni
       leírást írhat egyedi, a fix kategóriákkal meg nem határozható eseményhez.
+
+      A játékosok customizálhatósága. A felhasználó fel tudjon venni új játékosokat (név, mezszám), tudja a jelenlegieket szerkeszteni, illetve tudjon törölni is.

@@ -1,6 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types/event";
 import { DEFAULT_EVENT_FILTERS, getFilteredEvents, type EventFilters } from "../utils/eventFiltering";
+import { REVIEW_LEAD_IN_SECONDS } from "../config/review";
+import { getReviewSeekTime } from "../utils/review";
 import { players } from "../data/players";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
@@ -75,7 +77,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }, []);
 
   useEffect(() => {
-    if (currentReviewEvent) seekVideo(currentReviewEvent.timestamp);
+    if (currentReviewEvent) seekVideo(getReviewSeekTime(currentReviewEvent.timestamp, REVIEW_LEAD_IN_SECONDS));
   }, [reviewIndex, currentReviewEvent, seekVideo]);
 
   function handleStartReview() {

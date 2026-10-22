@@ -69,22 +69,22 @@ test("Review uses the exact shared filtered list in timestamp order, with safe b
   s.h.media.paused = true;
   s.start();
   assert(!s.component(s.Panel)); assert.equal(s.position(), "1 / 4");
-  assert.equal(s.review().event, filtered[0]); assert.equal(s.h.media.currentTime, 12.125); assert(s.h.media.paused);
+  assert.equal(s.review().event, filtered[0]); assert.equal(s.h.media.currentTime, 9.125); assert(s.h.media.paused);
   assert(s.control("Previous").props.disabled); assert(!s.control("Next").props.disabled);
   s.previous(); assert.equal(s.position(), "1 / 4");
-  s.next(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 44);
-  s.next(); assert.equal(s.position(), "3 / 4"); assert.equal(s.h.media.currentTime, 55.875);
-  s.previous(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 44);
+  s.next(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 41);
+  s.next(); assert.equal(s.position(), "3 / 4"); assert.equal(s.h.media.currentTime, 52.875);
+  s.previous(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 41);
   // Manual HTML5 playback remains under user control; navigation only seeks.
   s.h.media.paused = false;
   s.next(); assert(!s.h.media.paused);
-  s.next(); assert.equal(s.position(), "4 / 4"); assert.equal(s.h.media.currentTime, 90.75);
+  s.next(); assert.equal(s.position(), "4 / 4"); assert.equal(s.h.media.currentTime, 87.75);
   assert(s.control("Next").props.disabled); assert(!s.control("Previous").props.disabled);
   s.next(); assert.equal(s.position(), "4 / 4");
   assert(nodes(s.tree, node => node.type === "video")[0].props.controls);
   const summary = text(s.h.render(s.Review, s.review()));
   assert(summary.includes("01:30")); assert(summary.includes("#9")); assert(summary.includes("Shot · On Target · Foot"));
-  s.exitReview(); assert(!s.review()); assert.equal(s.h.media.currentTime, 90.75);
+  s.exitReview(); assert(!s.review()); assert.equal(s.h.media.currentTime, 87.75);
   assert(s.component(s.Summary)); s.open();
   assert.equal(s.panel().selectedEventType, "shot"); assert.equal(s.panel().selectedPlayerId, 1);
   assert.equal(s.panel().events, filtered); assert.equal(s.panel().totalEventCount, 7);
@@ -100,7 +100,7 @@ test("zero matching events cannot start Review; one matching event has both navi
   s.panel().onClose(); s.update(); s.add("pass", 3, 16.375); s.open(); s.filter("shot", 1);
   assert(reviewButton().props.disabled); s.start(); assert(!s.review());
   s.filter("pass", 3); assert(!reviewButton().props.disabled); assert.equal(text(reviewButton()), "Review 1 event");
-  s.start(); assert.equal(s.position(), "1 / 1"); assert.equal(s.h.media.currentTime, 16.375);
+  s.start(); assert.equal(s.position(), "1 / 1"); assert.equal(s.h.media.currentTime, 13.375);
   assert(s.control("Previous").props.disabled); assert(s.control("Next").props.disabled);
   s.previous(); s.next(); assert.equal(s.position(), "1 / 1");
   s.dispose();
@@ -121,7 +121,7 @@ test("Review locks mutations, overlays and event shortcuts while all six Quick S
     assert.equal(s.h.media.currentTime, before + (shiftKey ? -delta : delta));
     assert.equal(s.position(), "1 / 4");
   }
-  s.next(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 44);
+  s.next(); assert.equal(s.position(), "2 / 4"); assert.equal(s.h.media.currentTime, 41);
   s.press("Escape"); assert(!s.review()); assert(!s.component(s.Form));
   s.open(); assert.equal(s.panel().selectedEventType, "shot"); assert.equal(s.panel().selectedPlayerId, 1);
   s.dispose();
@@ -154,7 +154,7 @@ test("out-of-range or emptied external lists exit safely; valid external updates
   s.ctx.states[stateIndex] = saved; s.update(); s.start();
   const id = s.review().event.id;
   s.ctx.states[stateIndex] = saved.map(event => event.id === id ? { ...event, timestamp: 13.5 } : event);
-  s.update(); assert.equal(s.review().event.timestamp, 13.5); assert.equal(s.h.media.currentTime, 13.5);
+  s.update(); assert.equal(s.review().event.timestamp, 13.5); assert.equal(s.h.media.currentTime, 10.5);
   s.ctx.states[stateIndex] = []; s.update(); s.update(); assert(!s.review());
   s.dispose();
 });
@@ -202,5 +202,42 @@ test("Review layout omits all action rails and restores normal groups/badges on 
   assert.equal(nodes(s.tree, node => node.type === "video")[0].props.src, video.props.src);
   s.exitReview(); normal();
   s.open(); s.start(); s.press("Escape"); normal();
+  s.dispose();
+});
+
+test("Review start/Next/Previous use context while Events click-to-seek and event summaries stay exact", () => {
+  const s = setup(); s.add("shot", 1, 20); s.add("shot", 1, 35); s.open(); s.filter("shot", 1);
+  const source = s.panel().events;
+  source.forEach(Object.freeze); Object.freeze(source);
+  const snapshot = JSON.stringify(source);
+  s.start(); assert.equal(s.h.media.currentTime, 17); assert.equal(s.position(), "1 / 2"); assert(s.h.media.paused);
+  assert.equal(s.review().event, source[0]); assert.equal(s.review().event.timestamp, 20);
+  const summary = text(s.h.render(s.Review, s.review()));
+  assert(summary.includes("00:20")); assert(!summary.includes("00:17"));
+  s.next(); assert.equal(s.h.media.currentTime, 32); assert.equal(s.position(), "2 / 2");
+  s.previous(); assert.equal(s.h.media.currentTime, 17); assert.equal(s.position(), "1 / 2");
+  s.press("3", { code: "Digit3" }); assert.equal(s.h.media.currentTime, 18.5); assert.equal(s.position(), "1 / 2");
+  s.exitReview(); assert.equal(s.h.media.currentTime, 18.5);
+  s.open(); assert.equal(s.panel().selectedEventType, "shot"); assert.equal(s.panel().selectedPlayerId, 1);
+  const List = s.h.load("src/components/EventList.tsx").default;
+  const rows = s.h.render(List, { events: s.panel().events, disabled: false, onSeek: s.panel().onSeek });
+  nodes(rows, node => node.type === "button")[0].props.onClick(); s.update();
+  assert.equal(s.h.media.currentTime, 20); assert(!s.component(s.Panel)); assert(s.h.media.paused);
+  s.open(); s.start(); assert.equal(s.h.media.currentTime, 17); assert.equal(s.position(), "1 / 2");
+  assert.equal(JSON.stringify(source), snapshot);
+  assert(source.every(event => !["leadIn", "reviewSeekTime", "contextStart"].some(key => key in event)));
+  s.dispose();
+});
+
+test("Review start and navigation clamp to zero, including fractional timestamps around the lead-in boundary", () => {
+  const s = setup();
+  for (const timestamp of [0, 1.5, 2, 3, 3.1, 40]) s.add("shot", 1, timestamp);
+  s.open(); s.filter("shot", 1); s.start();
+  for (const [index, expected] of [0, 0, 0, 0, 0.1, 37].entries()) {
+    if (index) s.next();
+    assert.equal(s.position(), (index + 1) + " / 6");
+    assert(Math.abs(s.h.media.currentTime - expected) < 1e-12);
+    assert(s.h.media.paused);
+  }
   s.dispose();
 });
