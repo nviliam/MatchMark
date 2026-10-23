@@ -502,15 +502,15 @@ egyik előre definiált event type-ba sem.
 
 ### 7. Player / roster management
 
-**Állapot: részben elkészült.** A 7.1 Add Player / editable roster foundation elkészült,
-szimulált működési ellenőrzéssel. A runtime roster egyetlen React state-ben él;
-a játékosok szerkesztése, törlése és tartós mentése későbbi feladat.
+**Állapot: részben elkészült.** A 7.1 Add Player / editable roster foundation és a
+7.2 Edit Player elkészült, szimulált működési ellenőrzéssel. A runtime roster
+egyetlen React state-ben él; a játékosok törlése és tartós mentése későbbi feladat.
 
 - [x] A felhasználó vehessen fel új játékost.
 - [x] Új játékosnál legalább név legyen megadható.
 - [x] A mezszám legyen opcionális.
-- [ ] Meglévő játékos neve és mezszáma szerkeszthető legyen.
-- [ ] Szerkesztéskor a játékos stabil `playerId` értéke ne változzon.
+- [x] Meglévő játékos neve és mezszáma szerkeszthető legyen.
+- [x] Szerkesztéskor a játékos stabil `playerId` értéke ne változzon.
 - [ ] Játékos törölhető legyen.
 - [ ] Törlés előtt legyen megerősítés.
 - [ ] Törlés előtt jelenjen meg, hány event hivatkozik az adott játékosra.
@@ -536,7 +536,7 @@ a játékosok szerkesztése, törlése és tartós mentése későbbi feladat.
 - A `PlayersPanel` az Events/Settings melletti Players gombbal nyitható overlay,
   közös panelstílussal és saját belső scrollal. A teljes rostert a meglévő
   `formatPlayerLabel` formázza, üres állapotban `No players yet.` jelenik meg.
-  Nincs player Edit/Delete gomb vagy placeholder.
+  A sorok Edit actionje a 7.2-ben készült el; Delete gomb vagy placeholder nincs.
 - A Name kötelező, trimelt, legfeljebb 80 karakteres; szóköz, ékezet, kötőjel és
   aposztróf megengedett. A Shirt number opcionális; ha kitöltött, 0–99 közötti
   egész szám szükséges. Üres mezszámnál a `number` mező kimarad. A Player típusa
@@ -570,6 +570,44 @@ alatti megőrzést, valamint az új React session default rosterét. A korábbi 
 teszt is sikeres; a fogyasztók tesztjei explicit rostert kapnak.
 Valódi böngésző hiányában a Players panel vizuális illeszkedésének és scrolljának ellenőrzése
 még hátravan; a komponensvizsgálatok szimulált hookokkal/videóval futottak.
+
+#### 7.2 Edit Player
+
+- Minden játékossor kompakt Edit gombot kapott. Az Edit a Players panelen belül,
+  ugyanabban az űrlapban váltja fel az Add módot; nincs külön overlay vagy második roster.
+  A lokális `editingPlayerId` csak az aktív játékos numerikus ID-ját tárolja.
+  Egyszerre egy játékos szerkeszthető; a sorok Edit gombjai addig tiltottak.
+- Indításkor a Name és Shirt number mező a jelenlegi rosterből töltődik fel;
+  hiányzó mezszámnál üres input jelenik meg. A Save changes ugyanazt a
+  `validatePlayerInput` helpert használja, mint az Add, a formban és a state-ownernél is.
+  A név trimelt, kötelező, legfeljebb 80 karakter; a mezszám opcionális, 0–99 közötti
+  egész. A mezszám törölhető, azonos név és mezszám továbbra is megengedett.
+- A VideoPlayer funkcionális state-frissítése a `src/utils/roster.ts` `updatePlayer`
+  helperével új tömböt és a szerkesztett játékoshoz új objektumot készít.
+  A numerikus ID változatlan, a többi játékos objektuma és az immutable demo seed érintetlen.
+  A Player és MatchEvent domain modell nem változott; nincs player snapshot vagy event migration.
+- A meglévő event objektumok és `playerId` kapcsolataik változatlanok. A közös rosterből
+  történő lookup miatt az Events, Saved summary, Review és create/edit workflow
+  azonnal az új labelt használja. Az aktív Player filter ugyanazt az ID-t tartja meg;
+  csak az option label frissül. Az Unknown player fallback továbbra is működik.
+- Sikeres Save után az Edit bezárul és az Add form kiürül. Cancel mentés nélkül resetel.
+  Az első Escape csak az Editet szakítja meg: a capture listener elfogyasztja az eseményt,
+  ezért a workspace panelbezáró handlere ugyanarra a lenyomásra nem reagál.
+  A következő külön Escape bezárja a panelt. A listenert az Edit vége/unmount eltávolítja.
+- Az X, másik overlay megnyitása és az app Exit eldobja a nem mentett szerkesztést.
+  Resume zárt panellel folytatódik; csak a mentett roster-módosítások maradnak meg.
+  Új videó és video error sem reseteli a mentett rostert. Create/Edit event draft,
+  event Delete confirmation és Review alatt a Players panel továbbra is tiltott.
+- Nincs Delete Player, reference count, active/inactive állapot vagy persistence.
+  Oldalfrissítés után továbbra is a default/demo roster töltődik be.
+
+Ellenőrzés: `npm test` (62 sikeres teszt, ebből 6 új Edit Player teszt), lint és build sikeres.
+Az új tesztek lefedik a prefillt, közös Add/Edit formot és validációt, stabil ID-t,
+mezszám törlését, duplikált adatokat, immutable update-et, Cancelt, kétszeri Escape-et,
+listener cleanupot, a változatlan event objektumokat, aktív filtert és frissülő megjelenítéseket,
+valamint a mentett/unsaved Edit viselkedését panelbezárás, Exit/Resume, videócsere és hiba esetén.
+A tesztek szimulált hookokkal/videóval futottak; a Players panel valódi böngészős
+vizuális és scroll-ellenőrzése elérhető böngésző hiányában továbbra is hátravan.
 
 Megvalósult kapcsolat:
 

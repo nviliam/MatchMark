@@ -22,3 +22,7 @@ export function appendPlayer(players: readonly Player[], player: NewPlayer): Pla
   const id = players.reduce((highest, entry) => Math.max(highest, entry.id), 0) + 1;
   return [...players, { ...player, id }];
 }
+
+export function updatePlayer(players: readonly Player[], id: Player["id"], changes: NewPlayer): Player[] {
+  return players.map((player) => player.id === id ? { ...changes, id: player.id } : player);
+}
