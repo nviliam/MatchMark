@@ -61,7 +61,7 @@ export default function EventsPanel({ events, totalEventCount, selectedEventType
       <div className="events-panel-content">
         {totalEventCount > 0 && events.length === 0
           ? <p className="events-empty">No events match these filters.</p>
-          : <EventList events={events} disabled={false} onSeek={onSeek} />}
+          : <EventList players={players} events={events} disabled={false} onSeek={onSeek} />}
       </div>
       <div className="events-panel-footer">
         <button type="button" disabled={events.length === 0} onClick={onStartReview}>

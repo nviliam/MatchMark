@@ -1,11 +1,12 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from "react";
-import { players } from "../data/players";
+import type { Player } from "../types/player";
 import { formatPlayerLabel } from "../utils/players";
 import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
 import { createEventDetails, formatEventDetails, formatTimestamp } from "../utils/events";
 import { EVENT_DEFINITIONS, isEventFieldOption, type EventDefinition, type EventFieldDefinition, type EventFieldId } from "../config/eventDefinitions";
 
 type Props = {
+  players: readonly Player[];
   pending: PendingEvent;
   initialEvent?: MatchEvent;
   disabled: boolean;
@@ -16,7 +17,7 @@ type Props = {
 type Step = EventFieldId | "player" | "review";
 type Outcome = Extract<MatchEvent, { outcome: string }>["outcome"];
 
-export default function EventForm({ pending, initialEvent, disabled, onSave, onCancel }: Props) {
+export default function EventForm({ players, pending, initialEvent, disabled, onSave, onCancel }: Props) {
   const definition: EventDefinition = EVENT_DEFINITIONS[pending.type];
   const steps: Step[] = definition.fields.map((field) => field.id);
   if (definition.playerRequired) steps.push("player");

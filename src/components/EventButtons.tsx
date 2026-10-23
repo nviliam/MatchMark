@@ -21,10 +21,14 @@ type Props = {
   onOpenSettings: () => void;
   isSettingsOpen: boolean;
   settingsButtonRef: Ref<HTMLButtonElement>;
+  onOpenPlayers: () => void;
+  isPlayersOpen: boolean;
+  playersButtonRef: Ref<HTMLButtonElement>;
 };
 
 export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
-  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef, onOpenSettings, isSettingsOpen, settingsButtonRef }: Props) {
+  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef, onOpenSettings, isSettingsOpen, settingsButtonRef,
+  onOpenPlayers, isPlayersOpen, playersButtonRef }: Props) {
   return (
     <>
       {rails.map((rail) => (
@@ -41,6 +45,9 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
           ))}
           {rail.position === "top" && (
             <div className="analysis-controls">
+              <button ref={playersButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isPlayersOpen} aria-controls={isPlayersOpen ? "players-panel" : undefined}
+                aria-haspopup="dialog" onClick={onOpenPlayers}>Players</button>
               <button ref={eventsButtonRef} type="button" disabled={eventsDisabled}
                 aria-expanded={isEventsOpen} aria-controls={isEventsOpen ? "events-panel" : undefined}
                 aria-haspopup="dialog" onClick={onOpenEvents}>Events</button>

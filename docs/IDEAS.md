@@ -502,31 +502,76 @@ egyik előre definiált event type-ba sem.
 
 ### 7. Player / roster management
 
-**Állapot: tervezett.** A jelenlegi `src/data/players.ts` tesztadat-forrás.
-A cél, hogy a felhasználó saját meccskeretet tudjon összeállítani és kezelni.
-A meglévő dinamikus Player filter és közös játékosmegjelenítés erre építési alapot ad.
+**Állapot: részben elkészült.** A 7.1 Add Player / editable roster foundation elkészült,
+szimulált működési ellenőrzéssel. A runtime roster egyetlen React state-ben él;
+a játékosok szerkesztése, törlése és tartós mentése későbbi feladat.
 
-- [ ] A felhasználó vehessen fel új játékost.
-- [ ] Új játékosnál legalább név legyen megadható.
-- [ ] A mezszám legyen opcionális.
+- [x] A felhasználó vehessen fel új játékost.
+- [x] Új játékosnál legalább név legyen megadható.
+- [x] A mezszám legyen opcionális.
 - [ ] Meglévő játékos neve és mezszáma szerkeszthető legyen.
 - [ ] Szerkesztéskor a játékos stabil `playerId` értéke ne változzon.
 - [ ] Játékos törölhető legyen.
 - [ ] Törlés előtt legyen megerősítés.
 - [ ] Törlés előtt jelenjen meg, hány event hivatkozik az adott játékosra.
 - [ ] Már eventekben használt játékos törlése ne történjen észrevétlenül.
-- [ ] A rendszer rosterkezelés közben is kezelje biztonságosan azt az esetet,
+- [x] A rendszer rosterkezelés közben is kezelje biztonságosan azt az esetet,
       ha egy event `playerId` értéke már nem található az aktuális rosterben.
-- [ ] Az `Unknown player` fallback továbbra is működjön.
-- [ ] A Player filter automatikusan az aktuális, szerkeszthető rosterből dolgozzon.
-- [ ] Az event-specifikációs workflow automatikusan az aktuális rosterből dolgozzon.
-- [ ] A Review mode player-megjelenítése automatikusan az aktuális rosterből dolgozzon.
-- [ ] A rosterkezelés se építsen fix játékosszámra vagy konkrét nevekre.
+- [x] Az `Unknown player` fallback továbbra is működjön.
+- [x] A Player filter automatikusan az aktuális, szerkeszthető rosterből dolgozzon.
+- [x] Az event-specifikációs workflow automatikusan az aktuális rosterből dolgozzon.
+- [x] A Review mode player-megjelenítése automatikusan az aktuális rosterből dolgozzon.
+- [x] A rosterkezelés se építsen fix játékosszámra vagy konkrét nevekre.
 - [ ] A roster struktúrája később backendből is betölthető legyen az UI jelentős
       átírása nélkül.
 - [ ] Később megfontolható active/inactive player státusz a hard delete helyett.
+- [ ] A runtime roster maradjon meg oldalfrissítés után (külön persistence-fejlesztés).
 
-Tervezett kapcsolat:
+#### 7.1 Add Player / editable roster foundation
+
+- A `src/data/players.ts` kizárólag immutable default/demo seedet exportál
+  `DEFAULT_PLAYERS` néven. A tömb és elemei fagyasztottak; a VideoPlayer saját
+  tömböt és saját Player objektumokat másol a kezdeti `players` React state-be.
+  Futás közben egyetlen roster van; a form csak a mezőértékeket és a hibát tárolja.
+- A `PlayersPanel` az Events/Settings melletti Players gombbal nyitható overlay,
+  közös panelstílussal és saját belső scrollal. A teljes rostert a meglévő
+  `formatPlayerLabel` formázza, üres állapotban `No players yet.` jelenik meg.
+  Nincs player Edit/Delete gomb vagy placeholder.
+- A Name kötelező, trimelt, legfeljebb 80 karakteres; szóköz, ékezet, kötőjel és
+  aposztróf megengedett. A Shirt number opcionális; ha kitöltött, 0–99 közötti
+  egész szám szükséges. Üres mezszámnál a `number` mező kimarad. A Player típusa
+  `number?: number` lett; a numerikus `id` változatlan.
+- A `src/utils/roster.ts` közös validációját a form és a state-owner is használja.
+  Az új ID a funkcionális state-frissítés aktuális rosterében található legnagyobb
+  ID + 1, üres roster esetén 1. Azonos név és mezszám is megengedett.
+  Hozzáadáskor új tömb és új Player jön létre, a korábbi objektumok és a seed nem mutálódnak.
+- Sikeres Add után a form kiürül, a fókusz a Name mezőre kerül, és az új játékos
+  azonnal megjelenik a listában. A Player filter, az EventForm create/edit lépése,
+  az Events listája, a Saved summary és a ReviewControls ugyanazt az aktuális
+  rostert kapja propsként; a statikus seedet csak a VideoPlayer importálja.
+- Create/Edit draft, event Delete confirmation és Review alatt Players nem nyitható.
+  A közös overlay state biztosítja, hogy Events/Settings/Players közül csak egy
+  legyen nyitva. Players alatt az event shortcutok tiltottak; inputmezőn kívül
+  a meglévő Quick Seek továbbra is használható.
+- Close és Escape csak a panelt zárja, a roster megmarad; a félkész Add form
+  eldobódik. Bezáráskor a fókusz visszakerül a Players gombra.
+  Exit bezárja a panelt, Resume zárva hagyja, a roster ugyanazon React sessionben megmarad.
+  Új videó és video error sem reseteli a rostert; a meglévő event/filter/review reset változatlan.
+- Page reload után ismét a default roster indul. Nincs roster localStorage,
+  IndexedDB, backend vagy Firebase. Az event adatmodell nem változott:
+  csak a stabil `playerId` kapcsolatot tárolja, név/mezszám/label másolata nélkül.
+  A tiszta `Player[]` state és a props-alapú fogyasztók később persistence-szel bővíthetők.
+
+Ellenőrzés: `npm test` (56 sikeres teszt, ebből 9 új roster-teszt), lint és build sikeres.
+A tesztek lefedik a validációt, a trimet, opcionális mezszámot, duplikált adatokat,
+ID-képzést, seed-immutabilitást, form-resetet, dinamikus filter/workflow/display integrációt,
+unknown-player fallbacket, overlay/shortcut tiltásokat, Exit/Resume, videócsere és videóhiba
+alatti megőrzést, valamint az új React session default rosterét. A korábbi 47 regressziós
+teszt is sikeres; a fogyasztók tesztjei explicit rostert kapnak.
+Valódi böngésző hiányában a Players panel vizuális illeszkedésének és scrolljának ellenőrzése
+még hátravan; a komponensvizsgálatok szimulált hookokkal/videóval futottak.
+
+Megvalósult kapcsolat:
 
 ```text
 Roster / Players

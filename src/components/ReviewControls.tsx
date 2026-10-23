@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import type { MatchEvent } from "../types/event";
-import { players } from "../data/players";
+import type { Player } from "../types/player";
 import { formatPlayerLabel } from "../utils/players";
 import { formatEventDetails, formatTimestamp } from "../utils/events";
 
 type Props = {
+  players: readonly Player[];
   event: MatchEvent;
   index: number;
   total: number;
@@ -13,7 +14,7 @@ type Props = {
   onExit: () => void;
 };
 
-export default function ReviewControls({ event, index, total, onPrevious, onNext, onExit }: Props) {
+export default function ReviewControls({ players, event, index, total, onPrevious, onNext, onExit }: Props) {
   const controlsRef = useRef<HTMLDivElement | null>(null);
   const player = players.find((entry) => entry.id === event.playerId);
 

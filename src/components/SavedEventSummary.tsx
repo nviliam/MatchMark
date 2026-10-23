@@ -1,11 +1,11 @@
-﻿import { players } from "../data/players";
+﻿import type { Player } from "../types/player";
 import type { MatchEvent } from "../types/event";
 import { formatPlayerLabel } from "../utils/players";
 import { formatEventDetails, formatTimestamp } from "../utils/events";
 
-type Props = { event: MatchEvent; onEdit: () => void; onDelete: () => void; disabled: boolean };
+type Props = { players: readonly Player[]; event: MatchEvent; onEdit: () => void; onDelete: () => void; disabled: boolean };
 
-export default function SavedEventSummary({ event, onEdit, onDelete, disabled }: Props) {
+export default function SavedEventSummary({ players, event, onEdit, onDelete, disabled }: Props) {
   const player = players.find((entry) => entry.id === event.playerId);
   const summary = [
     formatPlayerLabel(player),

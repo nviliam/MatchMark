@@ -55,7 +55,7 @@ function seed(s) {
 test("Review uses the exact shared filtered list in timestamp order, with safe boundaries and immutable data", () => {
   const s = setup(); seed(s); s.open();
   const history = s.ctx.states.find(value => Array.isArray(value) && value.length === 7);
-  const players = s.h.load("src/data/players.ts").players;
+  const players = s.panel().players;
   const original = JSON.stringify(history), roster = JSON.stringify(players);
   history.forEach(Object.freeze); Object.freeze(history);
   players.forEach(Object.freeze); Object.freeze(players);
@@ -221,7 +221,7 @@ test("Review start/Next/Previous use context while Events click-to-seek and even
   s.exitReview(); assert.equal(s.h.media.currentTime, 18.5);
   s.open(); assert.equal(s.panel().selectedEventType, "shot"); assert.equal(s.panel().selectedPlayerId, 1);
   const List = s.h.load("src/components/EventList.tsx").default;
-  const rows = s.h.render(List, { events: s.panel().events, disabled: false, onSeek: s.panel().onSeek });
+  const rows = s.h.render(List, { players: s.panel().players, events: s.panel().events, disabled: false, onSeek: s.panel().onSeek });
   nodes(rows, node => node.type === "button")[0].props.onClick(); s.update();
   assert.equal(s.h.media.currentTime, 20); assert(!s.component(s.Panel)); assert(s.h.media.paused);
   s.open(); s.start(); assert.equal(s.h.media.currentTime, 17); assert.equal(s.position(), "1 / 2");

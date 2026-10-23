@@ -3,7 +3,10 @@ import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types
 import { DEFAULT_EVENT_FILTERS, getFilteredEvents, type EventFilters } from "../utils/eventFiltering";
 import { REVIEW_LEAD_IN_SECONDS } from "../config/review";
 import { getReviewSeekTime } from "../utils/review";
-import { players } from "../data/players";
+import { DEFAULT_PLAYERS } from "../data/players";
+import type { Player } from "../types/player";
+import { appendPlayer, validatePlayerInput } from "../utils/roster";
+import PlayersPanel from "./PlayersPanel";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventsPanel from "./EventsPanel";
@@ -42,19 +45,22 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [resumeTime, setResumeTime] = useState<number | null>(null);
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [overlay, setOverlay] = useState<"events" | "settings" | null>(null);
+  const [overlay, setOverlay] = useState<"events" | "settings" | "players" | null>(null);
   const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
   const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
   // Review owns an index only; the existing filtered list remains its source of truth.
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
+  const [players, setPlayers] = useState<Player[]>(() => DEFAULT_PLAYERS.map((player) => ({ ...player })));
   const isReviewMode = reviewIndex !== null;
   const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
   const isEventsOpen = overlay === "events";
   const isSettingsOpen = overlay === "settings";
+  const isPlayersOpen = overlay === "players";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
   const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const playersButtonRef = useRef<HTMLButtonElement | null>(null);
   const workflowDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
     || pending !== null || pendingDeleteId !== null;
   // Guarded adjustment for external list/session changes: discard an invalid Review
@@ -111,6 +117,24 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   function handleOpenSettings() {
     if (eventsDisabled) return;
     setOverlay("settings");
+  }
+
+  function handleOpenPlayers() {
+    if (eventsDisabled) return;
+    setOverlay("players");
+  }
+
+  const handleClosePlayers = useCallback(() => {
+    setOverlay(null);
+    playersButtonRef.current?.focus();
+  }, []);
+
+  function handleAddPlayer(name: string, number: string): boolean {
+    if (eventsDisabled || !isPlayersOpen) return false;
+    const result = validatePlayerInput(name, number);
+    if (!result.ok) return false;
+    setPlayers((currentPlayers) => appendPlayer(currentPlayers, result.value));
+    return true;
   }
 
   const handleEvent = useCallback((type: EventType) => {
@@ -198,12 +222,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
       if (pending || pendingDeleteId !== null) handleCancel();
       else if (isReviewMode) handleExitReview();
       else if (isSettingsOpen) handleCloseSettings();
+      else if (isPlayersOpen) handleClosePlayers();
       else handleCloseEvents();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [pending, pendingDeleteId, overlay, isSettingsOpen, isAnalysisActive, isReviewMode,
-    handleCancel, handleCloseEvents, handleCloseSettings, handleExitReview]);
+    handleCancel, handleCloseEvents, handleCloseSettings, handleExitReview, isPlayersOpen, handleClosePlayers]);
 
   function handleExit() {
     const video = videoRef.current;
@@ -346,7 +371,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
             {!isReviewMode && <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
               onSelect={handleEvent} onExit={handleExit} onOpenEvents={handleOpenEvents}
               eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef}
-              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef} />}
+              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef}
+              onOpenPlayers={handleOpenPlayers} isPlayersOpen={isPlayersOpen} playersButtonRef={playersButtonRef} />}
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
                 onLoadedMetadata={() => {
@@ -377,10 +403,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               {isSettingsOpen && isAnalysisActive && (
                 <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />
               )}
+              {isPlayersOpen && isAnalysisActive && (
+                <PlayersPanel players={players} onAdd={handleAddPlayer} onClose={handleClosePlayers} />
+              )}
             </div>
             <div className="bottom-rail">
               {isReviewMode && currentReviewEvent && (
-                <ReviewControls event={currentReviewEvent} index={reviewIndex} total={filteredEvents.length}
+                <ReviewControls players={players} event={currentReviewEvent} index={reviewIndex} total={filteredEvents.length}
                   onPrevious={() => handleReviewStep(-1)} onNext={() => handleReviewStep(1)}
                   onExit={handleExitReview} />
               )}
@@ -388,11 +417,11 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                 <DeleteEventConfirmation event={savedEvent} disabled={!isVideoReady || !isAnalysisActive}
                   onCancel={handleCancel} onConfirm={handleConfirmDelete} />
               ) : (
-                <SavedEventSummary event={savedEvent} onEdit={handleEdit} onDelete={handleRequestDelete}
+                <SavedEventSummary players={players} event={savedEvent} onEdit={handleEdit} onDelete={handleRequestDelete}
                   disabled={eventActionsDisabled} />
               ))}
               {pending && (
-                <EventForm pending={pending} initialEvent={pending.mode === "edit" ? pending.original : undefined} disabled={!isVideoReady || !isAnalysisActive}
+                <EventForm players={players} pending={pending} initialEvent={pending.mode === "edit" ? pending.original : undefined} disabled={!isVideoReady || !isAnalysisActive}
                   onSave={handleSave} onCancel={handleCancel} />
               )}
             </div>

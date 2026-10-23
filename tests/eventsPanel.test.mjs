@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import path from "node:path";
 import { createHarness, nodes, text } from "./helpers/componentHarness.mjs";
 
 test("panel options, labels and action placement follow metadata, including an added definition", () => {
@@ -126,11 +125,10 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
 
 test("player options and selection workflow use the central roster with 18 players and duplicate labels", () => {
   const roster = Array.from({ length: 18 }, (_, i) => ({ id: i + 100, name: i < 2 ? "Same Player" : "Player " + i, ...(i === 2 ? {} : { number: i < 2 ? 9 : i }) }));
-  const h = createHarness((source, filename) => filename.endsWith(path.join("src", "data", "players.ts"))
-    ? "export const players = " + JSON.stringify(roster) + ";" : source);
+  const h = createHarness();
   const Panel = h.load("src/components/EventsPanel.tsx").default;
   const Form = h.load("src/components/EventForm.tsx").default;
-  const { players } = h.load("src/data/players.ts");
+  const players = roster;
   const snapshot = JSON.stringify(players);
   players.forEach(Object.freeze); Object.freeze(players);
   let selected;
@@ -149,7 +147,7 @@ test("player options and selection workflow use the central roster with 18 playe
     select.props.onChange({ currentTarget: { value } }); assert.equal(selected, 101);
   }
   select.props.onChange({ currentTarget: { value: "all" } }); assert.equal(selected, "all");
-  const form = h.render(Form, { pending: { type: "interception", timestamp: 10 }, disabled: false });
+  const form = h.render(Form, { players, pending: { type: "interception", timestamp: 10 }, disabled: false });
   const step = nodes(form, n => n.props?.["aria-label"] === "Player")[0];
   const choices = nodes(step, n => n.type === "button");
   assert.equal(choices.length, 18);
@@ -162,8 +160,8 @@ test("unknown players render safely in both the event list and saved summary", (
   const List = h.load("src/components/EventList.tsx").default;
   const Summary = h.load("src/components/SavedEventSummary.tsx").default;
   const event = Object.freeze({ id: 1, type: "shot", playerId: 99999, timestamp: 12.375, outcome: "on-target", bodyPart: "foot" });
-  const list = h.render(List, { events: Object.freeze([event]), disabled: false });
-  const summary = h.render(Summary, { event, disabled: false });
+  const list = h.render(List, { players: [], events: Object.freeze([event]), disabled: false });
+  const summary = h.render(Summary, { players: [], event, disabled: false });
   assert(text(list).includes("Unknown player"));
   assert(text(summary).includes("Unknown player"));
   assert.equal(event.playerId, 99999);

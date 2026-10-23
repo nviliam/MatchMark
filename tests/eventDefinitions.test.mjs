@@ -101,11 +101,11 @@ test("TypeScript rejects mismatched definition IDs, event-specific fields/option
 
 for (const event of expected) test(`${event.id}: create/Edit preserve steps, Back, explicit Save, prefill and Cancel`, () => {
   const h = createHarness(), Form = h.load("src/components/EventForm.tsx").default;
-  const { players } = h.load("src/data/players.ts");
+  const { DEFAULT_PLAYERS: players } = h.load("src/data/players.ts");
   const ctx = h.context(), pending = Object.freeze({ type: event.id, timestamp: 42.375 });
   const saved = [];
   let cancelled = 0, tree;
-  const props = { pending, disabled: false, onSave: (playerId, details) => saved.push({ playerId, details }), onCancel: () => cancelled++ };
+  const props = { players, pending, disabled: false, onSave: (playerId, details) => saved.push({ playerId, details }), onCancel: () => cancelled++ };
   const render = () => tree = h.render(Form, props, ctx);
   const group = () => nodes(tree, n => n.props?.className === "workflow-step")[0];
   const buttons = () => nodes(group(), n => n.type === "button");
@@ -183,7 +183,7 @@ test("summaries preserve original text and safely display unknown runtime event 
     assert.equal(formatEventDetails(event), "Unknown event");
     for (const name of ["EventList", "SavedEventSummary", "ReviewControls"]) {
       const Component = h.load(`src/components/${name}.tsx`).default;
-      const tree = h.render(Component, { event, events: [event], index: 0, total: 1 });
+      const tree = h.render(Component, { players: [], event, events: [event], index: 0, total: 1 });
       assert(text(tree).includes("Unknown event"));
       assert(text(tree).includes("Unknown player"));
     }
@@ -192,7 +192,7 @@ test("summaries preserve original text and safely display unknown runtime event 
 
 test("incomplete or invalid Edit data cannot bypass required fields or player validation", () => {
   const h = createHarness(), Form = h.load("src/components/EventForm.tsx").default;
-  const { players } = h.load("src/data/players.ts");
+  const { DEFAULT_PLAYERS: players } = h.load("src/data/players.ts");
   for (const event of expected) {
     const values = Object.fromEntries(event.fields.map(field => [field.id, field.options[0][0]]));
     const valid = { id: 1, type: event.id, timestamp: 4, playerId: players[0].id, ...values };
@@ -201,7 +201,7 @@ test("incomplete or invalid Edit data cannot bypass required fields or player va
     for (const initialEvent of invalid) {
       let saved = false;
       const ctx = h.context();
-      const tree = h.render(Form, { pending: { type: event.id, timestamp: 4 }, initialEvent,
+      const tree = h.render(Form, { players, pending: { type: event.id, timestamp: 4 }, initialEvent,
         disabled: false, onSave: () => saved = true }, ctx);
       assert(nodes(tree, n => n.type === "button" && text(n) === "Save")[0].props.disabled);
       tree.props.onSubmit({ preventDefault() {} });
@@ -216,7 +216,7 @@ test("one definition edit updates workflow ordering/options, all summaries, filt
     .replace('label: "Goal"', 'label: "Net"')
     .replace('fields: [shotOutcome, bodyPart]', 'fields: [bodyPart, shotOutcome]') : source);
   const Form = h.load("src/components/EventForm.tsx").default;
-  const ctx = h.context(), props = { pending: { type: "shot", timestamp: 8 }, disabled: false };
+  const ctx = h.context(), props = { players: h.load("src/data/players.ts").DEFAULT_PLAYERS, pending: { type: "shot", timestamp: 8 }, disabled: false };
   let tree = h.render(Form, props, ctx);
   const group = () => nodes(tree, n => n.props?.className === "workflow-step")[0];
   assert.equal(group().props["aria-label"], "Body Part");
@@ -228,7 +228,7 @@ test("one definition edit updates workflow ordering/options, all summaries, filt
   const event = Object.freeze({ id: 1, type: "shot", timestamp: 8, playerId: 1, outcome: "goal", bodyPart: "foot" });
   for (const name of ["EventList", "SavedEventSummary", "ReviewControls"]) {
     const Component = h.load(`src/components/${name}.tsx`).default;
-    assert(text(h.render(Component, { event, events: [event], index: 0, total: 1 })).includes("Attempt · Foot · Net"));
+    assert(text(h.render(Component, { players: [], event, events: [event], index: 0, total: 1 })).includes("Attempt · Foot · Net"));
   }
   const { createEventDetails } = h.load("src/utils/events.ts");
   assert.deepEqual(JSON.parse(JSON.stringify(createEventDetails("shot", "goal", "foot"))), { type: "shot", outcome: "goal", bodyPart: "foot" });

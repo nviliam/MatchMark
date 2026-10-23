@@ -1,11 +1,11 @@
-﻿import { players } from "../data/players";
+﻿import type { Player } from "../types/player";
 import type { MatchEvent } from "../types/event";
 import { formatPlayerLabel } from "../utils/players";
 import { formatEventDetails, formatTimestamp } from "../utils/events";
 
-type Props = { events: MatchEvent[]; disabled: boolean; onSeek: (timestamp: number) => void };
+type Props = { players: readonly Player[]; events: MatchEvent[]; disabled: boolean; onSeek: (timestamp: number) => void };
 
-export default function EventList({ events, disabled, onSeek }: Props) {
+export default function EventList({ players, events, disabled, onSeek }: Props) {
   if (events.length === 0) return <p className="events-empty">No events yet.</p>;
 
   return (
