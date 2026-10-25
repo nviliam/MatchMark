@@ -5,7 +5,7 @@ import { REVIEW_LEAD_IN_SECONDS } from "../config/review";
 import { getReviewSeekTime } from "../utils/review";
 import { DEFAULT_PLAYERS } from "../data/players";
 import type { Player } from "../types/player";
-import { appendPlayer, updatePlayer, validatePlayerInput } from "../utils/roster";
+import { appendPlayer, removePlayer, updatePlayer, validatePlayerInput } from "../utils/roster";
 import PlayersPanel from "./PlayersPanel";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
@@ -51,6 +51,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   // Review owns an index only; the existing filtered list remains its source of truth.
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
   const [players, setPlayers] = useState<Player[]>(() => DEFAULT_PLAYERS.map((player) => ({ ...player })));
+  // Session allocator: deleting players or changing videos must never reuse IDs.
+  const nextPlayerId = useRef(DEFAULT_PLAYERS.reduce((highest, player) => Math.max(highest, player.id), 0) + 1);
   const isReviewMode = reviewIndex !== null;
   const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
   const isEventsOpen = overlay === "events";
@@ -133,7 +135,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     if (eventsDisabled || !isPlayersOpen) return false;
     const result = validatePlayerInput(name, number);
     if (!result.ok) return false;
-    setPlayers((currentPlayers) => appendPlayer(currentPlayers, result.value));
+    // Allocate outside the updater so React can replay the pure update safely.
+    const id = nextPlayerId.current++;
+    setPlayers((currentPlayers) => appendPlayer(currentPlayers, result.value, id));
     return true;
   }
 
@@ -142,6 +146,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     const result = validatePlayerInput(name, number);
     if (!result.ok) return false;
     setPlayers((currentPlayers) => updatePlayer(currentPlayers, id, result.value));
+    return true;
+  }
+
+  function handleDeletePlayer(id: Player["id"]): boolean {
+    if (eventsDisabled || !isPlayersOpen || !players.some((player) => player.id === id)) return false;
+    setPlayers((currentPlayers) => removePlayer(currentPlayers, id));
+    setFilters((current) => current.playerId === id ? { ...current, playerId: "all" } : current);
     return true;
   }
 
@@ -412,7 +423,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                 <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />
               )}
               {isPlayersOpen && isAnalysisActive && (
-                <PlayersPanel players={players} onAdd={handleAddPlayer} onUpdate={handleUpdatePlayer} onClose={handleClosePlayers} />
+                <PlayersPanel players={players} events={events} onAdd={handleAddPlayer} onUpdate={handleUpdatePlayer}
+                  onDelete={handleDeletePlayer} onClose={handleClosePlayers} />
               )}
             </div>
             <div className="bottom-rail">

@@ -18,7 +18,7 @@ export function createHarness(transformSource = source => source) {
       if (!(index in ctx.states)) ctx.states[index] = typeof initial === "function" ? initial() : initial;
       return [ctx.states[index], value => { ctx.states[index] = typeof value === "function" ? value(ctx.states[index]) : value; }];
     },
-    useRef() { const ctx = current, index = ctx.r++; return ctx.refs[index] ??= { current: ctx.video && index === 0 ? media : { focus() {} } }; },
+    useRef(initial) { const ctx = current, index = ctx.r++; return ctx.refs[index] ??= { current: ctx.video && index === 0 ? media : initial ?? { focus() {} } }; },
     useCallback(fn, deps) { return hooks.useMemo(() => fn, deps); },
     useMemo(fn, deps) {
       const ctx = current, index = ctx.m++, old = ctx.memos[index];

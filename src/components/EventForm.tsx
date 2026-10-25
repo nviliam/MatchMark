@@ -33,7 +33,7 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
   const details = createEventDetails(pending.type, outcome, bodyPart);
   const player = players.find((entry) => entry.id === playerId);
   const summary = [
-    formatEventDetails({ type: pending.type, outcome, bodyPart }), player && formatPlayerLabel(player),
+    formatEventDetails({ type: pending.type, outcome, bodyPart }), playerId !== null && formatPlayerLabel(player),
   ].filter(Boolean).join(" · ");
 
   useEffect(() => {
@@ -74,6 +74,9 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
             {option.label}
           </button>
         ))}
+        {step === "player" && players.length === 0 && (
+          <span role="status">No players available. Cancel this event and add a player in Players.</span>
+        )}
         {step === "player" && players.map((entry) => (
           <button key={entry.id} type="button" disabled={disabled} aria-pressed={playerId === entry.id}
             onClick={() => { setPlayerId(entry.id); advance(); }}>

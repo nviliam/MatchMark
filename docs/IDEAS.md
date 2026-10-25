@@ -502,19 +502,20 @@ egyik előre definiált event type-ba sem.
 
 ### 7. Player / roster management
 
-**Állapot: részben elkészült.** A 7.1 Add Player / editable roster foundation és a
-7.2 Edit Player elkészült, szimulált működési ellenőrzéssel. A runtime roster
-egyetlen React state-ben él; a játékosok törlése és tartós mentése későbbi feladat.
+**Állapot: részben elkészült.** A 7.1 Add Player / editable roster foundation,
+7.2 Edit Player és 7.3 Delete Player elkészült, szimulált működési ellenőrzéssel.
+A runtime roster egyetlen React state-ben él; a tartós mentés és az
+active/inactive modell későbbi feladat.
 
 - [x] A felhasználó vehessen fel új játékost.
 - [x] Új játékosnál legalább név legyen megadható.
 - [x] A mezszám legyen opcionális.
 - [x] Meglévő játékos neve és mezszáma szerkeszthető legyen.
 - [x] Szerkesztéskor a játékos stabil `playerId` értéke ne változzon.
-- [ ] Játékos törölhető legyen.
-- [ ] Törlés előtt legyen megerősítés.
-- [ ] Törlés előtt jelenjen meg, hány event hivatkozik az adott játékosra.
-- [ ] Már eventekben használt játékos törlése ne történjen észrevétlenül.
+- [x] Játékos törölhető legyen.
+- [x] Törlés előtt legyen megerősítés.
+- [x] Törlés előtt jelenjen meg, hány event hivatkozik az adott játékosra.
+- [x] Már eventekben használt játékos törlése ne történjen észrevétlenül.
 - [x] A rendszer rosterkezelés közben is kezelje biztonságosan azt az esetet,
       ha egy event `playerId` értéke már nem található az aktuális rosterben.
 - [x] Az `Unknown player` fallback továbbra is működjön.
@@ -536,14 +537,15 @@ egyetlen React state-ben él; a játékosok törlése és tartós mentése kés�
 - A `PlayersPanel` az Events/Settings melletti Players gombbal nyitható overlay,
   közös panelstílussal és saját belső scrollal. A teljes rostert a meglévő
   `formatPlayerLabel` formázza, üres állapotban `No players yet.` jelenik meg.
-  A sorok Edit actionje a 7.2-ben készült el; Delete gomb vagy placeholder nincs.
+  A sorok Edit actionje a 7.2-ben, Delete actionje és megerősítése a 7.3-ban készült el.
 - A Name kötelező, trimelt, legfeljebb 80 karakteres; szóköz, ékezet, kötőjel és
   aposztróf megengedett. A Shirt number opcionális; ha kitöltött, 0–99 közötti
   egész szám szükséges. Üres mezszámnál a `number` mező kimarad. A Player típusa
   `number?: number` lett; a numerikus `id` változatlan.
 - A `src/utils/roster.ts` közös validációját a form és a state-owner is használja.
-  Az új ID a funkcionális state-frissítés aktuális rosterében található legnagyobb
-  ID + 1, üres roster esetén 1. Azonos név és mezszám is megengedett.
+  A kezdeti max(roster ID) + 1 algoritmust a 7.3 session-szintű, monoton
+  `nextPlayerId` számlálóra cserélte, hogy törlés után se lehessen ID-t újra kiosztani.
+  Azonos név és mezszám is megengedett.
   Hozzáadáskor új tömb és új Player jön létre, a korábbi objektumok és a seed nem mutálódnak.
 - Sikeres Add után a form kiürül, a fókusz a Name mezőre kerül, és az új játékos
   azonnal megjelenik a listában. A Player filter, az EventForm create/edit lépése,
@@ -553,7 +555,7 @@ egyetlen React state-ben él; a játékosok törlése és tartós mentése kés�
   A közös overlay state biztosítja, hogy Events/Settings/Players közül csak egy
   legyen nyitva. Players alatt az event shortcutok tiltottak; inputmezőn kívül
   a meglévő Quick Seek továbbra is használható.
-- Close és Escape csak a panelt zárja, a roster megmarad; a félkész Add form
+- Add módban Close és Escape csak a panelt zárja, a roster megmarad; a félkész Add form
   eldobódik. Bezáráskor a fókusz visszakerül a Players gombra.
   Exit bezárja a panelt, Resume zárva hagyja, a roster ugyanazon React sessionben megmarad.
   Új videó és video error sem reseteli a rostert; a meglévő event/filter/review reset változatlan.
@@ -598,8 +600,9 @@ még hátravan; a komponensvizsgálatok szimulált hookokkal/videóval futottak.
   Resume zárt panellel folytatódik; csak a mentett roster-módosítások maradnak meg.
   Új videó és video error sem reseteli a mentett rostert. Create/Edit event draft,
   event Delete confirmation és Review alatt a Players panel továbbra is tiltott.
-- Nincs Delete Player, reference count, active/inactive állapot vagy persistence.
-  Oldalfrissítés után továbbra is a default/demo roster töltődik be.
+- A Delete Player és reference count külön, a 7.3-ban készült el.
+  Nincs active/inactive állapot vagy persistence; oldalfrissítés után
+  továbbra is a default/demo roster töltődik be.
 
 Ellenőrzés: `npm test` (62 sikeres teszt, ebből 6 új Edit Player teszt), lint és build sikeres.
 Az új tesztek lefedik a prefillt, közös Add/Edit formot és validációt, stabil ID-t,
@@ -608,6 +611,59 @@ listener cleanupot, a változatlan event objektumokat, aktív filtert és friss�
 valamint a mentett/unsaved Edit viselkedését panelbezárás, Exit/Resume, videócsere és hiba esetén.
 A tesztek szimulált hookokkal/videóval futottak; a Players panel valódi böngészős
 vizuális és scroll-ellenőrzése elérhető böngésző hiányában továbbra is hátravan.
+
+#### 7.3 Delete Player
+
+- Minden játékossor Edit mellett kompakt, piros Delete gombot kapott. Ez csak
+  megerősítést nyit a Players panelen belül; nincs natív confirm vagy új modal.
+  A lokális `deletingPlayerId` átmeneti UI-state, nem külön roster vagy player-másolat.
+- A `getPlayerEventCount(events, playerId)` helper mindig a teljes, aktuális mentett
+  eseménylistából számolja a hivatkozásokat; a count nincs state-ben és nem függ
+  az Events panel aktív szűrőitől. Nulla hivatkozásnál ezt külön szöveg jelzi;
+  egy vagy több hivatkozásnál a szám és az Unknown player megjelenésre figyelmeztetés látszik.
+  A szöveg minden esetben egyértelművé teszi, hogy a mentett eventek megmaradnak.
+- Csak a végső Delete player gomb hívja a VideoPlayer `handleDeletePlayer` handlerét.
+  A `removePlayer` helper immutable `filter` művelettel eltávolítja a játékost a
+  runtime rosterből. A seed, az events tömb, az event objektumok és `playerId`
+  értékeik változatlanok; nincs cascade delete, snapshot vagy migration.
+- A régi események az Events, Saved és Review nézetben a meglévő `formatPlayerLabel`
+  Unknown player fallbackjét használják. Az EventForm összefoglalója is ezt mutatja,
+  ha egy szerkesztett event játékosa már hiányzik; Save csak létező játékossal lehetséges.
+  A Review seek és a 3 másodperces lead-in változatlanul működik.
+- Ha a törölt ID az aktív Player filter, csak `filters.playerId` áll vissza `all`-ra.
+  Az Event type filter és másik játékos aktív filtere megmarad. All players alatt
+  a fel nem oldható playerId-jú eventek is szerepelnek; a szűrés nem dobja el őket.
+- Az új ID-t a VideoPlayer `nextPlayerId` refje osztja ki. Kezdőértéke a demo roster
+  legnagyobb ID-ja + 1; minden érvényes Add eggyel növeli, a React state-updateren kívül.
+  Az `appendPlayer` már explicit kiosztott ID-t kap, és tiszta frissítés marad.
+  Delete és Edit nem csökkenti/reseteli a számlálót, üres roster, Exit/Resume,
+  videócsere és videóhiba után is folytatódik. Új React sessionben újrainicializálódik.
+  Így egy új játékos nem örökölheti egy törölt játékos régi eseményeit.
+- Edit és Delete confirmation kölcsönösen kizárják egymást; megerősítés alatt az
+  Add/Edit form helyét a confirmation foglalja el, a sorok Edit/Delete actionjei tiltottak.
+  Megnyitáskor a Cancel kap fókuszt; a figyelmeztetés szöveges, a gombok billentyűzhetők.
+- Cancel vagy az első Escape csak a megerősítést dobja el; a panel nyitva marad.
+  Edit és Delete ugyanazt a capture-phase Escape handlert használja, amely megakadályozza
+  az azonnali panelbezárást. A következő külön Escape zárhatja a panelt.
+  X, másik overlay, Exit, videócsere vagy hiba eldobja a nem megerősített törlést.
+  Resume zárt panellel folytatódik. A végrehajtott törlés ugyanazon sessionben megmarad,
+  új videó és video error sem tölti vissza a demo játékosokat.
+- Az összes játékos törölhető. Üres rosternél No players yet. és működő Add form
+  látható; az event Player lépésben külön üzenet kéri a Cancel utáni játékosfelvételt.
+  Törölt játékos nem szerepel a választási lehetőségek között, játékos nélküli Save tiltott.
+- A Player és MatchEvent domain modell változatlan. Nincs persistence, backend,
+  active/inactive mező, restore vagy undo; page reload után a demo roster visszatér.
+  A backend-kompatibilitás, active/inactive és reload-persistence roadmap-pontok nyitva maradnak.
+
+Ellenőrzés: `npm test` (70 sikeres teszt, ebből 8 új Delete Player teszt), lint és build sikeres.
+Az új tesztek lefedik a 0/1/7 hivatkozást és a count újraszámolását, immutable törlést,
+confirmation/Cancel/Escape/exkluzivitást, változatlan event objektumokat és ID-kat,
+Unknown player megjelenítést, célzott filter-resetet, üres rostert és workflow-t,
+Review/click-to-seek/Quick Seek működést, a kritikus delete 3 → add 4 esetet,
+valamint az ID-k és törlések session-élettartamát. A tesztharness a numerikus refek
+kezdeti értékét is megőrzi, így a tényleges allocator működését vizsgálja.
+A komponens- és videóellenőrzések szimuláltak; elérhető böngésző hiányában valódi
+vizuális és billentyűfókusz-ellenőrzés nem történt.
 
 Megvalósult kapcsolat:
 

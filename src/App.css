@@ -352,7 +352,15 @@
 .roster-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; }
 .roster-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
 .roster-list li > span { flex: 1; min-width: 0; }
-.player-edit-button { flex-shrink: 0; min-height: 32px; padding: 4px 8px; font-size: 0.75rem; }
+.player-edit-button,
+.player-delete-button { flex-shrink: 0; min-height: 32px; padding: 4px 8px; font-size: 0.75rem; }
+.player-delete-button { color: #8a2822; border-color: #e6c3c0; }
+.player-delete-button:hover:not(:disabled) { background: #fff5f4; border-color: #8a2822; }
+.player-delete-confirmation { display: grid; gap: 10px; margin-bottom: 12px; font-size: 0.8rem; overflow-wrap: anywhere; }
+.player-delete-confirmation h3 { margin: 0; font-size: 0.85rem; }
+.player-delete-confirmation button { min-height: 36px; padding: 6px 10px; }
+.player-delete-confirm { color: #fff; background: #8a2822; border-color: #8a2822; }
+.player-delete-confirm:hover:not(:disabled) { background: #6f201b; border-color: #6f201b; }
 .player-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .events-empty {
   padding: 8px;

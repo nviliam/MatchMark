@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { DEFAULT_PLAYERS } from "../src/data/players.ts";
-import { appendPlayer, updatePlayer, PLAYER_NAME_MAX_LENGTH, validatePlayerInput } from "../src/utils/roster.ts";
+import { appendPlayer, updatePlayer, removePlayer, getPlayerEventCount, PLAYER_NAME_MAX_LENGTH, validatePlayerInput } from "../src/utils/roster.ts";
 import { formatPlayerLabel } from "../src/utils/players.ts";
 import { createHarness, nodes, text } from "./helpers/componentHarness.mjs";
 
@@ -32,24 +32,24 @@ test("shirt numbers must be whole numbers from 0 through 99 when supplied", () =
 test("numeric IDs are independent of position, names and shirt numbers; seed and existing objects remain untouched", () => {
   assert(Object.isFrozen(DEFAULT_PLAYERS)); assert(DEFAULT_PLAYERS.every(Object.isFrozen));
   const snapshot = JSON.stringify(DEFAULT_PLAYERS);
-  assert.equal(appendPlayer([], { name: "First" })[0].id, 1);
+  assert.equal(appendPlayer([], { name: "First" }, 1)[0].id, 1);
   const sparse = Object.freeze([{ id: 12, name: "Same", number: 7 }, { id: 3, name: "Same", number: 7 }].map(Object.freeze));
-  const first = appendPlayer(sparse, { name: "Same", number: 7 });
-  const second = appendPlayer(first, { name: "Same", number: 7 });
+  const first = appendPlayer(sparse, { name: "Same", number: 7 }, 13);
+  const second = appendPlayer(first, { name: "Same", number: 7 }, 14);
   assert.deepEqual(second.map(player => player.id), [12, 3, 13, 14]);
   assert.equal(second[0], sparse[0]); assert.equal(sparse.length, 2);
-  const added = appendPlayer(DEFAULT_PLAYERS, { name: DEFAULT_PLAYERS[0].name, number: DEFAULT_PLAYERS[0].number });
+  const added = appendPlayer(DEFAULT_PLAYERS, { name: DEFAULT_PLAYERS[0].name, number: DEFAULT_PLAYERS[0].number }, 4);
   assert.equal(added.length, DEFAULT_PLAYERS.length + 1);
   assert.equal(JSON.stringify(DEFAULT_PLAYERS), snapshot);
 });
 
 test("Players form shows textual validation, adds valid input, resets fields and supports duplicate submissions", () => {
   const h = createHarness(), ctx = h.context(), Panel = h.load("src/components/PlayersPanel.tsx").default;
-  let players = [], tree, closed = false;
+  let players = [], tree, closed = false, nextId = 1;
   const update = () => tree = h.render(Panel, { players, onClose: () => closed = true, onAdd: (name, number) => {
     const result = validatePlayerInput(name, number);
     if (!result.ok) return false;
-    players = appendPlayer(players, result.value); return true;
+    players = appendPlayer(players, result.value, nextId++); return true;
   } }, ctx);
   const input = name => nodes(tree, n => n.type === "input" && n.props.name === name)[0];
   const change = (name, value) => { input(name).props.onChange({ currentTarget: { value } }); update(); };
@@ -219,6 +219,9 @@ function mountPlayers(s) {
   update();
   return { update, input, edits, click, change, submit,
     edit(index = 0) { edits()[index].props.onClick(); update(); },
+    requestDelete(index = 0) {
+      nodes(tree, n => n.type === "button" && n.props.className === "player-delete-button")[index].props.onClick(); update();
+    },
     get tree() { return tree; },
     dispose() { s.h.dispose(ctx); },
     remount() { s.h.dispose(ctx); ctx = s.h.context(); update(); },
@@ -332,4 +335,166 @@ test("saved edits survive Exit/Resume, new video and errors while unsaved edits 
   s.upload(); s.ready(); s.open(); assert.equal(s.roster(), savedRoster);
   const fresh = setup(); fresh.open(); assert.equal(JSON.stringify(fresh.roster()), JSON.stringify(DEFAULT_PLAYERS));
   fresh.dispose(); s.dispose();
+});
+
+test("delete helpers count only matching player IDs and preserve frozen events, seed and remaining player objects", () => {
+  const events = Object.freeze(Array.from({ length: 8 }, (_, i) => Object.freeze({
+    id: i + 1, type: "interception", playerId: i === 0 ? 1 : 3, timestamp: i + 10,
+  })));
+  const seed = JSON.stringify(DEFAULT_PLAYERS), snapshot = JSON.stringify(events);
+  assert.equal(getPlayerEventCount(events, 3), 7); assert.equal(getPlayerEventCount(events, 2), 0);
+  assert.equal(getPlayerEventCount([], 3), 0);
+  const removed = removePlayer(DEFAULT_PLAYERS, 3);
+  assert.deepEqual(removed.map(p => p.id), [1, 2]); assert.notEqual(removed, DEFAULT_PLAYERS);
+  assert.equal(removed[0], DEFAULT_PLAYERS[0]); assert.equal(removed[1], DEFAULT_PLAYERS[1]);
+  assert.equal(JSON.stringify(DEFAULT_PLAYERS), seed); assert.equal(JSON.stringify(events), snapshot);
+});
+
+test("Delete requires confirmation, excludes Add/Edit, cancels before panel Escape and removes an unreferenced player only on confirm", () => {
+  const s = setup(); s.open(); const p = mountPlayers(s), original = s.roster();
+  p.edit(); p.requestDelete(1); assert.equal(nodes(p.tree, n => n.props?.className === "player-delete-confirmation").length, 0);
+  assert(nodes(p.tree, n => n.props?.className === "player-delete-button").every(n => n.props.disabled));
+  p.click("Cancel"); p.requestDelete(2); assert.equal(s.roster(), original);
+  assert(text(p.tree).includes("No saved events reference this player. Saved events will be kept."));
+  assert.equal(nodes(p.tree, n => n.type === "form").length, 0);
+  assert(p.edits().every(button => button.props.disabled));
+  const title = text(nodes(p.tree, n => n.props?.id === "player-delete-title")[0]);
+  p.requestDelete(0); p.edit(0); assert.equal(text(nodes(p.tree, n => n.props?.id === "player-delete-title")[0]), title);
+  p.click("Cancel"); assert.equal(s.roster(), original); assert.equal(p.input("playerName").props.value, "");
+  p.requestDelete(2);
+  for (const extra of [{ repeat: true }, { ctrlKey: true }, { altKey: true }, { metaKey: true }, { isComposing: true }]) {
+    s.press("Escape", extra); p.update(); assert(text(p.tree).includes("Delete player"));
+  }
+  s.press("Escape"); p.update(); assert(s.component("PlayersPanel")); assert.equal(s.roster(), original);
+  assert.equal(nodes(p.tree, n => n.props?.className === "player-delete-confirmation").length, 0);
+  s.press("Escape"); assert(!s.component("PlayersPanel")); p.dispose();
+  s.open(); p.remount(); p.requestDelete(2); p.click("Delete player");
+  assert.deepEqual(Array.from(s.roster(), player => player.id), [1, 2]);
+  assert.equal(s.roster()[0], original[0]); assert.equal(s.roster()[1], original[1]);
+  assert.equal(p.input("playerName").props.value, ""); assert(!p.edits().some(button => button.props.disabled));
+  p.dispose(); s.dispose(); assert.equal(s.h.listeners.size, 0);
+});
+
+function saveEvent(s, playerId, timestamp, type = "interception") {
+  s.h.media.currentTime = timestamp; s.buttons().onSelect(type); s.update();
+  s.component("EventForm").props.onSave(playerId, { type }); s.update();
+}
+
+test("reference count derives from current full events props rather than a cached or filtered count", () => {
+  const h = createHarness(), ctx = h.context(), Panel = h.load("src/components/PlayersPanel.tsx").default;
+  const props = { players: DEFAULT_PLAYERS, events: [] };
+  let tree = h.render(Panel, props, ctx);
+  nodes(tree, n => n.props?.className === "player-delete-button")[0].props.onClick();
+  tree = h.render(Panel, props, ctx); assert(text(tree).includes("No saved events reference"));
+  props.events = [{ id: 1, type: "interception", timestamp: 7, playerId: 1 }];
+  tree = h.render(Panel, props, ctx); assert(text(tree).includes("1 saved event references this player."));
+  props.events = Array.from({ length: 7 }, (_, i) => ({ id: i + 1, type: "key-pass", timestamp: i, playerId: 1 }));
+  tree = h.render(Panel, props, ctx); assert(text(tree).includes("7 saved events reference this player."));
+  h.dispose(ctx);
+});
+
+test("deletion preserves old event identities, resets only the deleted player filter and never assigns old events to a new player", () => {
+  const s = setup(); saveEvent(s, 1, 5);
+  for (let i = 0; i < 7; i++) saveEvent(s, 3, 10 + i, i === 6 ? "key-pass" : "interception");
+  s.buttons().onOpenEvents(); s.update();
+  s.component("EventsPanel").props.onEventTypeChange("interception");
+  s.component("EventsPanel").props.onPlayerChange(3); s.update();
+  assert.equal(s.component("EventsPanel").props.events.length, 6);
+  s.open(); const p = mountPlayers(s), events = s.component("PlayersPanel").props.events;
+  const seed = JSON.stringify(DEFAULT_PLAYERS), snapshot = JSON.stringify(events);
+  events.forEach(Object.freeze); Object.freeze(events);
+  p.requestDelete(2); assert(text(p.tree).includes("7 saved events reference this player."));
+  assert(text(p.tree).includes('Those events will be kept, but the player will appear as "Unknown player".'));
+  p.click("Delete player");
+  assert.equal(s.component("PlayersPanel").props.events, events);
+  assert(s.add("New player", "77")); p.update(); assert.equal(s.roster().at(-1).id, 4);
+  assert.equal(s.component("PlayersPanel").props.events, events);
+  p.dispose(); s.close();
+  const saved = s.component("SavedEventSummary"); assert.equal(saved.props.event, events.at(-1));
+  assert(text(s.h.render(s.components.SavedEventSummary, saved.props)).includes("Unknown player"));
+  s.buttons().onOpenEvents(); s.update();
+  const panel = s.component("EventsPanel");
+  assert.equal(panel.props.selectedPlayerId, "all"); assert.equal(panel.props.selectedEventType, "interception");
+  assert.equal(panel.props.events.length, 7); assert.equal(panel.props.totalEventCount, 8);
+  assert(panel.props.events.every(event => events.includes(event)));
+  const panelUI = s.h.render(s.components.EventsPanel, panel.props);
+  const playerSelect = nodes(panelUI, n => n.type === "select")[1];
+  assert(!nodes(playerSelect, n => n.type === "option" && n.props.value === 3).length);
+  const listNode = nodes(panelUI, n => n.type === s.components.EventList)[0];
+  const list = s.h.render(s.components.EventList, listNode.props);
+  assert.equal(nodes(list, n => n.type === "strong" && text(n) === "Unknown player").length, 6);
+  nodes(list, n => n.type === "button")[1].props.onClick(); s.update(); assert.equal(s.h.media.currentTime, 10);
+  s.buttons().onOpenEvents(); s.update(); s.component("EventsPanel").props.onStartReview(); s.update();
+  s.component("ReviewControls").props.onNext(); s.update();
+  const review = s.component("ReviewControls"); assert.equal(review.props.event, events[1]);
+  assert(text(s.h.render(s.components.ReviewControls, review.props)).includes("Unknown player"));
+  assert.equal(s.h.media.currentTime, 7); s.press("3", { code: "Digit3" }); assert.equal(s.h.media.currentTime, 8.5);
+  s.press("Escape"); s.component("SavedEventSummary").props.onEdit(); s.update();
+  const edit = s.h.render(s.components.EventForm, s.component("EventForm").props);
+  assert(text(edit).includes("Unknown player"));
+  assert(nodes(edit, n => n.type === "button" && text(n) === "Save")[0].props.disabled);
+  edit.props.onSubmit({ preventDefault() {} }); s.update(); assert(s.component("EventForm")); s.press("Escape");
+  s.buttons().onSelect("interception"); s.update();
+  const form = s.h.render(s.components.EventForm, s.component("EventForm").props);
+  assert(!nodes(form, n => n.type === "button" && n.key === "3").length);
+  assert(nodes(form, n => n.type === "button" && text(n) === "#77 New player").length);
+  assert.equal(JSON.stringify(events), snapshot); assert.equal(JSON.stringify(DEFAULT_PLAYERS), seed); s.dispose();
+});
+
+test("deleting another player preserves the active player and event type filters", () => {
+  const s = setup(); s.buttons().onOpenEvents(); s.update();
+  s.component("EventsPanel").props.onPlayerChange(1); s.component("EventsPanel").props.onEventTypeChange("shot"); s.update();
+  s.open(); const p = mountPlayers(s); p.requestDelete(1); p.click("Delete player"); p.dispose();
+  s.buttons().onOpenEvents(); s.update();
+  assert.equal(s.component("EventsPanel").props.selectedPlayerId, 1);
+  assert.equal(s.component("EventsPanel").props.selectedEventType, "shot"); s.dispose();
+});
+
+test("all players can be deleted; empty required-player workflows cannot save and Add keeps the session allocator", () => {
+  const s = setup(); s.open(); const p = mountPlayers(s);
+  while (s.roster().length) { p.requestDelete(); p.click("Delete player"); }
+  assert(text(p.tree).includes("No players yet.")); assert(nodes(p.tree, n => n.type === "form").length);
+  p.dispose(); s.close(); s.buttons().onSelect("interception"); s.update();
+  const form = s.h.render(s.components.EventForm, s.component("EventForm").props);
+  assert(text(form).includes("No players available. Cancel this event and add a player in Players."));
+  form.props.onSubmit({ preventDefault() {} }); s.update(); assert(s.component("EventForm"));
+  assert(!s.component("SavedEventSummary")); s.press("Escape"); s.open(); p.remount();
+  p.change("playerName", "Restarted roster"); p.submit(); assert.equal(s.roster()[0].id, 4);
+  p.dispose(); s.dispose();
+});
+
+test("confirmed deletes and the ID allocator survive Exit/Resume, video changes and errors; fresh sessions reload the seed", () => {
+  const s = setup(); s.open(); const p = mountPlayers(s);
+  p.requestDelete(2); p.click("Delete player");
+  assert(!s.add("  ")); assert(s.add("Fourth")); p.update(); assert.equal(s.roster().at(-1).id, 4);
+  p.requestDelete(2); p.click("Delete player");
+  p.edit(); p.change("playerName", "Edited first"); p.submit();
+  const roster = s.roster(); p.dispose();
+  s.buttons().onExit(); s.update(); s.resume(); s.open(); assert.equal(s.roster(), roster);
+  s.buttons().onExit(); s.update(); s.upload(); s.ready(); s.open(); assert.equal(s.roster(), roster);
+  assert(s.add("Fifth")); assert.equal(s.roster().at(-1).id, 5);
+  p.remount(); p.requestDelete(2); p.click("Delete player"); p.dispose();
+  const afterDelete = s.roster(); nodes(s.tree, n => n.type === "video")[0].props.onError(); s.update();
+  s.upload(); s.ready(); s.open(); assert.equal(s.roster(), afterDelete);
+  assert(s.add("Sixth")); assert.equal(s.roster().at(-1).id, 6);
+  const fresh = setup(); fresh.open(); assert.equal(JSON.stringify(fresh.roster()), JSON.stringify(DEFAULT_PLAYERS));
+  fresh.add("Fresh fourth"); assert.equal(fresh.roster().at(-1).id, 4);
+  fresh.dispose(); s.dispose();
+});
+
+test("unconfirmed deletes are discarded on X, overlay switch, Exit/Resume, video replacement and error", () => {
+  const s = setup(); s.open(); const p = mountPlayers(s), roster = s.roster();
+  for (const close of [
+    () => { nodes(p.tree, n => n.props?.["aria-label"] === "Close players")[0].props.onClick(); s.update(); },
+    () => { s.buttons().onOpenSettings(); s.update(); },
+    () => { s.buttons().onExit(); s.update(); s.resume(); },
+    () => { s.buttons().onExit(); s.update(); s.upload(); s.ready(); },
+    () => { nodes(s.tree, n => n.type === "video")[0].props.onError(); s.update(); s.upload(); s.ready(); },
+  ]) {
+    p.requestDelete(2); close(); p.dispose(); assert(!s.component("PlayersPanel"));
+    s.open(); p.remount(); assert.equal(s.roster(), roster);
+    assert.equal(nodes(p.tree, n => n.props?.className === "player-delete-confirmation").length, 0);
+    assert.equal(p.input("playerName").props.value, "");
+  }
+  p.dispose(); s.dispose(); assert.equal(s.h.listeners.size, 0);
 });
