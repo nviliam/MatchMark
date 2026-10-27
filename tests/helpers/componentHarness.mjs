@@ -71,7 +71,7 @@ export function createHarness(transformSource = source => source) {
     }
   }
   function dispose(ctx) { ctx.effects.forEach(effect => effect.cleanup?.()); }
-  return { load, render, context, media, press, dispose, listeners };
+  return { load, render, context, media, press, dispose, listeners, Element };
 }
 
 export function nodes(tree, predicate) {

@@ -30,14 +30,14 @@ const expected = [
 
 test("definitions cover all ten stable IDs with the original labels, order, rails and field options", () => {
   const ids = expected.map(event => event.id);
-  assert.deepEqual(Object.keys(EVENT_DEFINITIONS).sort(), [...ids].sort());
-  assert.deepEqual(ORDERED_EVENT_TYPES, ids);
-  assert.equal(new Set(Object.values(EVENT_DEFINITIONS).map(event => event.id)).size, 10);
+  assert.deepEqual(Object.keys(EVENT_DEFINITIONS).sort(), [...ids, "custom"].sort());
+  assert.deepEqual(ORDERED_EVENT_TYPES, [...ids, "custom"]);
+  assert.equal(new Set(Object.values(EVENT_DEFINITIONS).map(event => event.id)).size, 11);
   for (const event of expected) {
     assert.deepEqual(EVENT_DEFINITIONS[event.id], {
       ...event, playerRequired: true,
       category: ["tackle", "interception", "ball-recovery"].includes(event.id) ? "defending" : event.id === "duel" ? "contest" : "possession",
-      fields: event.fields.map(field => ({ ...field, options: field.options.map(([id, label]) => ({ id, label })) })),
+      fields: event.fields.map(field => ({ ...field, type: "options", options: field.options.map(([id, label]) => ({ id, label })) })),
     });
     assert.equal(getEventDefinition(event.id), EVENT_DEFINITIONS[event.id]);
   }
@@ -89,6 +89,15 @@ test("TypeScript rejects mismatched definition IDs, event-specific fields/option
     const missingPlayer: MatchEvent = { id: 1, timestamp: 3, type: "interception" };
     // @ts-expect-error Definition-only metadata must not enter saved domain data.
     const metadata: MatchEvent = { id: 1, playerId: 1, timestamp: 3, type: "interception", label: "Interception" };
+    const custom: MatchEvent = { id: 1, timestamp: 3, type: "custom", description: "Press" };
+    const customWithPlayer: MatchEvent = { ...custom, playerId: 2 };
+    const textField: EventDefinition<"custom">["fields"][number] = { id: "description", type: "text", label: "Description", required: true, maxLength: 160 };
+    // @ts-expect-error Custom events require a description.
+    const missingDescription: MatchEvent = { id: 1, timestamp: 3, type: "custom" };
+    // @ts-expect-error Description is not a Pass field.
+    const wrongTextField: PassField = textField;
+    // @ts-expect-error A Pass payload cannot include a description.
+    const wrongTextPayload: EventDetails = { type: "pass", outcome: "completed", description: "Press" };
   `;
   const options = { noEmit: true, strict: true, target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler, allowImportingTsExtensions: true, skipLibCheck: true, types: [] };

@@ -16,14 +16,19 @@ export type InterceptionEvent = BaseEvent & { type: "interception" };
 export type BallRecoveryEvent = BaseEvent & { type: "ball-recovery" };
 export type DuelEvent = BaseEvent & { type: "duel"; outcome: "won" | "lost" };
 export type BallLossEvent = BaseEvent & { type: "ball-loss" };
+export type CustomEvent = Omit<BaseEvent, "playerId"> & {
+  type: "custom";
+  description: string;
+  playerId?: number;
+};
 
 export type MatchEvent =
   | ShotEvent | PassEvent | KeyPassEvent | DribbleEvent | ProgressiveCarryEvent
-  | TackleEvent | InterceptionEvent | BallRecoveryEvent | DuelEvent | BallLossEvent;
+  | TackleEvent | InterceptionEvent | BallRecoveryEvent | DuelEvent | BallLossEvent | CustomEvent;
 
 export type EventType = MatchEvent["type"];
 // Distribute Omit over the union to preserve each event's required fields.
 export type EventDetails = MatchEvent extends infer Event
-  ? Event extends BaseEvent ? Omit<Event, keyof BaseEvent> : never
+  ? Event extends MatchEvent ? Omit<Event, keyof BaseEvent> : never
   : never;
 export type PendingEvent = { type: EventType; timestamp: number };

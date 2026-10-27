@@ -24,7 +24,7 @@ after(() => {
 
 test("defaults stay immutable and runtime configurations are separate objects", () => {
   assert(Object.isFrozen(DEFAULT_EVENT_SHORTCUTS));
-  assert.equal(EVENT_SHORTCUT_TYPES.length, 10);
+  assert.equal(EVENT_SHORTCUT_TYPES.length, 11);
   const runtime = loadEventShortcuts();
   assert.deepEqual(runtime, DEFAULT_EVENT_SHORTCUTS);
   assert.notEqual(runtime, DEFAULT_EVENT_SHORTCUTS);
@@ -97,6 +97,22 @@ test("reset mapping overwrites custom storage and remains the default after relo
   persistEventShortcuts({ ...DEFAULT_EVENT_SHORTCUTS, shot: "s", pass: "f" });
   persistEventShortcuts({ ...DEFAULT_EVENT_SHORTCUTS });
   assert.deepEqual(loadEventShortcuts(), DEFAULT_EVENT_SHORTCUTS);
+});
+
+test("legacy ten-event settings fall back to eleven defaults and are safely rewritten on startup", () => {
+  const { custom: _custom, ...legacy } = DEFAULT_EVENT_SHORTCUTS;
+  legacy.shot = "s";
+  storage.set(EVENT_SHORTCUTS_STORAGE_KEY, JSON.stringify(legacy));
+  assert.equal(validateEventShortcuts(legacy), null);
+  const current = loadEventShortcuts();
+  assert.deepEqual(current, DEFAULT_EVENT_SHORTCUTS);
+  assert.equal(findEventShortcut(current, "C"), "custom");
+  // App's existing startup effect persists exactly the loaded runtime mapping.
+  persistEventShortcuts(current);
+  assert.equal(Object.keys(JSON.parse(storage.get(EVENT_SHORTCUTS_STORAGE_KEY))).length, 11);
+  assert.deepEqual(loadEventShortcuts(), DEFAULT_EVENT_SHORTCUTS);
+  persistEventShortcuts({ ...current, custom: "." });
+  assert.equal(findEventShortcut(loadEventShortcuts(), "."), "custom");
 });
 
 test("denied reads/writes and unavailable storage never crash the app", () => {

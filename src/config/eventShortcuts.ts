@@ -15,6 +15,7 @@ export const DEFAULT_EVENT_SHORTCUTS: EventShortcuts = Object.freeze({
   tackle: "z",
   interception: "h",
   "ball-recovery": "n",
+  custom: "c",
 });
 
 export const EVENT_SHORTCUT_TYPES = ORDERED_EVENT_TYPES;

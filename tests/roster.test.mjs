@@ -143,7 +143,7 @@ test("new players flow immediately through filters, metadata workflow, Saved, Ev
   form.props.onSubmit({ preventDefault() {} }); s.update();
   const saved = s.component("SavedEventSummary");
   assert.equal(saved.props.players, roster); assert(text(s.h.render(s.components.SavedEventSummary, saved.props)).includes("No number"));
-  assert.equal(JSON.stringify(saved.props.event), JSON.stringify({ type: "interception", id: 1, playerId: player.id, timestamp: 27.43 }));
+  assert.deepEqual(JSON.parse(JSON.stringify(saved.props.event)), { type: "interception", id: 1, playerId: player.id, timestamp: 27.43 });
   saved.props.onEdit(); s.update();
   const edit = s.h.render(s.components.EventForm, s.component("EventForm").props);
   assert(text(edit).includes("No number")); assert.equal(s.component("EventForm").props.initialEvent.playerId, player.id);
