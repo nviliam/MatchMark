@@ -190,7 +190,7 @@ test("Review layout omits all action rails and restores normal groups/badges on 
     assert(s.component(s.Buttons));
     const controls = s.h.render(s.Buttons, s.buttons());
     assert.deepEqual(nodes(controls, node => node.props?.role === "group").map(node => node.props["aria-label"]), ["top actions", "left actions", "right actions"]);
-    assert.equal(nodes(controls, node => node.type === "kbd").length, 10);
+    assert.equal(nodes(controls, node => node.type === "kbd").length, 11);
     assert(nodes(controls, node => node.type === "button" && text(node) === "Exit")[0]);
   };
   const video = nodes(s.tree, node => node.type === "video")[0];

@@ -1,14 +1,22 @@
 import type { EventType, MatchEvent } from "../types/event";
 
 export type EventRail = "top" | "left" | "right";
-export type EventCategory = "possession" | "defending" | "contest";
-export type EventFieldId = "outcome" | "bodyPart";
+export type EventCategory = "possession" | "defending" | "contest" | "other";
+export type EventFieldId = "outcome" | "bodyPart" | "description";
+export const CUSTOM_EVENT_DESCRIPTION_MAX_LENGTH = 160;
 export type EventFieldOption<Value extends string> = Readonly<{ id: Value; label: string }>;
 
 // Distribute over domain events so each field keeps its own exact option IDs.
 type FieldsFor<Event> = Event extends MatchEvent ? {
-  [Field in EventFieldId]: Field extends keyof Event ? Readonly<{
+  [Field in EventFieldId]: Field extends keyof Event ? Field extends "description" ? Readonly<{
     id: Field;
+    type: "text";
+    label: string;
+    required: boolean;
+    maxLength: number;
+  }> : Readonly<{
+    id: Field;
+    type: "options";
     label: string;
     required: boolean;
     options: readonly EventFieldOption<Extract<Event[Field], string>>[];
@@ -27,6 +35,7 @@ export type EventDefinition<Type extends EventType = EventType> = Readonly<{
 }>;
 
 const shotOutcome = {
+  type: "options",
   id: "outcome", label: "Outcome", required: true,
   options: [
     { id: "goal", label: "Goal" }, { id: "on-target", label: "On Target" },
@@ -35,21 +44,25 @@ const shotOutcome = {
 } as const satisfies EventFieldDefinition;
 
 const bodyPart = {
+  type: "options",
   id: "bodyPart", label: "Body Part", required: true,
   options: [{ id: "foot", label: "Foot" }, { id: "head", label: "Head" }, { id: "other", label: "Other" }],
 } as const satisfies EventFieldDefinition;
 
 const passOutcome = {
+  type: "options",
   id: "outcome", label: "Outcome", required: true,
   options: [{ id: "completed", label: "Completed" }, { id: "incomplete", label: "Incomplete" }],
 } as const satisfies EventFieldDefinition;
 
 const dribbleOutcome = {
+  type: "options",
   id: "outcome", label: "Outcome", required: true,
   options: [{ id: "successful", label: "Successful" }, { id: "unsuccessful", label: "Unsuccessful" }],
 } as const satisfies EventFieldDefinition;
 
 const contestOutcome = {
+  type: "options",
   id: "outcome", label: "Outcome", required: true,
   options: [{ id: "won", label: "Won" }, { id: "lost", label: "Lost" }],
 } as const satisfies EventFieldDefinition;
@@ -66,6 +79,8 @@ export const EVENT_DEFINITIONS = {
   tackle: { id: "tackle", label: "Tackle", category: "defending", order: 80, rail: "right", playerRequired: true, fields: [contestOutcome] },
   interception: { id: "interception", label: "Interception", category: "defending", order: 90, rail: "right", playerRequired: true, fields: [] },
   "ball-recovery": { id: "ball-recovery", label: "Ball Recovery", category: "defending", order: 100, rail: "right", playerRequired: true, fields: [] },
+  custom: { id: "custom", label: "Custom", category: "other", order: 110, rail: "left", playerRequired: false,
+    fields: [{ id: "description", type: "text", label: "Description", required: true, maxLength: CUSTOM_EVENT_DESCRIPTION_MAX_LENGTH }] },
 } as const satisfies { [Type in EventType]: EventDefinition<Type> };
 
 export const ORDERED_EVENT_TYPES: readonly EventType[] = Object.freeze(
@@ -92,6 +107,6 @@ export function isEventFieldOption<Value extends string>(
   return field?.options.some((option) => option.id === value) ?? false;
 }
 
-export function getEventFieldOptionLabel(field: EventFieldDefinition, value: string | null | undefined): string | undefined {
+export function getEventFieldOptionLabel(field: Extract<EventFieldDefinition, { type: "options" }>, value: string | null | undefined): string | undefined {
   return field.options.find((option) => option.id === value)?.label;
 }

@@ -391,6 +391,10 @@ elkészült.** A jelenlegi eventkészlet továbbra sem végleges. A
 az eventtípusok funkcionális újratervezése, a migration és a backend előtti
 véglegesítés későbbi feladat.
 
+Az alábbi felépítés és a 47 tesztes ellenőrzés az eredeti 6.1 refaktort dokumentálja.
+A 6.2 azóta text fielddel, opcionális Playerrel és a tizenegyedik, Custom eventtel
+bővítette ezt; az új állapot részletei a következő szekcióban szerepelnek.
+
 - [x] Minden event type-nak legyen stabil belső ID-ja és külön display labelje.
 - [x] Az event action gombok a központi event-definíciókból generálódjanak.
 - [x] A filterek automatikusan a központi event-definíciókból készüljenek.
@@ -481,24 +485,85 @@ Event definitions → Shortcuts → Action buttons
 
 #### 6.2 Custom / Other event
 
-**Állapot: ötlet.** Legyen lehetőség olyan esemény rögzítésére is, amely nem fér bele
-egyik előre definiált event type-ba sem.
+**Állapot: elkészült, automatizált és szimulált komponens-/videóellenőrzéssel.**
+A Custom a meglévő konfigurációvezérelt event workflow része. A valódi böngészős
+vizuális ellenőrzés elérhető böngésző hiányában még hátravan.
 
-- [ ] Legyen külön Custom / Other event type stabil belső ID-val.
-- [ ] Custom event mentésekor a felhasználó adhasson egy rövid egyéni leírást.
-- [ ] A leírás legyen kötelező.
-- [ ] A leírás hossza legyen korlátozott, hogy ne váljon általános jegyzetmezővé
-      (például 120–200 karakter).
-- [ ] Játékos hozzárendelése legyen opcionális.
-- [ ] A custom event ugyanúgy kerüljön be az Events listába.
-- [ ] A custom event legyen használható Review mode-ban.
-- [ ] Lehessen Custom eventre szűrni.
-- [ ] A mentett adat stabil event type ID-t és a felhasználó által megadott
+- [x] Legyen külön Custom / Other event type stabil belső ID-val.
+- [x] Custom event mentésekor a felhasználó adhasson egy rövid egyéni leírást.
+- [x] A leírás legyen kötelező.
+- [x] A leírás hossza legyen korlátozott: legfeljebb 160 karakter.
+- [x] Játékos hozzárendelése legyen opcionális.
+- [x] A custom event ugyanúgy kerüljön be az Events listába.
+- [x] A custom event legyen használható Review mode-ban.
+- [x] Lehessen Custom eventre szűrni.
+- [x] A mentett adat stabil event type ID-t és a felhasználó által megadott
       `description` mezőt tartalmazzon.
-- [ ] A custom event UI labelje ne legyen redundánsan minden eventben eltárolva.
-- [ ] A Custom event később exportnál vagy backend persistence-nél is kezelhető legyen.
+- [x] A custom event UI labelje ne legyen redundánsan minden eventben eltárolva.
+- [x] A Custom event később exportnál vagy backend persistence-nél is kezelhető legyen:
+      backendfüggetlen domain adatot tárol; tényleges export/backend nincs.
+- [ ] Valódi böngészőben ellenőrizni az új bal oldali gombot, a 160 karakteres
+      Description mezőt és összefoglalókat, valamint a fix/responsive layoutot.
 - Függőség: a 6.1 konfigurációvezérelt eventmodell és a 7. rosterkezelés;
-  az opcionális játékos-hozzárendelést ezekkel összhangban kell kialakítani.
+  az opcionális játékos-hozzárendelés ezek közös workflow-ját és runtime rosterét használja.
+
+Megvalósult felépítés:
+
+- Stabil ID: `custom`, UI label: `Custom`, kategória: `other`. A `CustomEvent`
+  a `src/types/event.ts` `MatchEvent` discriminated unionjének tagja:
+  `id`, `type`, `timestamp`, kötelező `description`, opcionális `playerId`.
+  A korábbi tíz event mentett mezői és kötelező játékoskapcsolata változatlan.
+- A `src/config/eventDefinitions.ts` `EventFieldDefinition` unionje `type: "options"`
+  és `type: "text"` változatot kezel. A Description csak olyan domain eventhez
+  rendelhető, amely ténylegesen tartalmazza ezt a mezőt. A központi
+  `CUSTOM_EVENT_DESCRIPTION_MAX_LENGTH = 160` adja a limitet és a textarea `maxLength` értékét.
+- A közös `validateEventText` trimel, elutasítja az üres/whitespace-only és a
+  160 karakternél hosszabb trimelt értéket. A form és a factory ugyanazt a
+  metadata-alapú validációt használja; inline üzenet és karakterszámláló segíti a kitöltést.
+- Folyamat: Description → Next → Player (optional) → Review → explicit Save.
+  A `playerRequired: false` alapján jelenik meg a `No player` opció; üres
+  rosterrel is lehet menteni. A kötelező játékost igénylő eventek viselkedése nem változott.
+  Back megőrzi a mezőértékeket; Cancel/Escape eldobja a draftot. Exit/Resume megtartja.
+- A `createEventDetails` létrehozza a trimelt Custom payloadot. A `createMatchEvent`
+  típusbiztos factory állítja össze a mentett eseményt, `as MatchEvent` nélkül;
+  játékos nélkül teljesen elhagyja a `playerId` mezőt. Nincs fake ID, player snapshot
+  vagy redundánsan mentett label. Az Edit prefill, a játékos hozzáadása/eltávolítása,
+  az eredeti ID/timestamp megőrzése, Cancel rollback és az event Delete közös maradt.
+- A `formatEventDetails` a text metadata alapján jeleníti meg a leírást az
+  Events/Saved/Review és workflow összefoglalókban. A `formatEventPlayer` helper
+  hiányzó `playerId` esetén üres szöveget ad; létező, de rosterben nem található
+  ID esetén `Unknown player` jelenik meg. A player törlése nem törli a hivatkozást.
+- A Custom filter a központi definícióból automatikusan megjelenik. A meglévő
+  Event type + Player AND szűrés változatlan: konkrét játékosnál a hozzárendelés
+  nélküli eventek kimaradnak, `All players` alatt megjelennek. Nincs `No player` filter.
+- Az Events click-to-seek pontos timestampre ugrik; a Review ugyanabból a
+  `filteredEvents` listából dolgozik, Previous/Next/count és 3 másodperces,
+  nullánál korlátozott lead-innel, autoplay nélkül. A Quick Seek nem változott.
+- A Custom gomb a bal rail végére került: ott a meglévő kettő mellé harmadikként
+  elfér, a felső railt nem terheli, a tíz eredeti gomb sorrendje és a railméretek
+  megmaradtak. A kompakt textarea és a hosszú összefoglalók a fix bottom railen
+  belül maradnak; szükség esetén csak a szöveg/rail belseje görgethető.
+- Default shortcut: `C`, a közös `eventShortcuts.ts` mappingből; badge, aria-keyshortcuts,
+  handler és Settings ugyanazt az értéket használja. A Custom billentyű testreszabható.
+  Description gépelése közben az input/textarea guard az event shortcutokat és a
+  Quick Seeket is blokkolja. A workflow/overlay tiltások változatlanok.
+- A régi, 10-eventes localStorage mapping a teljes konfiguráció validálásán elbukik;
+  az új, 11-eventes default töltődik be, és az App meglévő startup effectje visszaírja.
+  Ez a korábbi egyedi kiosztást is defaultokra állítja; komplex migration nincs.
+- Új event persistence, export, backend és csomag nem készült. Az eventek/roster
+  runtime React state-ben maradnak, oldalfrissítéskor elvesznek; csak a shortcutok
+  persistentek. Saved-event migration ehhez a bővítéshez nem szükséges; meglévő
+  eventtípus átalakításához/megszüntetéséhez továbbra is roadmap-feladat.
+
+Ellenőrzés: `npm test` — 80 sikeres teszt (10 új), lint és build sikeres.
+A célzott tesztek lefedik a definíciót, trimet/required/160–161 karakteres határt,
+domain-only factoryt, opcionális Playert és üres rostert, create/edit/Back/Cancel/Delete
+folyamatot, no-player vs deleted-player megjelenítést és reference countot,
+kombinált szűrést, exact seeket, Review lead-int és navigációt, shortcut/badge/Settings
+szinkront, tiltásokat, textarea typing guardot, régi shortcut config fallbacket,
+valamint az Exit/Resume alatti draftmegőrzést. A fordítási szerződésteszt ellenőrzi
+a Custom kötelező leírását és a más eventekre tiltott description mezőt is.
+A korábbi 70 regressziós teszt megmaradt; a komponens- és videótesztek szimuláltak.
 
 ### 7. Player / roster management
 

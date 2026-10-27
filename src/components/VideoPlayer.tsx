@@ -15,6 +15,7 @@ import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import ReviewControls from "./ReviewControls";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
+import { createMatchEvent } from "../utils/events";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -332,18 +333,23 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     videoRef.current?.focus();
   }
 
-  function handleSave(playerId: number, details: EventDetails) {
+  function handleSave(playerId: number | undefined, details: EventDetails) {
     if (!pending || !isVideoReady || !isAnalysisActive || isReviewMode || pending.type !== details.type) return;
-    const timestamp = pending.timestamp;
+    if (playerId !== undefined && !players.some((player) => player.id === playerId)) return;
+    const saved = createMatchEvent(details, {
+      id: pending.mode === "edit" ? pending.original.id : events.length + 1,
+      timestamp: pending.timestamp,
+    }, playerId);
+    if (!saved) return;
     if (pending.mode === "edit") {
       const editedId = pending.original.id;
       setEvents((previousEvents) => previousEvents.map((event) => event.id === editedId
-        ? { ...details, id: event.id, timestamp: event.timestamp, playerId }
+        ? saved
         : event));
     } else {
       setEvents((previousEvents) => [
         ...previousEvents,
-        { ...details, id: previousEvents.length + 1, playerId, timestamp },
+        saved,
       ]);
     }
     setShowSavedEvent(true);

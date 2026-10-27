@@ -1,6 +1,6 @@
 ﻿import type { Player } from "../types/player";
 import type { MatchEvent } from "../types/event";
-import { formatPlayerLabel } from "../utils/players";
+import { formatEventPlayer } from "../utils/players";
 import { formatEventDetails, formatTimestamp } from "../utils/events";
 
 type Props = { players: readonly Player[]; events: MatchEvent[]; disabled: boolean; onSeek: (timestamp: number) => void };
@@ -11,13 +11,13 @@ export default function EventList({ players, events, disabled, onSeek }: Props) 
   return (
     <ul className="event-list" aria-label="Saved events">
       {events.map((event) => {
-        const player = players.find((player) => player.id === event.playerId);
+        const playerLabel = formatEventPlayer(event.playerId, players);
         return (
           <li key={event.id}>
             <button type="button" disabled={disabled} onClick={() => onSeek(event.timestamp)}>
               <span className="event-list-heading">
                 <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
-                <strong>{formatPlayerLabel(player)}</strong>
+                {playerLabel && <strong>{playerLabel}</strong>}
               </span>
               <span className="event-list-details">
                 {formatEventDetails(event)}
