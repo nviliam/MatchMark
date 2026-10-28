@@ -2,6 +2,31 @@
   width: 100%;
   margin: 0 auto;
   padding: 12px 16px;
+  background:
+    radial-gradient(ellipse at 0% 25%, rgb(74 155 184 / 10%), transparent 36%),
+    radial-gradient(ellipse at 100% 30%, rgb(74 155 184 / 10%), transparent 36%),
+    radial-gradient(ellipse at 50% 100%, rgb(18 100 72 / 12%), transparent 60%),
+    var(--background);
+}
+/* Landing-only sizing leaves the fixed analysis grid untouched. */
+.app:not(.app-analysis) {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: clamp(16px, 2.5vw, 32px);
+  background:
+    radial-gradient(ellipse at 0% 24%, rgb(176 226 239 / 22%), transparent 24%),
+    radial-gradient(ellipse at 100% 24%, rgb(176 226 239 / 22%), transparent 24%),
+    radial-gradient(ellipse at 50% 82%, rgb(20 132 87 / 25%), transparent 48%),
+    radial-gradient(ellipse at 50% 40%, #0c2734, #030c13 78%);
+}
+.app:not(.app-analysis) > .video-player {
+  align-content: center;
+  padding-block: clamp(24px, 6dvh, 64px);
+}
+.app:not(.app-analysis) .error-message {
+  width: min(100%, 720px);
+  margin-inline: auto;
 }
 .app-header {
   display: flex;
@@ -20,10 +45,11 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  background: var(--accent);
+  background: linear-gradient(145deg, #1b9b73, #10513e);
   color: white;
   border-radius: 8px;
   font-weight: 750;
+  border: 1px solid rgb(100 230 184 / 24%);
 }
 .video-player {
   display: grid;
@@ -43,10 +69,15 @@
   align-items: center;
   gap: var(--space-6);
   text-align: center;
-  padding: clamp(2rem, 7vw, 5rem) var(--space-6);
-  max-width: 760px;
+  padding: clamp(2rem, 5vw, 4rem) var(--space-6);
+  max-width: 720px;
   width: 100%;
-  margin: var(--space-8) auto;
+  margin: 0 auto;
+  background: var(--surface-glass);
+  border-color: var(--border-medium);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
 }
 
 .eyebrow {
@@ -59,7 +90,7 @@
 }
 
 .video-picker h2 {
-  font-size: 1.75rem;
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
   letter-spacing: -0.035em;
   overflow-wrap: anywhere;
 }
@@ -71,6 +102,19 @@
 
 .privacy-note {
   font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.video-picker:not(.video-picker-compact) .file-button {
+  min-width: 200px;
+  min-height: 52px;
+  border-color: var(--badge-border);
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+.video-picker:not(.video-picker-compact) .file-button:hover {
+  background: var(--primary-fill);
+  border-color: var(--accent);
 }
 
 .file-button {
@@ -138,22 +182,19 @@
   border-color: var(--accent);
 }
 .action-rail-top .analysis-exit {
-  background: rgb(138 40 34 / 10%);
-  border-color: rgb(138 40 34 / 32%);
-  color: #8a2822;
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
 }
 .action-rail-top .analysis-exit:hover:not(:disabled) {
-  background: rgb(138 40 34 / 18%);
-  border-color: rgb(138 40 34 / 56%);
-  color: #6f201b;
+  background: var(--danger-soft-hover);
+  border-color: var(--danger);
+  color: var(--danger-hover);
 }
 .action-rail-top .analysis-exit:active:not(:disabled) {
-  background: rgb(138 40 34 / 24%);
-  border-color: #8a2822;
-  color: #6f201b;
-}
-.action-rail-top .analysis-exit:focus-visible {
-  outline-color: #8a2822;
+  background: var(--danger-fill);
+  border-color: var(--danger);
+  color: #fff;
 }
 
 .video-picker-compact {
@@ -188,7 +229,7 @@
   grid-template-areas: "top top top" "left video right" "bottom bottom bottom";
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--surface);
+  background: var(--surface-glass);
 }
 .action-rail {
   display: flex;
@@ -196,6 +237,7 @@
   justify-content: center;
   gap: 4px;
   min-width: 0;
+  background: rgb(6 19 27 / 48%);
 }
 .action-rail-top {
   grid-area: top;
@@ -228,10 +270,10 @@
   flex-shrink: 0;
   min-width: 16px;
   padding: 1px 3px;
-  border: 1px solid currentColor;
+  border: 1px solid var(--badge-border);
   border-radius: 3px;
-  background: #dcebe3;
-  color: var(--text-primary);
+  background: var(--badge-background);
+  color: var(--badge-text);
   font-family: inherit;
   font-size: 0.65rem;
   font-weight: 600;
@@ -263,18 +305,31 @@
   grid-area: video;
   min-width: 0;
   min-height: 0;
-  background: #10191d;
+  background: #02080d;
+  border-radius: 10px;
+  /* Inset edge adds definition without taking space from the video. */
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
 }
 .video-stage video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #10191d;
+  background: #02080d;
+}
+.video-stage video:focus-visible {
+  /* Keep keyboard focus visible inside the stage's clipped rounded edge. */
+  outline-offset: -3px;
 }
 .events-panel,
 .shortcut-settings,
 .players-panel {
+  /* Shared smoked glass skin; geometry and scrolling remain unchanged. */
+  /* Keep secondary copy legible over bright frames with the lighter glass. */
+  --text-secondary: var(--panel-text-secondary);
+  color-scheme: dark;
+  color: var(--text-primary);
   position: absolute;
   z-index: 1;
   top: 8px;
@@ -286,11 +341,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgb(255 255 255 / 75%);
-  backdrop-filter: blur(3px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+  background: var(--panel-glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid var(--panel-glass-border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+.players-panel {
+  border-radius: 16px;
+  background-clip: padding-box;
+  /* The shared overflow: hidden clips children; the body retains its own scroll. */
+}
+.players-panel-header {
+  border-radius: 15px 15px 0 0;
 }
 .events-panel-header,
 .shortcut-settings-header,
@@ -302,6 +366,7 @@
   padding: 4px 10px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+  background: var(--panel-control-bg);
 }
 .events-panel-header h2,
 .shortcut-settings-header h2,
@@ -319,6 +384,11 @@
   height: 32px;
   line-height: 1;
   padding: 0;
+  background: var(--panel-control-bg);
+}
+.panel-close-button:hover:not(:disabled) {
+  background: var(--panel-row-bg);
+  border-color: var(--border-medium);
 }
 .events-panel-content {
   min-height: 0;
@@ -332,6 +402,21 @@
   overscroll-behavior: contain;
   padding: 8px 10px;
 }
+.events-panel-content,
+.players-panel-content,
+.shortcut-settings-content {
+  scrollbar-color: var(--panel-scroll-thumb) transparent;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-track {
+  background: transparent;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb {
+  background: var(--panel-scroll-thumb);
+  border-radius: 8px;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-scroll-hover);
+}
 .add-player-form { display: grid; gap: 8px; margin-bottom: 12px; font-size: 0.8rem; }
 .add-player-form h3 { margin: 0; font-size: 0.85rem; }
 .add-player-form label { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -342,25 +427,27 @@
   padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--surface);
+  background: var(--panel-control-bg);
   color: var(--text-primary);
   font-size: 0.85rem;
+  caret-color: var(--accent);
 }
 .add-player-form button { min-height: 36px; padding: 6px 10px; justify-self: start; }
 .optional-field { color: var(--text-secondary); }
-.player-form-error { color: #8a2822; }
+.player-form-error { color: var(--danger); }
 .roster-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; }
 .roster-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
 .roster-list li > span { flex: 1; min-width: 0; }
+.roster-list li { background: var(--panel-row-bg); }
 .player-edit-button,
 .player-delete-button { flex-shrink: 0; min-height: 32px; padding: 4px 8px; font-size: 0.75rem; }
-.player-delete-button { color: #8a2822; border-color: #e6c3c0; }
-.player-delete-button:hover:not(:disabled) { background: #fff5f4; border-color: #8a2822; }
+.player-delete-button { color: var(--danger); border-color: var(--danger-border); background: var(--danger-soft); }
+.player-delete-button:hover:not(:disabled) { background: var(--danger-soft-hover); border-color: var(--danger); }
 .player-delete-confirmation { display: grid; gap: 10px; margin-bottom: 12px; font-size: 0.8rem; overflow-wrap: anywhere; }
 .player-delete-confirmation h3 { margin: 0; font-size: 0.85rem; }
 .player-delete-confirmation button { min-height: 36px; padding: 6px 10px; }
-.player-delete-confirm { color: #fff; background: #8a2822; border-color: #8a2822; }
-.player-delete-confirm:hover:not(:disabled) { background: #6f201b; border-color: #6f201b; }
+.player-delete-confirm { color: #fff; background: var(--danger-fill); border-color: var(--danger-border); }
+.player-delete-confirm:hover:not(:disabled) { background: var(--danger-fill-hover); border-color: var(--danger); }
 .player-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .events-empty {
   padding: 8px;
@@ -381,7 +468,7 @@
   border-bottom: 1px solid var(--border);
   font-size: 0.75rem;
 }
-.events-filter > span { flex-shrink: 0; }
+.events-filter > span { flex-shrink: 0; color: var(--text-secondary); }
 .events-filter select {
   flex: 1;
   min-width: 0;
@@ -389,9 +476,13 @@
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--surface);
+  background: var(--panel-control-bg);
   color: var(--text-primary);
   font-size: 0.75rem;
+}
+.events-filter option {
+  background: var(--surface);
+  color: var(--text-primary);
 }
 .bottom-rail {
   grid-area: bottom;
@@ -399,6 +490,7 @@
   min-width: 0;
   min-height: 0;
   border-top: 1px solid var(--border);
+  background: var(--surface-glass);
   /* Form overflow stays inside the reserved track, including on small screens. */
   overflow: auto;
   overscroll-behavior: contain;
@@ -424,12 +516,15 @@
   width: 100%;
   min-height: 44px;
   padding: 4px 8px;
-  background: transparent;
+  background: var(--panel-row-bg);
   text-align: left;
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+.event-list button:focus-visible {
+  outline-offset: -3px;
 }
 .event-list-heading {
   display: flex;
@@ -529,10 +624,10 @@
 }
 .error-message {
   padding: 16px;
-  border: 1px solid #e6c3c0;
+  border: 1px solid var(--danger-border);
   border-radius: 8px;
-  background: #fff5f4;
-  color: #8a2822;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 /* Only the loaded analysis view owns the viewport. Removing the class
@@ -616,6 +711,7 @@ body:has(.app-analysis) {
   border: 0;
   border-radius: 0 0 8px 8px;
   box-shadow: none;
+  background: transparent;
 }
 .app-analysis .event-form > * {
   min-width: 0;
@@ -841,21 +937,22 @@ body:has(.app-analysis) {
   font-size: 0.8rem;
 }
 .saved-event-summary .button-danger {
-  color: #8a2822;
-  border-color: #e6c3c0;
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
 }
 .saved-event-summary .button-danger:hover:not(:disabled) {
-  background: #fff5f4;
-  border-color: #8a2822;
+  background: var(--danger-soft-hover);
+  border-color: var(--danger);
 }
 .saved-event-summary .button-danger-confirm {
   color: #fff;
-  background: #8a2822;
-  border-color: #8a2822;
+  background: var(--danger-fill);
+  border-color: var(--danger-border);
 }
 .saved-event-summary .button-danger-confirm:hover:not(:disabled) {
-  background: #6f201b;
-  border-color: #6f201b;
+  background: var(--danger-fill-hover);
+  border-color: var(--danger);
 }
 
 /* Shortcut editing is an overlay: only its list scrolls, never the cockpit. */
@@ -883,12 +980,21 @@ body:has(.app-analysis) {
   justify-content: space-between;
   gap: 8px;
   font-size: 0.8rem;
+  background: var(--panel-row-bg);
+  border-radius: 8px;
 }
 .shortcut-settings-list button {
   min-height: 36px;
   min-width: 48px;
   padding: 4px 8px;
   font-size: 0.75rem;
+  background: var(--badge-background);
+  border-color: var(--badge-border);
+  color: var(--badge-text);
+}
+.shortcut-settings-list button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 .shortcut-settings-list button[aria-pressed="true"] {
   background: var(--accent-soft);
@@ -914,6 +1020,20 @@ body:has(.app-analysis) {
   font-size: 0.75rem;
 }
 
+/* Extra room on the left only: preserve right-aligned actions and Events spacing. */
+.players-panel-header,
+.players-panel-content,
+.shortcut-settings-header,
+.shortcut-settings-hint,
+.shortcut-settings-content,
+.shortcut-settings-footer {
+  padding-left: 12px;
+}
+.roster-list li,
+.shortcut-settings-list li {
+  padding-left: 4px;
+}
+
 /* Review navigation occupies the existing fixed-height bottom rail. */
 .events-panel-footer {
   flex-shrink: 0;
@@ -926,6 +1046,17 @@ body:has(.app-analysis) {
   min-height: 36px;
   padding: 4px 8px;
   font-size: 0.75rem;
+}
+.events-panel-footer button,
+.add-player-form button[type="submit"] {
+  background: var(--primary-fill);
+  border-color: var(--badge-border);
+  color: var(--text-primary);
+}
+.events-panel-footer button:hover:not(:disabled),
+.add-player-form button[type="submit"]:hover:not(:disabled) {
+  background: var(--primary-fill-hover);
+  border-color: var(--accent);
 }
 .review-controls {
   display: flex;

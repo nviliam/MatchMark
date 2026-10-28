@@ -7,16 +7,39 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --background: #f4f6f7;
-  --surface: #ffffff;
-  --text-primary: #172b32;
-  --text-secondary: #596b72;
-  --accent: #17664e;
-  --accent-hover: #104d3b;
-  --accent-soft: #edf5f1;
-  --border: #dce4e5;
+  color-scheme: dark;
+  --background: #061019;
+  --surface: #10232e;
+  --surface-glass: rgb(9 26 36 / 78%);
+  --panel-glass-bg: rgb(10 24 34 / 80%);
+  --panel-text-secondary: #becdd5;
+  --panel-glass-border: rgb(255 255 255 / 11%);
+  --panel-row-bg: rgb(255 255 255 / 5%);
+  --panel-control-bg: rgb(6 16 25 / 60%);
+  --panel-scroll-thumb: rgb(255 255 255 / 22%);
+  --panel-scroll-hover: rgb(24 181 122 / 40%);
+  --text-primary: #f3f7f8;
+  --text-secondary: #aabcc5;
+  --text-muted: #91a7b2;
+  --accent: #44d9a4;
+  --accent-hover: #64e6b8;
+  --accent-soft: rgb(24 181 122 / 14%);
+  --primary-fill: #126448;
+  --primary-fill-hover: #187c59;
+  --border: rgb(177 207 220 / 16%);
+  --border-medium: rgb(177 207 220 / 28%);
+  --badge-background: #0b2627;
+  --badge-border: rgb(97 202 163 / 38%);
+  --badge-text: #c4eddf;
+  --danger: #ffb0aa;
+  --danger-hover: #ffd1cc;
+  --danger-soft: rgb(190 55 55 / 16%);
+  --danger-soft-hover: rgb(190 55 55 / 28%);
+  --danger-border: rgb(230 106 100 / 40%);
+  --danger-fill: #923333;
+  --danger-fill-hover: #ac3e3e;
   --radius: 12px;
-  --shadow: 0 2px 8px rgb(23 43 50 / 4%);
+  --shadow: 0 12px 36px rgb(0 0 0 / 18%);
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -34,7 +57,7 @@ body {
   min-width: 320px;
 }
 
-button, input, select {
+button, input, select, textarea {
   font: inherit;
 }
 
@@ -50,7 +73,7 @@ button, .file-button {
   color: var(--text-primary);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  transition: background-color 150ms, border-color 150ms, color 150ms, opacity 150ms;
 }
 
 button:hover:not(:disabled) {
@@ -58,24 +81,26 @@ button:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-button:focus-visible, select:focus-visible, input:focus-visible, .file-button:focus-within {
+button:focus-visible, select:focus-visible, input:focus-visible,
+textarea:focus-visible, video:focus-visible, .file-button:focus-within {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
 button:disabled, fieldset:disabled button {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .button-primary {
-  background: var(--accent);
+  background: var(--primary-fill);
   border-color: var(--accent);
   color: #fff;
 }
 
 .button-primary:hover:not(:disabled), .file-button:hover {
-  background: var(--accent-hover);
+  background: var(--primary-fill-hover);
+  border-color: var(--accent-hover);
   color: #fff;
 }
 
@@ -91,6 +116,19 @@ h2 {
 
 p {
   color: var(--text-secondary);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+input, select, textarea {
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+}
+
+* {
+  scrollbar-color: var(--border-medium) transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
