@@ -369,9 +369,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     <section className="video-player" aria-label="Video player">
       {!isAnalysisActive && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
         <div className="video-picker-copy">
-          <p className="eyebrow">{videoUrl ? "Match video" : "Start your analysis"}</p>
-          <h2>{videoUrl ? videoName : "Select match video"}</h2>
-          <p>{videoUrl ? "Your video stays on your device." : "Choose a local video file to start tagging."}</p>
+          <p className="eyebrow">{videoUrl ? "Match video" : ""}</p>
+          <h2>{videoUrl ? videoName : "Choose a local video file to start tagging."}</h2>
+          <p>{videoUrl ? "Your video stays on your device." : ""}</p>
           <p className="privacy-note" id="video-format-hint">Recommended format: MP4 (H.264)</p>
         </div>
         <div className="video-picker-actions">
@@ -381,12 +381,12 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
             </button>
           )}
           <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
-            <span>{videoUrl ? "Change video" : "Choose video"}</span>
+            <span>{videoUrl ? "Change video" : "Select video"}</span>
             <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
-              aria-label={videoUrl ? "Change video" : "Choose video"} onChange={handleFileChange} />
+              aria-label={videoUrl ? "Change video" : "Select video"} onChange={handleFileChange} />
           </label>
         </div>
-        {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded.</p>}
+        {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded to the cloud.</p>}
       </div>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (

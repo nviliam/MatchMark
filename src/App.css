@@ -90,9 +90,13 @@
 }
 
 .video-picker h2 {
-  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
   letter-spacing: -0.035em;
   overflow-wrap: anywhere;
+}
+
+.video-picker-copy > p:empty {
+  display: none;
 }
 
 .video-picker-copy > h2 + p,
