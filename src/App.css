@@ -644,6 +644,7 @@ body:has(.app-analysis) {
   height: 100dvh;
   padding: 8px;
   overflow: hidden;
+  transition: background-color 200ms ease;
 }
 .app-analysis .video-player {
   height: 100%;
@@ -1085,4 +1086,89 @@ body:has(.app-analysis) {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) var(--bottom-rail-height);
   grid-template-areas: "video" "bottom";
+  background-color: var(--review-bg);
+  border-color: rgb(74 155 184 / 34%);
+  box-shadow: 0 0 22px rgb(25 110 151 / 8%);
+}
+
+/* Existing Review state supplies the visual mode; keep geometry and accents intact. */
+.app-analysis:has(.tagging-workspace-review) {
+  --review-bg: #071622;
+  --review-ambient: rgb(55 139 181 / 16%);
+  background:
+    radial-gradient(ellipse at 0% 0%, var(--review-ambient), transparent 42%),
+    radial-gradient(ellipse at 100% 0%, var(--review-ambient), transparent 42%),
+    var(--review-bg);
+}
+.app-analysis .bottom-rail {
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.app-analysis .tagging-workspace-review > .bottom-rail {
+  background:
+    linear-gradient(180deg, rgb(74 155 184 / 12%), transparent 65%),
+    var(--review-bg);
+  border-top-color: rgb(86 175 207 / 44%);
+  box-shadow: inset 0 1px 0 rgb(121 198 223 / 10%);
+}
+.app-analysis .tagging-workspace-review > .video-stage {
+  outline-color: rgb(100 181 209 / 22%);
+}
+
+/* Broadcast control surfaces preserve the existing rail size and button positions. */
+.app-analysis .tagging-workspace-review .review-controls button {
+  background:
+    linear-gradient(180deg, rgb(88 160 190 / 8%), transparent),
+    #0b293d;
+  border-color: rgb(84 167 201 / 42%);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.app-analysis .tagging-workspace-review .review-controls button:hover:not(:disabled) {
+  background-color: #12394f;
+  border-color: rgb(112 193 222 / 64%);
+}
+.app-analysis .tagging-workspace-review .review-controls button:active:not(:disabled) {
+  background-color: #092236;
+}
+.app-analysis .tagging-workspace-review .review-controls button:disabled {
+  border-color: rgb(84 167 201 / 20%);
+}
+/* Exit Review is the existing final action; retain the shared danger palette. */
+.app-analysis .tagging-workspace-review .review-controls button:last-child {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+.app-analysis .tagging-workspace-review .review-controls button:last-child:hover:not(:disabled) {
+  background-color: var(--danger-soft-hover);
+  border-color: var(--danger);
+}
+.app-analysis .tagging-workspace-review .review-controls button:last-child:active:not(:disabled) {
+  background-color: var(--danger-soft);
+}
+.app-analysis .tagging-workspace-review .review-controls .saved-event-label {
+  color: #80d2e2;
+  text-shadow: 0 1px 12px rgb(80 174 201 / 15%);
+}
+.app-analysis .tagging-workspace-review .review-position {
+  color: #d0e4ee;
+  font-weight: 600;
+}
+.app-analysis .tagging-workspace-review .review-controls .timestamp {
+  background: #0b3b3d;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgb(63 181 163 / 20%);
+  font-weight: 600;
+}
+.app-analysis .tagging-workspace-review .review-controls .event-summary-text {
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-analysis,
+  .app-analysis .bottom-rail,
+  .app-analysis .tagging-workspace-review .review-controls button {
+    transition: none;
+  }
 }
