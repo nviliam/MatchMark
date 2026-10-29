@@ -2,7 +2,10 @@ import "./App.css";
 import { useEffect, useState } from "react";
 
 import VideoPlayer from "./components/VideoPlayer";
-import { loadEventShortcuts, persistEventShortcuts } from "./config/eventShortcuts";
+import {
+  loadEventShortcuts,
+  persistEventShortcuts,
+} from "./config/eventShortcuts";
 
 function App() {
   const [isAnalysisActive, setIsAnalysisActive] = useState(false);
@@ -15,15 +18,23 @@ function App() {
 
   return (
     <main className={isAnalysisActive ? "app app-analysis" : "app"}>
-      {!isAnalysisActive && <header className="app-header">
-        <div className="brand-mark" aria-hidden="true">M</div>
-        <div>
-          <h1>MatchMark</h1>
-          <p>Football video tagging for youth coaches</p>
-        </div>
-      </header>}
-      <VideoPlayer isAnalysisActive={isAnalysisActive} onAnalysisActiveChange={setIsAnalysisActive}
-        eventShortcuts={eventShortcuts} onEventShortcutsChange={setEventShortcuts} />
+      {!isAnalysisActive && (
+        <header className="app-header">
+          <div className="brand-mark" aria-hidden="true">
+            M
+          </div>
+          <div>
+            <h1>MatchMark</h1>
+            <p>Football analysis made simple</p>
+          </div>
+        </header>
+      )}
+      <VideoPlayer
+        isAnalysisActive={isAnalysisActive}
+        onAnalysisActiveChange={setIsAnalysisActive}
+        eventShortcuts={eventShortcuts}
+        onEventShortcutsChange={setEventShortcuts}
+      />
     </main>
   );
 }
