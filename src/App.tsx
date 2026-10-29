@@ -19,7 +19,7 @@ function App() {
         <div className="brand-mark" aria-hidden="true">M</div>
         <div>
           <h1>MatchMark</h1>
-          <p>Football video tagging for youth coaches</p>
+          <p>Football analysis made simple</p>
         </div>
       </header>}
       <VideoPlayer isAnalysisActive={isAnalysisActive} onAnalysisActiveChange={setIsAnalysisActive}
