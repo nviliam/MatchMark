@@ -12,7 +12,7 @@ function setup() {
   let active = false, tree;
   const update = () => tree = h.render(Player, {
     isAnalysisActive: active, onAnalysisActiveChange: value => active = value,
-    eventShortcuts: { ...DEFAULT_EVENT_SHORTCUTS, shot: "s" },
+    eventShortcuts: { ...DEFAULT_EVENT_SHORTCUTS, shot: "h" },
   }, ctx);
   const component = Type => nodes(tree, node => node.type === Type)[0];
   const buttons = () => component(Buttons).props;
@@ -35,7 +35,7 @@ function setup() {
   const add = (type, playerId, timestamp) => {
     h.media.currentTime = timestamp; buttons().onSelect(type); update();
     const details = { type, ...(type === "shot" ? { outcome: "on-target", bodyPart: "foot" } : {}),
-      ...(type === "pass" ? { outcome: "completed" } : {}), ...(type === "duel" ? { outcome: "won" } : {}) };
+      ...(type === "pass" ? { subtype: "regular", outcome: "completed" } : {}), ...(type === "aerial-duel" ? { outcome: "won" } : {}) };
     component(Form).props.onSave(playerId, details); update();
   };
   update(); upload(); ready();
@@ -48,7 +48,7 @@ function setup() {
 function seed(s) {
   for (const [type, playerId, timestamp] of [
     ["shot", 1, 90.75], ["pass", 3, 4.5], ["shot", 1, 12.125], ["shot", 2, 7],
-    ["shot", 1, 55.875], ["duel", 2, 21], ["shot", 1, 44],
+    ["shot", 1, 55.875], ["aerial-duel", 2, 21], ["shot", 1, 44],
   ]) s.add(type, playerId, timestamp);
 }
 
@@ -114,7 +114,7 @@ test("Review locks mutations, overlays and event shortcuts while all six Quick S
   assert(s.control("Exit Review")); assert.equal(s.control("Exit"), undefined);
   assert(!s.component(s.Summary)); assert(!s.component(s.Form)); assert(!s.component(s.Delete));
   assert(!s.component(s.Panel)); assert(!s.component(s.Settings));
-  s.press("s"); assert(!s.component(s.Form)); assert.equal(s.position(), "1 / 4");
+  s.press("h"); assert(!s.component(s.Form)); assert.equal(s.position(), "1 / 4");
   for (const [key, delta] of [["2", 1.2], ["3", 1.5], ["4", 2]]) for (const shiftKey of [false, true]) {
     const before = s.h.media.currentTime;
     s.press(key, { code: `Digit${key}`, shiftKey });
@@ -190,7 +190,7 @@ test("Review layout omits all action rails and restores normal groups/badges on 
     assert(s.component(s.Buttons));
     const controls = s.h.render(s.Buttons, s.buttons());
     assert.deepEqual(nodes(controls, node => node.props?.role === "group").map(node => node.props["aria-label"]), ["top actions", "left actions", "right actions"]);
-    assert.equal(nodes(controls, node => node.type === "kbd").length, 11);
+    assert.equal(nodes(controls, node => node.type === "kbd").length, 15);
     assert(nodes(controls, node => node.type === "button" && text(node) === "Exit")[0]);
   };
   const video = nodes(s.tree, node => node.type === "video")[0];

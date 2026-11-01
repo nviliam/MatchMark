@@ -6,7 +6,7 @@ import { EVENT_DEFINITIONS, ORDERED_EVENT_TYPES, getEventDefinition } from "../s
 import { createEventDetails, formatEventDetails } from "../src/utils/events.ts";
 import { createHarness, nodes, text } from "./helpers/componentHarness.mjs";
 
-// Independent snapshots of the pre-refactor UI, not derived expectations.
+// Independent v1 contract snapshots, not derived expectations.
 const outcomes = {
   shot: [["goal", "Goal"], ["on-target", "On Target"], ["off-target", "Off Target"], ["blocked", "Blocked"]],
   pass: [["completed", "Completed"], ["incomplete", "Incomplete"]],
@@ -16,27 +16,34 @@ const outcomes = {
 const bodyParts = [["foot", "Foot"], ["head", "Head"], ["other", "Other"]];
 const outcome = options => ({ id: "outcome", label: "Outcome", required: true, options });
 const expected = [
-  { id: "pass", label: "Pass", rail: "top", order: 10, fields: [outcome(outcomes.pass)] },
-  { id: "key-pass", label: "Key Pass", rail: "top", order: 20, fields: [] },
-  { id: "shot", label: "Shot", rail: "top", order: 30, fields: [outcome(outcomes.shot), { id: "bodyPart", label: "Body Part", required: true, options: bodyParts }] },
-  { id: "duel", label: "Duel", rail: "top", order: 40, fields: [outcome(outcomes.contest)] },
-  { id: "ball-loss", label: "Ball Loss", rail: "top", order: 50, fields: [] },
-  { id: "dribble", label: "Dribble", rail: "left", order: 60, fields: [outcome(outcomes.dribble)] },
-  { id: "progressive-carry", label: "Progressive Carry", rail: "left", order: 70, fields: [] },
-  { id: "tackle", label: "Tackle", rail: "right", order: 80, fields: [outcome(outcomes.contest)] },
-  { id: "interception", label: "Interception", rail: "right", order: 90, fields: [] },
-  { id: "ball-recovery", label: "Ball Recovery", rail: "right", order: 100, fields: [] },
+  { id: "pass", label: "Pass", rail: "top", order: 10, fields: [{ id: "subtype", label: "Pass type", required: true,
+    options: [["regular", "Regular"], ["key-pass", "Key Pass"], ["long-ball", "Long Ball"]] }, outcome(outcomes.pass)] },
+  { id: "shot", label: "Shot", rail: "top", order: 20, fields: [outcome(outcomes.shot), { id: "bodyPart", label: "Body Part", required: true, options: bodyParts }] },
+  { id: "cross", label: "Cross", rail: "top", order: 30, fields: [outcome(outcomes.pass)] },
+  { id: "dribble", label: "Dribble", rail: "top", order: 40, fields: [outcome(outcomes.dribble)] },
+  { id: "ball-control", label: "Ball Control", rail: "top", order: 50, fields: [outcome(outcomes.dribble)] },
+  { id: "ball-loss", label: "Ball Loss", rail: "top", order: 60, fields: [] },
+  { id: "goal", label: "Goal", rail: "left", order: 70, fields: [] },
+  { id: "chance", label: "Chance", rail: "left", order: 80, fields: [] },
+  { id: "goalkeeper", label: "Goalkeeper", rail: "left", order: 90, fields: [{ id: "subtype", label: "Goalkeeper type", required: true,
+    options: [["save", "Save"], ["catch", "Catch"]] }] },
+  { id: "tackle", label: "Tackle", rail: "right", order: 110, fields: [outcome(outcomes.contest)] },
+  { id: "interception", label: "Interception", rail: "right", order: 120, fields: [] },
+  { id: "clearance", label: "Clearance", rail: "right", order: 130, fields: [] },
+  { id: "ball-recovery", label: "Ball Recovery", rail: "right", order: 140, fields: [] },
+  { id: "aerial-duel", label: "Aerial Duel", rail: "right", order: 150, fields: [outcome(outcomes.contest)] },
 ];
 
-test("definitions cover all ten stable IDs with the original labels, order, rails and field options", () => {
+test("definitions cover the fifteen v1 IDs with exact labels, order, rails and field options", () => {
   const ids = expected.map(event => event.id);
   assert.deepEqual(Object.keys(EVENT_DEFINITIONS).sort(), [...ids, "custom"].sort());
-  assert.deepEqual(ORDERED_EVENT_TYPES, [...ids, "custom"]);
-  assert.equal(new Set(Object.values(EVENT_DEFINITIONS).map(event => event.id)).size, 11);
+  assert.deepEqual(ORDERED_EVENT_TYPES, [...ids.slice(0, 9), "custom", ...ids.slice(9)]);
+  assert.equal(new Set(Object.values(EVENT_DEFINITIONS).map(event => event.id)).size, 15);
   for (const event of expected) {
     assert.deepEqual(EVENT_DEFINITIONS[event.id], {
       ...event, playerRequired: true,
-      category: ["tackle", "interception", "ball-recovery"].includes(event.id) ? "defending" : event.id === "duel" ? "contest" : "possession",
+      category: ["tackle", "interception", "clearance", "ball-recovery"].includes(event.id) ? "defending"
+        : event.id === "aerial-duel" ? "contest" : event.rail === "left" ? "other" : "possession",
       fields: event.fields.map(field => ({ ...field, type: "options", options: field.options.map(([id, label]) => ({ id, label })) })),
     });
     assert.equal(getEventDefinition(event.id), EVENT_DEFINITIONS[event.id]);
@@ -47,14 +54,16 @@ test("factory preserves all option combinations, validation and exact domain-onl
   for (const event of expected) {
     const field = event.fields.find(field => field.id === "outcome");
     const valid = field?.options.map(([id]) => id) ?? [""];
-    for (const value of valid) {
+    const subtypeField = event.fields.find(field => field.id === "subtype");
+    for (const subtype of subtypeField?.options.map(([id]) => id) ?? [""]) for (const value of valid) {
       for (const bodyPart of [null, "foot", "head", "other"]) {
-        const details = createEventDetails(event.id, value, bodyPart);
+        const details = createEventDetails(event.id, value, bodyPart, "", subtype);
         if (event.id === "shot" && bodyPart === null) {
           assert.equal(details, null);
         } else {
           assert.deepEqual(details, {
             type: event.id, ...(field ? { outcome: value } : {}),
+            ...(subtypeField ? { subtype } : {}),
             ...(event.id === "shot" ? { bodyPart } : {}),
           });
         }
@@ -62,7 +71,10 @@ test("factory preserves all option combinations, validation and exact domain-onl
     }
     for (const value of ["", "unknown", ...Object.values(outcomes).flat().map(([id]) => id)]) {
       if (field && !valid.includes(value)) assert.equal(createEventDetails(event.id, value, "foot"), null);
-      if (!field) assert.deepEqual(createEventDetails(event.id, value, "head"), { type: event.id });
+      if (!field && !subtypeField) assert.deepEqual(createEventDetails(event.id, value, "head"), { type: event.id });
+    }
+    if (subtypeField) for (const invalid of ["", "unknown", "goal", "completed", "foot"]) {
+      assert.equal(createEventDetails(event.id, valid[0], "foot", "", invalid), null);
     }
   }
 });
@@ -98,6 +110,16 @@ test("TypeScript rejects mismatched definition IDs, event-specific fields/option
     const wrongTextField: PassField = textField;
     // @ts-expect-error A Pass payload cannot include a description.
     const wrongTextPayload: EventDetails = { type: "pass", outcome: "completed", description: "Press" };
+    const pass: EventDetails = { type: "pass", subtype: "key-pass", outcome: "completed" };
+    const goalkeeper: EventDetails = { type: "goalkeeper", subtype: "catch" };
+    // @ts-expect-error Pass subtype is mandatory.
+    const missingSubtype: EventDetails = { type: "pass", outcome: "completed" };
+    // @ts-expect-error Subtype domains cannot be exchanged.
+    const wrongSubtype: EventDetails = { type: "goalkeeper", subtype: "regular" };
+    // @ts-expect-error Pass subtype options cannot be goalkeeper options.
+    const wrongSubtypeField: Extract<PassField, { id: "subtype" }> = { id: "subtype", type: "options", label: "Pass type", required: true, options: [{ id: "save", label: "Save" }] };
+    // @ts-expect-error Removed top-level events are not part of v1.
+    const removed: EventDetails = { type: "key-pass" };
   `;
   const options = { noEmit: true, strict: true, target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler, allowImportingTsExtensions: true, skipLibCheck: true, types: [] };
@@ -128,7 +150,8 @@ for (const event of expected) test(`${event.id}: create/Edit preserve steps, Bac
     assert.equal(group().props["aria-label"], field.label);
     assert.deepEqual(buttons().map(text), field.options.map(([, label]) => label));
     assert(buttons().every(n => !n.props["aria-pressed"]));
-    submit(); assert.equal(saved.length, 0); assert(!button("Save"));
+    submit(); assert.equal(saved.length, 0);
+    assert.equal(nodes(tree, n => n.type === "button" && n.props.type === "submit").length, 0);
     click(field.options.at(-1)[1]); timestamp();
     // Back restores the selected option; a replacement advances the same one step.
     click("Back");

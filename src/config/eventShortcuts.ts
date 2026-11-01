@@ -6,16 +6,20 @@ export type EventShortcuts = Readonly<Record<EventType, string>>;
 
 export const DEFAULT_EVENT_SHORTCUTS: EventShortcuts = Object.freeze({
   pass: "q",
-  "key-pass": "w",
-  shot: "e",
-  duel: "r",
-  "ball-loss": "t",
-  dribble: "a",
-  "progressive-carry": "y",
-  tackle: "z",
-  interception: "h",
-  "ball-recovery": "n",
-  custom: "c",
+  shot: "w",
+  cross: "e",
+  dribble: "r",
+  "ball-control": "t",
+  "ball-loss": "z",
+  goal: "a",
+  chance: "s",
+  goalkeeper: "d",
+  custom: "f",
+  tackle: "y",
+  interception: "x",
+  clearance: "c",
+  "ball-recovery": "v",
+  "aerial-duel": "b",
 });
 
 export const EVENT_SHORTCUT_TYPES = ORDERED_EVENT_TYPES;

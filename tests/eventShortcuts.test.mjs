@@ -24,12 +24,12 @@ after(() => {
 
 test("defaults stay immutable and runtime configurations are separate objects", () => {
   assert(Object.isFrozen(DEFAULT_EVENT_SHORTCUTS));
-  assert.equal(EVENT_SHORTCUT_TYPES.length, 11);
+  assert.equal(EVENT_SHORTCUT_TYPES.length, 15);
   const runtime = loadEventShortcuts();
   assert.deepEqual(runtime, DEFAULT_EVENT_SHORTCUTS);
   assert.notEqual(runtime, DEFAULT_EVENT_SHORTCUTS);
-  runtime.shot = "s";
-  assert.equal(DEFAULT_EVENT_SHORTCUTS.shot, "e");
+  runtime.shot = "h";
+  assert.equal(DEFAULT_EVENT_SHORTCUTS.shot, "w");
 });
 
 test("normalization, lookup and badge formatting share case and Unicode rules", () => {
@@ -39,7 +39,7 @@ test("normalization, lookup and badge formatting share case and Unicode rules", 
   assert.equal(findEventShortcut(custom, "E\u0301"), "shot");
   assert.equal(formatShortcutKey("e\u0301"), "É");
   assert.equal(findEventShortcut(custom, "."), "pass");
-  assert.equal(findEventShortcut(custom, "E"), undefined);
+  assert.equal(findEventShortcut(custom, "W"), undefined);
 });
 
 test("Quick Seek numbers and their physical shifted keys are reserved", () => {
@@ -57,17 +57,17 @@ test("only single printable keys are accepted", () => {
 });
 
 test("a complete custom config is normalized and survives storage reload", () => {
-  const custom = { ...DEFAULT_EVENT_SHORTCUTS, shot: "S", pass: "F" };
+  const custom = { ...DEFAULT_EVENT_SHORTCUTS, shot: "H", pass: "G" };
   const validated = validateEventShortcuts(custom);
-  assert.equal(validated.shot, "s");
-  assert.equal(validated.pass, "f");
+  assert.equal(validated.shot, "h");
+  assert.equal(validated.pass, "g");
   persistEventShortcuts(validated);
   assert.equal(storage.get(EVENT_SHORTCUTS_STORAGE_KEY), JSON.stringify(validated));
   const reloaded = loadEventShortcuts();
   assert.deepEqual(reloaded, validated);
-  assert.equal(findEventShortcut(reloaded, "S"), "shot");
-  assert.equal(findEventShortcut(reloaded, "F"), "pass");
-  assert.equal(findEventShortcut(reloaded, "E"), undefined);
+  assert.equal(findEventShortcut(reloaded, "H"), "shot");
+  assert.equal(findEventShortcut(reloaded, "G"), "pass");
+  assert.equal(findEventShortcut(reloaded, "W"), undefined);
   assert.equal(findEventShortcut(reloaded, "Q"), undefined);
 });
 
@@ -94,22 +94,22 @@ test("corrupt, incomplete, unknown, duplicate, reserved and wrong-type storage f
 });
 
 test("reset mapping overwrites custom storage and remains the default after reload", () => {
-  persistEventShortcuts({ ...DEFAULT_EVENT_SHORTCUTS, shot: "s", pass: "f" });
+  persistEventShortcuts({ ...DEFAULT_EVENT_SHORTCUTS, shot: "h", pass: "g" });
   persistEventShortcuts({ ...DEFAULT_EVENT_SHORTCUTS });
   assert.deepEqual(loadEventShortcuts(), DEFAULT_EVENT_SHORTCUTS);
 });
 
-test("legacy ten-event settings fall back to eleven defaults and are safely rewritten on startup", () => {
-  const { custom: _custom, ...legacy } = DEFAULT_EVENT_SHORTCUTS;
+test("legacy eleven-event settings fall back to fifteen defaults and are safely rewritten on startup", () => {
+  const legacy = { pass: "q", "key-pass": "w", shot: "e", duel: "r", "ball-loss": "t", dribble: "a", "progressive-carry": "y", tackle: "z", interception: "h", "ball-recovery": "n", custom: "c" };
   legacy.shot = "s";
   storage.set(EVENT_SHORTCUTS_STORAGE_KEY, JSON.stringify(legacy));
   assert.equal(validateEventShortcuts(legacy), null);
   const current = loadEventShortcuts();
   assert.deepEqual(current, DEFAULT_EVENT_SHORTCUTS);
-  assert.equal(findEventShortcut(current, "C"), "custom");
+  assert.equal(findEventShortcut(current, "F"), "custom");
   // App's existing startup effect persists exactly the loaded runtime mapping.
   persistEventShortcuts(current);
-  assert.equal(Object.keys(JSON.parse(storage.get(EVENT_SHORTCUTS_STORAGE_KEY))).length, 11);
+  assert.equal(Object.keys(JSON.parse(storage.get(EVENT_SHORTCUTS_STORAGE_KEY))).length, 15);
   assert.deepEqual(loadEventShortcuts(), DEFAULT_EVENT_SHORTCUTS);
   persistEventShortcuts({ ...current, custom: "." });
   assert.equal(findEventShortcut(loadEventShortcuts(), "."), "custom");

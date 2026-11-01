@@ -5,7 +5,7 @@ import { EVENT_DEFINITIONS, getEventDefinition, getEventFieldOptionLabel, getEve
 export { getEventLabel } from "../config/eventDefinitions.ts";
 
 // Shared display boundary for saved events and partially completed drafts.
-export function formatEventDetails(event: { type: string; outcome?: string; bodyPart?: string | null; description?: string }): string {
+export function formatEventDetails(event: { type: string; subtype?: string; outcome?: string; bodyPart?: string | null; description?: string }): string {
   const fields = getEventDefinition(event.type)?.fields ?? [];
   return [getEventLabel(event.type), ...fields.map((field) => field.type === "text"
     ? event[field.id]?.trim() : getEventFieldOptionLabel(field, event[field.id]))]
@@ -22,7 +22,7 @@ export function validateEventText(field: Extract<EventFieldDefinition, { type: "
   return { ok: true, value };
 }
 
-export function createEventDetails(type: EventType, outcome: string, bodyPart: BodyPart | null, description = ""): EventDetails | null {
+export function createEventDetails(type: EventType, outcome: string, bodyPart: BodyPart | null, description = "", subtype = ""): EventDetails | null {
   switch (type) {
     case "custom": {
       const result = validateEventText(EVENT_DEFINITIONS.custom.fields[0], description);
@@ -34,14 +34,22 @@ export function createEventDetails(type: EventType, outcome: string, bodyPart: B
       }
       return null;
     case "pass":
-      return isEventFieldOption(EVENT_DEFINITIONS.pass.fields.find((field) => field.id === "outcome"), outcome) ? { type, outcome } : null;
+      return isEventFieldOption(EVENT_DEFINITIONS.pass.fields.find((field) => field.id === "subtype"), subtype)
+        && isEventFieldOption(EVENT_DEFINITIONS.pass.fields.find((field) => field.id === "outcome"), outcome)
+        ? { type, subtype, outcome } : null;
+    case "goalkeeper":
+      return isEventFieldOption(EVENT_DEFINITIONS.goalkeeper.fields[0], subtype) ? { type, subtype } : null;
+    case "cross":
+      return isEventFieldOption(EVENT_DEFINITIONS.cross.fields[0], outcome) ? { type, outcome } : null;
     case "dribble":
-      return isEventFieldOption(EVENT_DEFINITIONS.dribble.fields.find((field) => field.id === "outcome"), outcome) ? { type, outcome } : null;
-    case "tackle":
-    case "duel":
+    case "ball-control":
       return isEventFieldOption(EVENT_DEFINITIONS[type].fields.find((field) => field.id === "outcome"), outcome) ? { type, outcome } : null;
-    case "key-pass":
-    case "progressive-carry":
+    case "tackle":
+    case "aerial-duel":
+      return isEventFieldOption(EVENT_DEFINITIONS[type].fields.find((field) => field.id === "outcome"), outcome) ? { type, outcome } : null;
+    case "goal":
+    case "chance":
+    case "clearance":
     case "interception":
     case "ball-recovery":
     case "ball-loss":

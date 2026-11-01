@@ -620,7 +620,7 @@
   border-radius: 6px;
 }
 .event-form-actions {
-  margin-left: auto;
+  margin-left: 0;
 }
 .event-form-actions button {
   padding: 6px 14px;
@@ -657,7 +657,8 @@ body:has(.app-analysis) {
 .app-analysis .tagging-workspace {
   --rail-size: 44px;
   --top-rail-height: 40px;
-  --side-action-length: clamp(100px, 16dvh, 152px);
+  /* Reserve room for five side actions without enlarging the rail tracks. */
+  --side-action-length: clamp(72px, calc((100dvh - 152px) / 5), 152px);
   height: 100%;
   min-height: 0;
   min-width: 0;
@@ -672,6 +673,9 @@ body:has(.app-analysis) {
   min-height: 36px;
   height: 36px;
   padding: 4px 12px;
+}
+.app-analysis .action-rail-top .event-action {
+  padding-inline: 8px;
 }
 .app-analysis .action-rail-left .action-slot,
 .app-analysis .action-rail-right .action-slot {
@@ -744,6 +748,10 @@ body:has(.app-analysis) {
 }
 
 @media (min-width: 900px) {
+  /* Read the left rail from bottom to top, matching its rotated labels. */
+  .action-rail-left {
+    flex-direction: column-reverse;
+  }
   /* The trailing badge sits below the label after the clockwise rotation. */
   .action-rail-right button {
     transform: translate(-50%, -50%) rotate(90deg);

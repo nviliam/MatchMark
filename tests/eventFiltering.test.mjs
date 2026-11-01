@@ -8,7 +8,7 @@ const types = ["shot", "pass", "shot", "interception", "pass", "shot", "tackle",
 const events = Object.freeze(types.map((type, index) => Object.freeze({
   id: index + 1, type, timestamp: [74.25, 12.5, 45.125, 20, 90, 45.125, 33, 10][index], playerId: 1,
   ...(type === "shot" ? { outcome: "on-target", bodyPart: "foot" } : {}),
-  ...(type === "pass" ? { outcome: "completed" } : {}),
+  ...(type === "pass" ? { subtype: "regular", outcome: "completed" } : {}),
   ...(type === "tackle" ? { outcome: "won" } : {}),
 })));
 
@@ -28,7 +28,7 @@ test("All -> Shot -> Pass -> All gives the correct chronological subsets without
 test("empty history and empty filter result both produce empty derived arrays", () => {
   assert.deepEqual(getFilteredEvents([], { eventType: "all", playerId: "all" }), []);
   assert.deepEqual(getFilteredEvents([], { eventType: "shot", playerId: "all" }), []);
-  assert.deepEqual(getFilteredEvents(events, { eventType: "duel", playerId: "all" }), []);
+  assert.deepEqual(getFilteredEvents(events, { eventType: "aerial-duel", playerId: "all" }), []);
 });
 
 test("every configured type filters by stable ID rather than its label", () => {
@@ -69,7 +69,7 @@ test("AND pipeline handles All/All, type-only, player-only, combined and empty r
     [{ eventType: "all", playerId: 1 }, [4, 6, 1]],
     [{ eventType: "shot", playerId: 1 }, [6, 1]],
     [{ eventType: "pass", playerId: 3 }, [2, 5]],
-    [{ eventType: "duel", playerId: 1 }, []],
+    [{ eventType: "aerial-duel", playerId: 1 }, []],
     [{ eventType: "all", playerId: 2 }, [7, 3]],
     [{ eventType: "all", playerId: 999 }, [8]],
     [{ eventType: "shot", playerId: 12345 }, []],

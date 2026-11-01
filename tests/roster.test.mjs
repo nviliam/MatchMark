@@ -388,14 +388,14 @@ test("reference count derives from current full events props rather than a cache
   tree = h.render(Panel, props, ctx); assert(text(tree).includes("No saved events reference"));
   props.events = [{ id: 1, type: "interception", timestamp: 7, playerId: 1 }];
   tree = h.render(Panel, props, ctx); assert(text(tree).includes("1 saved event references this player."));
-  props.events = Array.from({ length: 7 }, (_, i) => ({ id: i + 1, type: "key-pass", timestamp: i, playerId: 1 }));
+  props.events = Array.from({ length: 7 }, (_, i) => ({ id: i + 1, type: "goal", timestamp: i, playerId: 1 }));
   tree = h.render(Panel, props, ctx); assert(text(tree).includes("7 saved events reference this player."));
   h.dispose(ctx);
 });
 
 test("deletion preserves old event identities, resets only the deleted player filter and never assigns old events to a new player", () => {
   const s = setup(); saveEvent(s, 1, 5);
-  for (let i = 0; i < 7; i++) saveEvent(s, 3, 10 + i, i === 6 ? "key-pass" : "interception");
+  for (let i = 0; i < 7; i++) saveEvent(s, 3, 10 + i, i === 6 ? "goal" : "interception");
   s.buttons().onOpenEvents(); s.update();
   s.component("EventsPanel").props.onEventTypeChange("interception");
   s.component("EventsPanel").props.onPlayerChange(3); s.update();

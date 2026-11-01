@@ -21,7 +21,7 @@ test("panel options, labels and action placement follow metadata, including an a
   assert.equal(changed, "experimental");
   select.props.onChange({ currentTarget: { value: "invalid" } });
   assert.equal(changed, "experimental");
-  const buttons = h.render(Buttons, { shortcuts: { ...DEFAULT_EVENT_SHORTCUTS, experimental: "x" } });
+  const buttons = h.render(Buttons, { shortcuts: { ...DEFAULT_EVENT_SHORTCUTS, experimental: "j" } });
   const left = nodes(buttons, n => n.props?.["aria-label"] === "left actions")[0];
   assert(text(left).includes("New event"));
   assert(text(buttons).includes("Attempt"));
@@ -39,7 +39,7 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   const Settings = h.load("src/components/ShortcutSettings.tsx").default;
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
   let active = false, tree;
-  const shortcuts = { ...DEFAULT_EVENT_SHORTCUTS, shot: "s" };
+  const shortcuts = { ...DEFAULT_EVENT_SHORTCUTS, shot: "h" };
   const update = () => tree = h.render(Player, { isAnalysisActive: active, onAnalysisActiveChange: value => active = value, eventShortcuts: shortcuts }, ctx);
   const component = Type => nodes(tree, n => n.type === Type)[0];
   const open = () => { component(Buttons).props.onOpenEvents(); update(); };
@@ -61,16 +61,16 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   for (const [type, timestamp, playerId] of [["shot", 80.25, 1], ["pass", 15.5, 3], ["shot", 12.75, 2], ["interception", 10, 1], ["pass", 22, 3], ["shot", 45.125, 1], ["tackle", 38, 2], ["ball-recovery", 5, 3]]) {
     h.media.currentTime = timestamp;
     component(Buttons).props.onSelect(type); update();
-    const details = { type, ...(type === "shot" ? { outcome: "on-target", bodyPart: "foot" } : {}), ...(type === "pass" ? { outcome: "completed" } : {}), ...(type === "tackle" ? { outcome: "won" } : {}) };
+    const details = { type, ...(type === "shot" ? { outcome: "on-target", bodyPart: "foot" } : {}), ...(type === "pass" ? { subtype: "regular", outcome: "completed" } : {}), ...(type === "tackle" ? { outcome: "won" } : {}) };
     component(Form).props.onSave(playerId, details); update();
   }
   open(); count(8);
-  for (const [type, expected] of [["shot", 3], ["pass", 2], ["all", 8], ["duel", 0]]) {
+  for (const [type, expected] of [["shot", 3], ["pass", 2], ["all", 8], ["aerial-duel", 0]]) {
     filter(type); count(expected);
     assert.equal(nodes(panel(), n => n.type === "select")[0].props.value, type);
   }
   assert(text(panel()).includes("No events match these filters."));
-  for (const [type, player, expected] of [["all", "all", 8], ["shot", "all", 3], ["shot", "1", 2], ["all", "1", 3], ["all", "all", 8], ["pass", "3", 2], ["duel", "1", 0]]) {
+  for (const [type, player, expected] of [["all", "all", 8], ["shot", "all", 3], ["shot", "1", 2], ["all", "1", 3], ["all", "all", 8], ["pass", "3", 2], ["aerial-duel", "1", 0]]) {
     const position = h.media.currentTime;
     filter(type); playerFilter(player); count(expected);
     assert.equal(h.media.currentTime, position);
@@ -91,7 +91,7 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   nodes(rows, n => n.type === "button")[1].props.onClick(); update();
   assert.equal(h.media.currentTime, 45.125); assert(h.media.paused); assert(!component(Panel));
   open(); count(3); assert.equal(component(Panel).props.totalEventCount, 8);
-  press("s"); assert(!component(Form));
+  press("h"); assert(!component(Form));
   const before = h.media.currentTime; press("3", { code: "Digit3" }); assert.equal(h.media.currentTime, before + 1.5);
   playerFilter("1"); count(2);
   assert.deepEqual(Array.from(component(Panel).props.events, event => event.timestamp), [45.125, 80.25]);
@@ -109,10 +109,10 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   nodes(tree, n => n.type === "button" && text(n) === "Resume analysis")[0].props.onClick(); update();
   assert(!component(Panel)); open(); count(2); assert.equal(component(Panel).props.selectedPlayerId, 1);
   close(); open(); count(2); assert.equal(component(Panel).props.selectedPlayerId, 1); close();
-  press("s"); assert.equal(component(Form).props.pending.type, "shot");
+  press("h"); assert.equal(component(Form).props.pending.type, "shot");
   assert(component(Buttons).props.eventsDisabled); open(); assert(!component(Panel)); press("Escape");
   // Saving another event while a filter is retained updates the derived results.
-  h.media.currentTime = 100; press("s"); component(Form).props.onSave(1, { type: "shot", outcome: "goal", bodyPart: "head" }); update();
+  h.media.currentTime = 100; press("h"); component(Form).props.onSave(1, { type: "shot", outcome: "goal", bodyPart: "head" }); update();
   component(Summary).props.onEdit(); update(); open(); assert(!component(Panel)); press("Escape");
   component(Summary).props.onDelete(); update(); open(); assert(!component(Panel));
   component(Delete).props.onConfirm(); update(); open(); count(2); playerFilter("all"); count(3); filter("all"); count(8);

@@ -2,7 +2,7 @@ import type { EventType, MatchEvent } from "../types/event";
 
 export type EventRail = "top" | "left" | "right";
 export type EventCategory = "possession" | "defending" | "contest" | "other";
-export type EventFieldId = "outcome" | "bodyPart" | "description";
+export type EventFieldId = "subtype" | "outcome" | "bodyPart" | "description";
 export const CUSTOM_EVENT_DESCRIPTION_MAX_LENGTH = 160;
 export type EventFieldOption<Value extends string> = Readonly<{ id: Value; label: string }>;
 
@@ -67,20 +67,34 @@ const contestOutcome = {
   options: [{ id: "won", label: "Won" }, { id: "lost", label: "Lost" }],
 } as const satisfies EventFieldDefinition;
 
+const passSubtype = {
+  type: "options", id: "subtype", label: "Pass type", required: true,
+  options: [{ id: "regular", label: "Regular" }, { id: "key-pass", label: "Key Pass" }, { id: "long-ball", label: "Long Ball" }],
+} as const satisfies EventFieldDefinition;
+
+const goalkeeperSubtype = {
+  type: "options", id: "subtype", label: "Goalkeeper type", required: true,
+  options: [{ id: "save", label: "Save" }, { id: "catch", label: "Catch" }],
+} as const satisfies EventFieldDefinition;
+
 // Keys are stable domain IDs. Changing a label never rewrites saved events.
 export const EVENT_DEFINITIONS = {
-  pass: { id: "pass", label: "Pass", category: "possession", order: 10, rail: "top", playerRequired: true, fields: [passOutcome] },
-  "key-pass": { id: "key-pass", label: "Key Pass", category: "possession", order: 20, rail: "top", playerRequired: true, fields: [] },
-  shot: { id: "shot", label: "Shot", category: "possession", order: 30, rail: "top", playerRequired: true, fields: [shotOutcome, bodyPart] },
-  duel: { id: "duel", label: "Duel", category: "contest", order: 40, rail: "top", playerRequired: true, fields: [contestOutcome] },
-  "ball-loss": { id: "ball-loss", label: "Ball Loss", category: "possession", order: 50, rail: "top", playerRequired: true, fields: [] },
-  dribble: { id: "dribble", label: "Dribble", category: "possession", order: 60, rail: "left", playerRequired: true, fields: [dribbleOutcome] },
-  "progressive-carry": { id: "progressive-carry", label: "Progressive Carry", category: "possession", order: 70, rail: "left", playerRequired: true, fields: [] },
-  tackle: { id: "tackle", label: "Tackle", category: "defending", order: 80, rail: "right", playerRequired: true, fields: [contestOutcome] },
-  interception: { id: "interception", label: "Interception", category: "defending", order: 90, rail: "right", playerRequired: true, fields: [] },
-  "ball-recovery": { id: "ball-recovery", label: "Ball Recovery", category: "defending", order: 100, rail: "right", playerRequired: true, fields: [] },
-  custom: { id: "custom", label: "Custom", category: "other", order: 110, rail: "left", playerRequired: false,
+  pass: { id: "pass", label: "Pass", category: "possession", order: 10, rail: "top", playerRequired: true, fields: [passSubtype, passOutcome] },
+  shot: { id: "shot", label: "Shot", category: "possession", order: 20, rail: "top", playerRequired: true, fields: [shotOutcome, bodyPart] },
+  cross: { id: "cross", label: "Cross", category: "possession", order: 30, rail: "top", playerRequired: true, fields: [passOutcome] },
+  dribble: { id: "dribble", label: "Dribble", category: "possession", order: 40, rail: "top", playerRequired: true, fields: [dribbleOutcome] },
+  "ball-control": { id: "ball-control", label: "Ball Control", category: "possession", order: 50, rail: "top", playerRequired: true, fields: [dribbleOutcome] },
+  "ball-loss": { id: "ball-loss", label: "Ball Loss", category: "possession", order: 60, rail: "top", playerRequired: true, fields: [] },
+  goal: { id: "goal", label: "Goal", category: "other", order: 70, rail: "left", playerRequired: true, fields: [] },
+  chance: { id: "chance", label: "Chance", category: "other", order: 80, rail: "left", playerRequired: true, fields: [] },
+  goalkeeper: { id: "goalkeeper", label: "Goalkeeper", category: "other", order: 90, rail: "left", playerRequired: true, fields: [goalkeeperSubtype] },
+  custom: { id: "custom", label: "Custom", category: "other", order: 100, rail: "left", playerRequired: false,
     fields: [{ id: "description", type: "text", label: "Description", required: true, maxLength: CUSTOM_EVENT_DESCRIPTION_MAX_LENGTH }] },
+  tackle: { id: "tackle", label: "Tackle", category: "defending", order: 110, rail: "right", playerRequired: true, fields: [contestOutcome] },
+  interception: { id: "interception", label: "Interception", category: "defending", order: 120, rail: "right", playerRequired: true, fields: [] },
+  clearance: { id: "clearance", label: "Clearance", category: "defending", order: 130, rail: "right", playerRequired: true, fields: [] },
+  "ball-recovery": { id: "ball-recovery", label: "Ball Recovery", category: "defending", order: 140, rail: "right", playerRequired: true, fields: [] },
+  "aerial-duel": { id: "aerial-duel", label: "Aerial Duel", category: "contest", order: 150, rail: "right", playerRequired: true, fields: [contestOutcome] },
 } as const satisfies { [Type in EventType]: EventDefinition<Type> };
 
 export const ORDERED_EVENT_TYPES: readonly EventType[] = Object.freeze(

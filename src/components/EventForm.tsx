@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, type FormEvent } from "react";
+﻿import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Player } from "../types/player";
 import { formatPlayerLabel } from "../utils/players";
 import type { BodyPart, EventDetails, MatchEvent, PendingEvent } from "../types/event";
@@ -16,6 +16,7 @@ type Props = {
 
 type Step = EventFieldId | "player" | "review";
 type Outcome = Extract<MatchEvent, { outcome: string }>["outcome"];
+type Subtype = Extract<MatchEvent, { subtype: string }>["subtype"];
 
 export default function EventForm({ players, pending, initialEvent, disabled, onSave, onCancel }: Props) {
   const definition: EventDefinition = EVENT_DEFINITIONS[pending.type];
@@ -23,6 +24,7 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
   steps.push("player", "review");
   const [playerId, setPlayerId] = useState<number | null>(initialEvent?.playerId ?? null);
   const [outcome, setOutcome] = useState<Outcome | "">(initialEvent && "outcome" in initialEvent ? initialEvent.outcome : "");
+  const [subtype, setSubtype] = useState<Subtype | "">(initialEvent && "subtype" in initialEvent ? initialEvent.subtype : "");
   const [bodyPart, setBodyPart] = useState<BodyPart | null>(initialEvent && "bodyPart" in initialEvent ? initialEvent.bodyPart : null);
   const [description, setDescription] = useState(initialEvent && "description" in initialEvent ? initialEvent.description : "");
   const [stepIndex, setStepIndex] = useState(initialEvent ? steps.length - 1 : 0);
@@ -30,13 +32,29 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
   const step = steps[stepIndex];
   const field = definition.fields.find((entry) => entry.id === step);
   const stepLabel = field?.label ?? (step === "player" ? (definition.playerRequired ? "Player" : "Player (optional)") : "Review event");
-  const details = createEventDetails(pending.type, outcome, bodyPart, description);
+  const details = createEventDetails(pending.type, outcome, bodyPart, description, subtype);
   const textValidation = field?.type === "text" ? validateEventText(field, description) : undefined;
   const player = players.find((entry) => entry.id === playerId);
   const isPlayerValid = playerId === null ? !definition.playerRequired : player !== undefined;
   const summary = [
-    formatEventDetails({ type: pending.type, outcome, bodyPart, description }), playerId !== null && formatPlayerLabel(player),
+    formatEventDetails({ type: pending.type, subtype, outcome, bodyPart, description }), playerId !== null && formatPlayerLabel(player),
   ].filter(Boolean).join(" · ");
+  const canSave = !disabled && step === "review" && isPlayerValid && details !== null;
+  const saveEvent = useCallback(() => {
+    if (canSave && details) onSave(player?.id, details);
+  }, [canSave, details, onSave, player?.id]);
+
+  useEffect(() => {
+    if (!canSave) return;
+    function handleSaveKey(event: KeyboardEvent) {
+      if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)
+        || event.altKey || event.shiftKey || event.repeat || event.isComposing || event.defaultPrevented) return;
+      event.preventDefault();
+      saveEvent();
+    }
+    window.addEventListener("keydown", handleSaveKey);
+    return () => window.removeEventListener("keydown", handleSaveKey);
+  }, [canSave, saveEvent]);
 
   useEffect(() => {
     if (!disabled) stepRef.current?.focus();
@@ -48,6 +66,7 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
 
   function selectFieldOption(field: EventFieldDefinition, value: string) {
     if (field.id === "outcome" && isEventFieldOption(field, value)) setOutcome(value);
+    else if (field.id === "subtype" && isEventFieldOption(field, value)) setSubtype(value);
     else if (field.id === "bodyPart" && isEventFieldOption(field, value)) setBodyPart(value);
     else return;
     advance();
@@ -55,8 +74,7 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (disabled || step !== "review" || !isPlayerValid || !details) return;
-    onSave(player?.id, details);
+    saveEvent();
   }
 
   return (
@@ -71,7 +89,7 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
         <span className="workflow-step-label">{stepLabel}</span>
         {field?.type === "options" && field.options.map((option) => (
           <button key={option.id} type="button" disabled={disabled}
-            aria-pressed={(field.id === "outcome" ? outcome : bodyPart) === option.id}
+            aria-pressed={(field.id === "outcome" ? outcome : field.id === "subtype" ? subtype : bodyPart) === option.id}
             onClick={() => selectFieldOption(field, option.id)}>
             {option.label}
           </button>
@@ -112,7 +130,8 @@ export default function EventForm({ players, pending, initialEvent, disabled, on
         )}
         <button type="button" disabled={disabled} onClick={onCancel}>Cancel</button>
         {step === "review" && (
-          <button className="button-primary" type="submit" disabled={disabled || !isPlayerValid || !details}>Save</button>
+          <button className="button-primary" type="submit" disabled={!canSave}
+            title="Save (Ctrl+Enter / Cmd+Enter)" aria-keyshortcuts="Control+Enter Meta+Enter">Save</button>
         )}
       </div>
     </form>

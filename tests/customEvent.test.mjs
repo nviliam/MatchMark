@@ -176,20 +176,20 @@ function workspaceSetup() {
 }
 
 test("Custom keyboard/click share timestamp and workflow; guards, typing safety, Quick Seek and configurable badges stay in sync", () => {
-  const s = workspaceSetup(); s.press("c"); assert(!s.component("EventForm")); s.ready();
+  const s = workspaceSetup(); s.press("f"); assert(!s.component("EventForm")); s.ready();
   const ui = () => s.h.render(s.components.EventButtons, s.buttons());
-  const customButton = () => nodes(ui(), n => n.type === "button" && n.props["aria-keyshortcuts"] === "c")[0];
-  assert.equal(text(customButton()), "CustomC");
+  const customButton = () => nodes(ui(), n => n.type === "button" && n.props["aria-keyshortcuts"] === "f")[0];
+  assert.equal(text(customButton()), "CustomF");
   assert.equal(nodes(customButton(), n => n.type === "kbd")[0].props["aria-hidden"], "true");
   const textareaTarget = new s.h.Element(); textareaTarget.closest = () => textareaTarget;
   s.h.media.currentTime = 27.43;
   for (const extra of [{ repeat: true }, { ctrlKey: true }, { altKey: true }, { metaKey: true }, { target: textareaTarget }]) {
-    s.press("c", extra); assert(!s.component("EventForm"));
+    s.press("f", extra); assert(!s.component("EventForm"));
   }
   s.press("3", { code: "Digit3", target: textareaTarget }); assert.equal(s.h.media.currentTime, 27.43);
   s.start(27.43); const pending = s.component("EventForm").props.pending;
   assert.equal(pending.type, "custom"); assert.equal(pending.timestamp, 27.43);
-  s.press("C"); assert.equal(s.component("EventForm").props.pending, pending);
+  s.press("F"); assert.equal(s.component("EventForm").props.pending, pending);
   s.press("3", { code: "Digit3", target: textareaTarget }); assert.equal(s.h.media.currentTime, 27.43);
   s.press("3", { code: "Digit3" }); assert.equal(s.h.media.currentTime, 28.93);
   s.press("3", { code: "Digit3", shiftKey: true }); assert.equal(s.h.media.currentTime, 27.43);
@@ -197,15 +197,15 @@ test("Custom keyboard/click share timestamp and workflow; guards, typing safety,
   s.start(27.43, false); assert.equal(s.component("EventForm").props.pending.timestamp, pending.timestamp);
   s.save("Saved"); s.component("SavedEventSummary").props.onEdit(); s.update();
   const edit = s.component("EventForm").props.pending;
-  s.press("c"); assert.equal(s.component("EventForm").props.pending, edit); s.press("Escape");
-  s.component("SavedEventSummary").props.onDelete(); s.update(); s.press("c"); assert(!s.component("EventForm")); s.press("Escape");
-  s.buttons().onOpenSettings(); s.update(); s.press("c"); assert(!s.component("EventForm"));
+  s.press("f"); assert.equal(s.component("EventForm").props.pending, edit); s.press("Escape");
+  s.component("SavedEventSummary").props.onDelete(); s.update(); s.press("f"); assert(!s.component("EventForm")); s.press("Escape");
+  s.buttons().onOpenSettings(); s.update(); s.press("f"); assert(!s.component("EventForm"));
   const settingsProps = s.component("ShortcutSettings").props;
   assert(text(s.h.render(s.components.ShortcutSettings, settingsProps)).includes("Custom"));
   settingsProps.onChange({ ...settingsProps.shortcuts, custom: "." }); s.update();
   s.component("ShortcutSettings").props.onClose(); s.update();
   assert(nodes(ui(), n => n.type === "button" && n.props["aria-keyshortcuts"] === ".")[0]);
-  s.press("c"); assert(!s.component("EventForm")); s.press("."); assert(s.component("EventForm"));
+  s.press("f"); assert(!s.component("EventForm")); s.press("."); assert(s.component("EventForm"));
   s.press("Escape"); s.buttons().onExit(); s.update(); s.press("."); assert(!s.component("EventForm"));
   s.dispose(); assert.equal(s.h.listeners.size, 0);
 });
