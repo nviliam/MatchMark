@@ -28,6 +28,13 @@ Megvalósítás: `100dvh` magas analysis layout, csak ebben a nézetben tiltott
 oldalgörgetéssel. A top rail 40 px magas, a két oldalsó rail 44 px széles.
 Szűk helyen kizárólag a bottom rail belseje görgethető.
 
+A v1 eventkészlethez a felső rail hat, a bal négy, a jobb öt actiont tartalmaz.
+Az oldalsó gombhossz `clamp(72px, calc((100dvh - 152px) / 5), 152px)`;
+a felső event gombok vízszintes paddingje 8 px. A railméretek nem változtak.
+900 px-től a bal rail vizuális sorrendje **alulról felfelé**: Goal, Chance,
+Goalkeeper, Custom (`column-reverse`). 900 px alatt a vízszintes sorrend ugyanilyen,
+balról jobbra. Az új 15 gombos elrendezés böngészős vizuális ellenőrzése még hátravan.
+
 ### 2. Letisztult elemzői nézet és Exit gomb
 
 **Állapot: elkészült (valódi böngészős ellenőrzés még hátravan).**
@@ -59,7 +66,8 @@ Az A–D forgatókönyvek szimulált komponensellenőrzése, a lint és a build 
 ### 3. Lépésenkénti eseményspecifikálás az alsó sávban
 
 **Állapot: elkészült.** A specifikáció lépésenként halad; a Player kiválasztása után
-ellenőrző összefoglaló és külön Save gomb következik. Csak a Save ment eseményt.
+ellenőrző összefoglaló és külön Save gomb következik. Kizárólag explicit mentés történik:
+a Save gombbal vagy az ugyanazt a handlert hívó Ctrl+Enter / Cmd+Enter kombinációval.
 
 - [x] A videó körüli eseménygombok maradjanak a jelenlegi elrendezésben.
 - [x] Az alsó sáv kezdetben üres legyen. Esemény indításakor az aktuális draft,
@@ -67,13 +75,18 @@ ellenőrző összefoglaló és külön Save gomb következik. Csak a Save ment e
 - [x] Az esemény további adatait kizárólag az alsó sávban lehessen kiválasztani,
       egyszerre csak az aktuális lépés lehetőségeivel.
 - [x] Shot kiválasztása után az Outcome lehetőségei legyenek: Goal, On Target, Off Target, Blocked.
-- [x] Egy specifikáció kiválasztása automatikusan vigyen a következő szükséges lépésre; ne legyen Next gomb.
-- [x] A sorrend legyen Event → Outcome → Body Part → Player → Save.
-      Csak a szükséges lépések jelenjenek meg: Shotnál mindegyik,
-      Pass/Dribble/Tackle/Duel esetén Outcome → Player → Save,
-      a többi eseménynél Player → Save az action gomb megnyomása után.
+- [x] Egy opció kiválasztása automatikusan vigyen a következő szükséges lépésre.
+      A Custom szöveges Description lépése validált Next gombbal folytatható.
+- [x] A sorrend a központi definíció mezői → Player → Review event → Save legyen.
+      Shot: Outcome → Body Part; Pass: Pass type → Outcome; Goalkeeper: Goalkeeper type;
+      Cross/Dribble/Ball Control/Tackle/Aerial Duel: Outcome; Custom: Description.
+      A mező nélküli események rögtön a Player lépésre kerülnek (részletek: 6.1).
 - [x] A Player kiválasztása legyen az utolsó specifikációs lépés.
-      Ezután jelenjen meg a Save gomb, és az esemény csak annak megnyomásakor mentődjön el.
+      Custom esetén a No player is választható. Ezután jelenjen meg a Save gomb;
+      automatikus mentés nincs.
+- [x] A végső Review event lépésben Ctrl+Enter / Cmd+Enter is menthessen,
+      kizárólag akkor, ha a Save gomb is használható.
+- [x] A Back, Cancel és Save vezérlők balra igazítva jelenjenek meg.
 - [x] Az addigi választások kompakt összefoglalóban legyenek láthatók; hiányos vagy hibás adatokat ne lehessen menteni.
 - [x] A Back pontosan egy specifikációs lépéssel vigyen vissza, a választások megtartásával.
       A korábbi érték legyen vizuálisan kijelölve, és újra kiválasztható vagy módosítható.
@@ -92,7 +105,7 @@ ellenőrző összefoglaló és külön Save gomb következik. Csak a Save ment e
       1366×768 és 1280×720 méreten: illeszkedés, stabil videóméret és oldalgörgetés hiánya.
 - Függőség: a fix elemzői nézet kialakítása.
 
-Ellenőrzés: mind a 10 eseménytípus, a Save előtti validáció, Back/módosítás,
+Ellenőrzés: mind a 15 eseménytípus, a Save előtti validáció, Back/módosítás,
 Cancel/Escape, timestamp-invariancia, a megmaradó Saved összefoglaló,
 Quick Seek, Exit/Resume a Player és Save lépésnél, valamint a videócsere/hiba miatti reset
 szimulált komponensellenőrzése sikeres. A valódi böngészős ellenőrzés még hátravan.
@@ -103,6 +116,13 @@ szimulált komponensellenőrzése sikeres. A valódi böngészős ellenőrzés m
 időzített visszajelzés nem cél; az alábbi működés a 3. feladattal elkészült.
 
 - [x] A Player kiválasztása után külön Save gomb mentse a validált eseményt.
+- [x] A form submit és a Ctrl+Enter / Cmd+Enter ugyanazt az `EventForm.saveEvent`
+      függvényt használja. A `canSave` ellenőrzi a végső lépést, a disabled állapotot,
+      a mezőket és a szükséges játékoskapcsolatot; hiányos adatot a shortcut sem menthet.
+- [x] A mentő shortcut hagyja figyelmen kívül az ismétlést, az IME compositiont,
+      az Alt/Shift kombinációt és a már kezelt eseményt. A listener csak menthető
+      állapotban él, cleanuppal. A Custom textarea sima Entere továbbra is sortörés;
+      a Description lépésből Ctrl/Cmd+Enter sem ment idő előtt.
 - [x] Sikeres mentés után Saved felirat, timestamp, játékos és eseményspecifikáció maradjon a sávban.
 - [x] Az összefoglaló ne tűnjön el időzítővel; lejátszás és Quick Seek közben is maradjon látható.
 - [x] Új action gomb indítson új draftot, és azonnal váltsa le a Saved összefoglalót.
@@ -116,7 +136,7 @@ időzített visszajelzés nem cél; az alábbi működés a 3. feladattal elkés
 - [x] Exit/Resume őrizze meg az Edit lépését és módosított draft értékeit;
       a saved state Save előtt maradjon változatlan.
 
-Ellenőrzés: mind a 10 eseménytípus create/edit folyamata, előtöltés és Back,
+Ellenőrzés: mind a 15 eseménytípus create/edit folyamata, előtöltés és Back,
 id/timestamp/sorrend/elemszám megőrzése, Cancel/Escape, action tiltás és Exit/Resume
 szimulált komponensellenőrzése sikeres. Az új Edit UI valódi böngészős ellenőrzése még hátravan.
 
