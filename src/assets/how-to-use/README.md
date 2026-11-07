@@ -8,10 +8,10 @@ Bekötött fájlok (a kis- és nagybetűk pontosan számítanak):
 
 | Fájlnév | Manifest kulcs | Tartalom |
 | --- | --- | --- |
-| `screenshot01.png` | `load-video` | A kezdőképernyő a Select video és How to use gombbal. |
-| `Screenshot02.png` | `tag-events` | Analysis/tagging: videó, top/left/right event railek és Pass type lépés. |
-| `Screenshot03.png` | `assign-details` | Az alsó EventForm Player lépése. |
-| `Screenshot04.png` | `review-events` | Events panel: szűrők, mentett események és a Review indítógomb. |
+| `load-video.png` | `load-video` | A kezdőképernyő a Select video és How to use gombbal. |
+| `tag-events.png` | `tag-events` | Analysis/tagging: videó, top/left/right event railek és Pass type lépés. |
+| `assign-details.png` | `assign-details` | Az alsó EventForm Player lépése. |
+| `review-events.png` | `review-events` | Events panel: szűrők, mentett események és a Review indítógomb. |
 
 A negyedik kép a Review indítását mutatja, nem az aktív Broadcast Review módot.
 Az alt szöveg is ezt írja le. Ha később aktív Review screenshot váltja fel,
@@ -23,10 +23,10 @@ kerül az útmutatóba: csak a kiválasztott statikus screenshotok.
 A `screenshots.ts` importjai és manifestje:
 
 ```ts
-import loadVideo from "./screenshot01.png";
-import tagEvents from "./Screenshot02.png";
-import assignDetails from "./Screenshot03.png";
-import reviewEvents from "./Screenshot04.png";
+import loadVideo from "./load-video.png";
+import tagEvents from "./tag-events.png";
+import assignDetails from "./assign-details.png";
+import reviewEvents from "./review-events.png";
 
 export type HowToUseScreenshotId = "load-video" | "tag-events" | "assign-details" | "review-events";
 

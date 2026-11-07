@@ -9,6 +9,15 @@ kerete, majd az eseményrögzítés folyamata készüljön el.
 Állapotok: **elkészült**, **részben elkészült**, **tervezett**, **ötlet**.
 A kipipált részfeladatok már megvalósultak; az üres jelölők a hátralévő munkát jelzik.
 
+**MatchMark v1 release-állapot (2026. november 7.):** a 15 fő eventet kezelő
+modell, a runtime roster CRUD, a dark premium / Broadcast Review design és a
+screenshotokkal támogatott How to use elkészült. A jelenlegi felületet a felhasználó
+manuálisan is ellenőrizte. A korábbi szekciók tesztszámai történeti ellenőrzéseket
+jelölnek; a release teljes ellenőrzése 98 tesztből áll.
+Az eventek és a játékosmódosítások továbbra is csak az aktuális sessionben élnek:
+refresh vagy böngészőablak-bezárás után elvesznek. Kizárólag a shortcutkiosztás
+megőrzése implementált; a tartós session-mentés a 11. pontban jövőbeli feladat.
+
 ## Magas prioritás
 
 ### 1. Fix, görgetésmentes elemzői nézet
@@ -168,9 +177,10 @@ A teljes mentett eseménylista React state-ben marad,
 
 #### 5.1 Events panel
 
-Az alapműködés szimulált komponens-/videótesztekkel ellenőrizve. Az overlay és a saját
-scroll CSS-megvalósítása elkészült, de valódi böngészős vizuális ellenőrzésük még hátravan;
-ezért az első két pont egyelőre nincs kipipálva.
+Az alapműködés szimulált komponens-/videótesztekkel ellenőrizve. Az overlay és
+a saját scroll megvalósítása elkészült; a jelenlegi felületet a felhasználó
+a v1 release előtt manuálisan is ellenőrizte. A konkrét képernyőméretekre vonatkozó
+külön vizuális ellenőrzési feladatok ettől még megmaradnak.
 
 - [x] Az Exit mellett legyen `Events` gomb, amely kompakt, bezárható overlay/panelt
       nyit meg a videó fölött úgy, hogy a videó jelentős része továbbra is látható maradjon.
@@ -259,7 +269,7 @@ Megvalósult felépítés:
   A click-to-seek továbbra is az eredeti timestampet és a meglévő `seekToEvent` handlert
   használja; a kattintás bezárja a panelt, automatikus lejátszás nélkül.
 - Ez az egyetlen közös `filteredEvents` lista az 5.4 Review mode bemenete is;
-  roster-szerkesztés és backend továbbra sem készült.
+  a runtime roster-szerkesztés azóta a 7. ponttal elkészült; backend továbbra sincs.
 
 Ellenőrzés: `npm test` (19 teszt), lint és build sikeres. A tesztek lefedik az
 All/All, csak típus, csak játékos és kombinált szűrést (például Shot + #9, Pass + #7),
@@ -390,9 +400,9 @@ nem történt meg; a komponensellenőrzések szimulált videóelemmel futottak.
 
 #### 5.6 Technikai és költségszempontok
 
-- [ ] Az Events panel, a szűrés és a Review mode első verziója kizárólag
+- [x] Az Events panel, a szűrés és a Review mode első verziója kizárólag
       a meglévő lokális videóra és React state-ben tárolt eventekre épüljön.
-- [ ] Ne legyen szükség videófeltöltésre, backend videófeldolgozásra vagy új külső csomagra.
+- [x] Ne legyen szükség videófeltöltésre, backend videófeldolgozásra vagy új külső csomagra.
 - [ ] A struktúra később legyen kompatibilis tartós adatmentéssel
       (például Firebase / Firestore), de ez ne legyen előfeltétele az első verziónak.
 
@@ -412,8 +422,9 @@ az eventtípusok funkcionális újratervezése, a migration és a backend előtt
 véglegesítés későbbi feladat.
 
 Az alábbi felépítés és a 47 tesztes ellenőrzés az eredeti 6.1 refaktort dokumentálja.
-A 6.2 azóta text fielddel, opcionális Playerrel és a tizenegyedik, Custom eventtel
-bővítette ezt; az új állapot részletei a következő szekcióban szerepelnek.
+A 6.2 azóta text fielddel és opcionális Playerrel, a 6.3 pedig a 15 fő eventből
+álló v1 készlettel és subtype-okkal bővítette ezt. A történeti leírás tíz eventre
+vonatkozó részei helyett a jelenlegi készlethez a 6.3 az irányadó.
 
 - [x] Minden event type-nak legyen stabil belső ID-ja és külön display labelje.
 - [x] Az event action gombok a központi event-definíciókból generálódjanak.
@@ -509,6 +520,9 @@ Event definitions → Shortcuts → Action buttons
 A Custom a meglévő konfigurációvezérelt event workflow része. A valódi böngészős
 vizuális ellenőrzés elérhető böngésző hiányában még hátravan.
 
+Az alábbi technikai rész a Custom eredeti, 11-eventes bevezetésének történeti
+leírása. A jelenlegi rail-elhelyezés és shortcut a 6.3 és 8. pont szerint működik.
+
 - [x] Legyen külön Custom / Other event type stabil belső ID-val.
 - [x] Custom event mentésekor a felhasználó adhasson egy rövid egyéni leírást.
 - [x] A leírás legyen kötelező.
@@ -584,6 +598,39 @@ szinkront, tiltásokat, textarea typing guardot, régi shortcut config fallbacke
 valamint az Exit/Resume alatti draftmegőrzést. A fordítási szerződésteszt ellenőrzi
 a Custom kötelező leírását és a más eventekre tiltott description mezőt is.
 A korábbi 70 regressziós teszt megmaradt; a komponens- és videótesztek szimuláltak.
+
+#### 6.3 Event model v1
+
+**Állapot: elkészült / implementált.** A jelenlegi készlet 15 fő eventből áll;
+az eventtípusok későbbi módosítása és migrációja továbbra is külön roadmap-feladat.
+
+- [x] A fő eventek, labelek, mezők és rail-elhelyezések központi forrása az
+      `src/config/eventDefinitions.ts`; a `MatchEvent` típusbiztos discriminated union.
+- [x] Top rail, balról jobbra: **Pass, Shot, Cross, Dribble, Ball Control, Ball Loss**.
+- [x] Left rail, desktopon alulról felfelé: **Goal, Chance, Goalkeeper, Custom**.
+      Vizuálisan felülről lefelé: **Custom, Goalkeeper, Chance, Goal**.
+      900 px alatt a vízszintes sorrend Goal → Chance → Goalkeeper → Custom.
+- [x] Right rail, felülről lefelé: **Tackle, Interception, Clearance, Ball Recovery, Aerial Duel**.
+- [x] A subtype-ok a fő eventhez tartoznak, nem külön action gombok vagy filtertípusok:
+
+| Fő event | Specifikációk, sorrendben |
+| --- | --- |
+| Pass | Pass type: Regular / Key Pass / Long Ball → Outcome: Completed / Incomplete |
+| Shot | Outcome: Goal / On Target / Off Target / Blocked → Body Part: Foot / Head / Other |
+| Cross | Outcome: Completed / Incomplete |
+| Dribble, Ball Control | Outcome: Successful / Unsuccessful |
+| Goalkeeper | Goalkeeper type: Save / Catch |
+| Tackle, Aerial Duel | Outcome: Won / Lost |
+| Custom | Kötelező, legfeljebb 160 karakteres Description; opcionális játékos |
+| Ball Loss, Goal, Chance, Interception, Clearance, Ball Recovery | Nincs további event-specifikus mező |
+
+- [x] A Player lépés az event mezői után következik, majd Review event és explicit Save.
+      Custom kivételével minden fő eventhez kötelező a játékos.
+- [x] Back / Cancel / Save balra rendezve; Ctrl+Enter / Cmd+Enter ugyanazt a
+      validált mentést használja, mint a Save gomb. Részletek: 3–4. pont.
+- [x] A filterek a fő event ID-jával működnek: például a Pass összes subtype-ja
+      egy Pass filter alatt jelenik meg. Review, summary és Edit a subtype-ot is kezeli.
+- [ ] Tartós eventadatokra alkalmazható migrációs rendszer; ez a release nem ad hozzá persistence-t.
 
 ### 7. Player / roster management
 
@@ -773,14 +820,14 @@ a 8.1–8.4 pontok a tervezett bővítéseket tartalmazzák.
 
 **Meglévő event shortcutok**
 
-**Állapot: elkészült, szimulált működési ellenőrzéssel.** Mind a 10 esemény
+**Állapot: elkészült, szimulált működési ellenőrzéssel.** Mind a 15 fő esemény
 billentyűje testreszabható; a kiosztás localStorage-ban megmarad.
 A Settings megjelenésének és a tényleges böngészős page reloadnak az ellenőrzése még hátravan.
 
 - [x] Az alapértelmezett kiosztás követi a jelenlegi action rail sorrendjét:
-  - Felül: `Q` → Pass, `W` → Key Pass, `E` → Shot, `R` → Duel, `T` → Ball Loss.
-  - Balra: `A` → Dribble, `Y` → Progressive Carry.
-  - Jobbra: `Z` → Tackle, `H` → Interception, `N` → Ball Recovery.
+  - Felül: `Q` → Pass, `W` → Shot, `E` → Cross, `R` → Dribble, `T` → Ball Control, `Z` → Ball Loss.
+  - Balra, alulról felfelé: `A` → Goal, `S` → Chance, `D` → Goalkeeper, `F` → Custom.
+  - Jobbra: `Y` → Tackle, `X` → Interception, `C` → Clearance, `V` → Ball Recovery, `B` → Aerial Duel.
 - [x] Minden event action gombon külön, kompakt shortcut badge jelenik meg.
 - [x] A működés és a badge ugyanabból a központi konfigurációból származik
       (`src/config/eventShortcuts.ts`), az aktuális mappinget az App React state-ben tartja.
@@ -812,18 +859,20 @@ A Settings megjelenésének és a tényleges böngészős page reloadnak az elle
       Megvalósítva és storage round-trip / szimulált App-újracsatolás teszttel ellenőrizve;
       a tényleges böngészős reload ellenőrzése külön, alább maradt nyitva.
       Tárolás: `matchmark:event-shortcuts` localStorage-kulcs, teljes event type → normalizált billentyű JSON objektum.
-- [x] A betöltés az egész konfigurációt validálja: pontosan a 10 ismert event,
+- [x] A betöltés az egész konfigurációt validálja: pontosan a 15 ismert fő event,
       string értékek, engedélyezett és egyedi billentyűk szükségesek.
       Hibás JSON, hiányzó/ismeretlen event, duplicate, reserved vagy rossz típus esetén
       default mapping töltődik be, majd felülírja a hibás értéket. A storage-hozzáférés hibája nem állítja le az appot.
+- [x] A korábbi 10/11-eventes vagy egyéb hiányos kiosztás a jelenlegi 15-eventes
+      defaultokra áll vissza; komplex shortcut-migráció nem készült.
 - [x] Exit bezárja a Settings panelt; Resume zárt panellel, változatlan konfigurációval folytatódik.
 - [x] Valódi böngészőben ellenőrizni a Settings overlay illeszkedését, saját scrollját,
-      valamint Shot `E → S` és Pass `Q → F` után a page reloadot, a badge-eket és a shortcutok működését.
+      valamint egyedi Shot/Pass kiosztás után a page reloadot, a badge-eket és a shortcutok működését.
 
 Ellenőrzés: `node --test tests/eventShortcuts.test.mjs` (8 teszt), lint és build sikeres.
 Külön szimulált komponensellenőrzés lefedi a key capture-t, az ütközéseket,
 a badge/aria/handler szinkront, az App újraindítását megmaradó storage mellett,
-a resetet, mind a 10 event click/keyboard workflow-ját, a hat Quick Seek shortcutot,
+a resetet, a jelenlegi 15 event click/keyboard workflow-ját, a hat Quick Seek shortcutot,
 Back/Save/Cancel/Escape, Edit/Delete, Events click-to-seek és Exit/Resume regressziókat.
 Ezek nem helyettesítik a valódi böngészős vizuális és page reload ellenőrzést.
 
@@ -889,13 +938,80 @@ seek.backward.large
 - [ ] Backend/account alapú shortcut sync és eszközök közötti megőrzés külön
       későbbi fejlesztés maradjon.
 
+### 9. Dark premium design és Broadcast Review
+
+**Állapot: elkészült / implementált.** A jelenlegi MatchMark design a v1 release része.
+
+- [x] Dark premium navy/charcoal alap, zöld/teal accent és visszafogott stadionhangulat.
+- [x] Landing page redesign: glass videóválasztó card, egyetlen hangsúlyos fő üzenet,
+      Select video CTA, formátumajánlás és a helyi videókezelést leíró privacy szöveg.
+- [x] Közös dark glass Players / Events / Settings panelek, kompakt close gombokkal.
+- [x] A Broadcast Review vizuálisan elkülönülő, hűvösebb navy/cyan hátteret és
+      kontrasztosabb alsó vezérlősávot kapott, változatlan videóterülettel és 56 px-es raillel.
+- [x] Review label, timestamp badge, Previous/Next és Exit Review vizuális finomítása.
+- [x] A Review stílus a meglévő `.tagging-workspace-review` classból származik;
+      nincs új módstate, layout- vagy logikai változás. A zöld focus-visible megmaradt.
+- [x] 200 ms-os háttér-/szegélyszín-átmenetek; reduced motion esetén kikapcsolva.
+
+### 10. How to use onboarding / help
+
+**Állapot: elkészült / implementált.** A felhasználó a jelenlegi help felületet és
+a négy végleges screenshotot manuálisan is ellenőrizte a release előtt.
+
+- [x] Secondary How to use gomb a landing Select video gombja mellett.
+- [x] Külön `HowToUse` launcher és `HowToUsePanel` natív modal, izolált
+      `isHowToUseOpen` állapottal; az analysis overlayek state-je nem változott.
+- [x] Close és Escape bezárás, fókusz visszaadása a launchernek, háttérinterakciók
+      blokkolása; keyboard-accessible tartalom és jól látható focus-visible.
+- [x] Középre rendezett, legfeljebb 960 px széles dark glass panel, saját belső scrollal;
+      mobilon a szöveg és screenshot egymás alá kerül, az analysis responsive szabályai változatlanok.
+- [x] Négy workflow-blokk: Load a video; Tag match events; Assign players and details;
+      Review your events.
+- [x] Négy valódi, lokális screenshot a `src/assets/how-to-use/` mappában:
+      `load-video.png`, `tag-events.png`, `assign-details.png`, `review-events.png`.
+      A manifest mind a négyet használja; nincs aktív placeholder vagy remote image request.
+      Az utolsó kép az Events filtereket és a Review indítását mutatja; az alt szöveg ezt írja le.
+- [x] Reszponzív, eredeti képarányú, lazy loadinggal betöltődő képek;
+      a fájlnevek és cseréjük az assetmappa README-jében dokumentálva.
+- [x] Keyboard shortcuts & Quick Seek blokk keycap badge-ekkel:
+      2 / 3 / 4 → +1.2 / +1.5 / +2.0 s; Shift+2 / Shift+3 / Shift+4 ugyanez visszafelé.
+      Az event shortcutokhoz a gombokon látható badge-ekre és a Settingsre utal, nem duplikálja a mappinget.
+- [x] Ctrl+Enter (Windows/Linux) és Cmd+Enter (macOS): Save current event;
+      a leírás jelzi, hogy csak a menthető végső lépésben használható.
+- [x] Külön, visszafogott amber Important blokk jelzi, hogy refresh vagy ablakbezárás
+      törli az eventeket és a játékosmódosításokat; ez nem hibajelzés és nem persistence-funkció.
+
+Release-ellenőrzés: a teljes csomag 98 automatizált tesztet tartalmaz, köztük
+a help megnyitás/Close/Escape/focus-return, tartalom, shortcutleírások, warning,
+a négy valódi kép és a fallback kezelésének regresszióival. A komponens- és
+videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyettesítik.
+
+### 11. Tartós adatmentés és backend
+
+**Állapot: tervezett / nincs implementálva.** A v1 nem ment tartós meccset,
+eventet vagy rostert. A jelenlegi session refresh és ablakbezárás után elvész.
+Exit/Resume csak ugyanazon betöltött oldal memóriáját őrzi meg; nem saved session.
+
+- [ ] Persistent match/event storage.
+- [ ] Backend és tartós rostermentés.
+- [ ] Authentication / felhasználói fiókok.
+- [ ] Saved sessions: session mentése, későbbi megnyitása és folytatása.
+
+Ezek jövőbeli fejlesztések. A meglévő localStorage kizárólag az event shortcutok
+kiosztását őrzi meg; nem tárol videót, eventeket vagy játékosmódosításokat.
+
 ## Következő fejlesztések javasolt sorrendje
 
-1. Event model / event definitions refactor (6.1).
-2. Player / roster management (7.).
-3. Custom / Other event (6.2).
-4. Keyboard shortcut rendszer bővítése (8.1–8.3, közös action modellre építve).
-5. Backend / persistence; a későbbi opcionális beállítások külön ütemezhetők.
+1. Eventmodell további stabilizálása és későbbi migrációs stratégia (6.1 / 6.3);
+   a központi metadata-refaktor és a v1 eventkészlet már elkészült.
+2. Roster további bővítése (7.): active/inactive modell és későbbi backend-betöltés;
+   Add / Edit / Delete már elkészült.
+3. Keyboard shortcut rendszer bővítése (8.1–8.3, közös action modellre építve).
+4. Backend / tartós match- és eventmentés / saved sessions (11.).
+5. Opcionális account-alapú settings sync és további video control beállítások (8.4).
+
+A Custom / Other event (6.2) és a How to use (10.) implementált;
+a későbbi export és backendintegráció továbbra is nyitott fejlesztés.
 
 Az eventtípusok és a roster még változni fognak. Ezeket célszerű a tartós
 adatmentés bevezetése előtt stabilizálni, hogy később ne kelljen nagy

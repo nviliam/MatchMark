@@ -126,7 +126,7 @@ test("help contains all six sections, exact Quick Seek pairs, platform Save shor
   const warning = nodes(tree, n => n.props?.className === "how-to-use-warning")[0];
   assert.equal(warning.type, "section"); assert.equal(warning.props.role, undefined);
   assert.equal(text(nodes(warning, n => n.type === "p")[0]),
-    "Your tagged events and player changes are not saved permanently yet. Refreshing the page or closing the browser window will reset the current session.");
+    "In this early version, your tagged events and player changes are not saved permanently yet. Refreshing the page or closing the browser window will reset the current session.");
   assert.equal(text(nodes(warning, n => n.type === "p")[1]),
     "Make sure you finish your review before leaving or refreshing the page.");
   assert.equal(nodes(tree, n => n.type === "input" || n.type === "video").length, 0);
@@ -137,8 +137,8 @@ test("all four supplied screenshots render in workflow order using the exact loc
   const h = createHarness(), { tree, ctx } = mountPanel(h);
   const images = nodes(tree, n => n.type === "img");
   assert.deepEqual(images.map(image => image.props.src), [
-    "/src/assets/how-to-use/screenshot01.png", "/src/assets/how-to-use/Screenshot02.png",
-    "/src/assets/how-to-use/Screenshot03.png", "/src/assets/how-to-use/Screenshot04.png",
+    "/src/assets/how-to-use/load-video.png", "/src/assets/how-to-use/tag-events.png",
+    "/src/assets/how-to-use/assign-details.png", "/src/assets/how-to-use/review-events.png",
   ]);
   assert.equal(nodes(tree, n => n.type === "figcaption").length, 0);
   assert(images.every(image => image.props.alt && image.props.loading === "lazy"));
