@@ -16,6 +16,7 @@ import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import ReviewControls from "./ReviewControls";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
 import { createMatchEvent } from "../utils/events";
+import HowToUse from "./HowToUse";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -385,6 +386,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
             <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
               aria-label={videoUrl ? "Change video" : "Select video"} onChange={handleFileChange} />
           </label>
+          {!videoUrl && <HowToUse />}
         </div>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded to the cloud.</p>}
       </div>}

@@ -35,6 +35,12 @@ export function createHarness(transformSource = source => source) {
   function load(relative) {
     const filename = path.resolve(root, relative);
     if (cache.has(filename)) return cache.get(filename).exports;
+    // Match Vite's default static PNG imports without evaluating image bytes as JS.
+    if (path.extname(filename) === ".png") {
+      const asset = { exports: { __esModule: true, default: "/" + path.relative(root, filename).split(path.sep).join("/") } };
+      cache.set(filename, asset);
+      return asset.exports;
+    }
     const module = { exports: {} }; cache.set(filename, module);
     const source = transformSource(fs.readFileSync(filename, "utf8"), filename);
     const code = ts.transpileModule(source, { compilerOptions: {
