@@ -10,6 +10,7 @@
 }
 /* Landing-only sizing leaves the fixed analysis grid untouched. */
 .app:not(.app-analysis) {
+  position: relative;
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -110,10 +111,8 @@
 }
 
 .video-picker:not(.video-picker-compact) .file-button {
-  min-width: 200px;
-  min-height: 52px;
-  border-color: var(--badge-border);
-  background: var(--accent-soft);
+  border-color: var(--accent);
+  background: var(--primary-fill);
   color: var(--text-primary);
 }
 .video-picker:not(.video-picker-compact) .file-button:hover {
@@ -170,12 +169,39 @@
 /* Landing help stays separate from the analysis overlays and their event handling. */
 .video-picker:not(.video-picker-compact) .video-picker-actions {
   justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+.video-picker:not(.video-picker-compact) .video-picker-actions > .file-button,
+.video-picker:not(.video-picker-compact) .video-picker-actions > .session-import > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  min-height: 52px;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.video-picker:not(.video-picker-compact) .video-picker-actions > .session-import {
+  margin-bottom: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.landing-help {
+  position: absolute;
+  top: clamp(16px, 2.5vw, 32px);
+  right: clamp(16px, 2.5vw, 32px);
+  max-width: calc(100% - 32px);
 }
 .how-to-use-button {
-  min-height: 52px;
-  background: var(--panel-row-bg);
-  border-color: var(--border-medium);
-  color: var(--text-primary);
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  background: var(--panel-control-bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 .how-to-use-button:hover {
   background: var(--accent-soft);
@@ -183,6 +209,14 @@
 }
 body:has(.how-to-use-panel[open]) {
   overflow: hidden;
+}
+@media (max-width: 480px) {
+  .landing-help {
+    top: 72px;
+  }
+  .app:not(.app-analysis):has(.landing-help) > .video-player {
+    padding-top: 88px;
+  }
 }
 .how-to-use-panel {
   position: fixed;
@@ -1194,6 +1228,23 @@ body:has(.app-analysis) {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+.session-export, .session-import, .session-imported {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.session-import-confirmation {
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel-row-bg);
+}
+.session-import-confirmation p {
+  margin: 8px 0;
+}
+.session-import-confirmation button + button {
+  margin-left: 8px;
 }
 .shortcut-settings-list li {
   display: flex;

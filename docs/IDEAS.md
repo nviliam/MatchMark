@@ -988,9 +988,10 @@ videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyet
 
 ### 11. Tartós adatmentés – local-first alap, opcionális backend
 
-**Állapot: részben elkészült – Phase 1: session schema + JSON export implementálva.**
+**Állapot: részben elkészült – Phase 1 és Phase 2 implementálva.**
 A Settings panel Export session gombja a mentett eventeket és az aktuális rostert
-verziózott JSON-fájlként tölti le, üres eseménylistával is. Import még nincs;
+verziózott JSON-fájlként tölti le, üres eseménylistával is. Az Import session
+runtime validáció és explicit megerősítés után teljes sessioncserét végez;
 refresh után a runtime adatok továbbra is elvesznek. Exit/Resume csak az aktuális oldal memóriáját őrzi meg.
 A meglévő localStorage kizárólag az event shortcutokat tárolja.
 
@@ -1000,23 +1001,25 @@ A meglévő localStorage kizárólag az event shortcutokat tárolja.
       `src/utils/session.ts`; schemaVersion 1, createdAt/exportedAt, opcionális match
       metadata, videónév/méret/időtartam, roster, saved events, nextPlayerId, nextEventId.
       A videó, draftok, UI-state és shortcutbeállítások nem kerülnek exportba.
-- [ ] Phase 2 – JSON import + runtime validation.
-- [ ] Phase 3 – video re-attachment / session restoration.
+- [x] Phase 2 – JSON import + runtime validation + sessionadatok visszaállítása.
+      Settingsből és videó nélküli kezdőnézetből is elérhető. Hibánál és Cancelnél
+      a jelenlegi munka érintetlen marad; megerősítés után a régi videót lecsatoljuk.
+- [ ] Phase 3 – video re-attachment.
 - [ ] Phase 4 – IndexedDB autosave + recovery.
 - [ ] A helyi videó újracsatolása fájlválasztással; név, méret és időtartam alapján
       eltérésjelzés. A videót és a futásidejű blob URL-t nem mentjük a sessionfájlba.
 - [ ] IndexedDB autosave és recovery a már elmentett eventekre és roster-módosításokra,
       látható mentési állapottal és hibakezeléssel.
-- [ ] Importvalidáció és `schemaVersion`; hibás vagy nem támogatott fájl ne írja felül
+- [x] Importvalidáció és `schemaVersion`; hibás vagy nem támogatott fájl ne írja felül
       csendben az aktuális munkát. A roster cseréjének szabálya legyen egyértelmű.
-- [ ] Stabil player/event kapcsolatok és a `nextPlayerId` megőrzése; import után se
+- [x] Stabil player/event kapcsolatok és a `nextPlayerId` megőrzése; import után se
       lehessen korábban használt játékos-ID-t tévesen új játékoshoz kiosztani.
-- [ ] Az importált adatokat futásidőben is validáljuk: egyedi, érvényes azonosítók,
+- [x] Az importált adatokat futásidőben is validáljuk: egyedi, érvényes azonosítók,
       véges és nem negatív timestamp, típushelyes eventmezők és playerkapcsolatok.
       Az event-ID-k kiosztása se ütközhessen a visszatöltött eseményekkel.
-- [ ] Az import első körben teljes sessioncsere legyen, ne összeolvasztás;
+- [x] Az import első körben teljes sessioncsere legyen, ne összeolvasztás;
       az aktuális munka lecserélése előtt legyen egyértelmű megerősítés.
-      A videó újracsatolása ne fusson át az új videó szokásos session-reset ágán.
+- [ ] A videó újracsatolása ne fusson át az új videó szokásos session-reset ágán.
 
 A videó neve, mérete és időtartama csak eltérésjelzésre alkalmas, nem bizonyítja
 a fájl azonosságát. Sikertelen import vagy recovery hagyja meg az aktuális munkát.
@@ -1029,10 +1032,20 @@ A CSV külön elemzési kimenet, nem a sessionformátum helyettesítője.
 A jelenlegi stabil ID-kra és típusos eventmodellre építünk. A jelenlegi adatszerződést
 rögzíteni kell, de nem szükséges minden jövőbeli eventet véglegesíteni a mentés előtt.
 
-Phase 1 megjegyzés: az event creation továbbra is `events.length + 1` ID-t használ.
-A snapshot `nextEventId` értéke max(mentett event-ID-k) + 1; a későbbi importnak
-ebből kell indítania egy ütközésmentes allocatort. Az export nem módosítja az ID-kat.
+Phase 2: az event creation monoton `nextEventId` allocatort használ, import után
+az importált értékről folytatva. A törlés nem csökkenti az allocatort; az Edit nem
+fogyaszt ID-t. Az export a runtime allocator értékét őrzi meg.
 A createdAt az elfogadott videóválasztás ideje; exportedAt az export ideje (UTC ISO).
+Import után a createdAt és match/video metadata megmarad. A filterek All értékre,
+Review, overlay, draft, pending delete és Resume state alapállapotra kerülnek.
+Az importált session videó nélkül újra exportálható; a normál Select video tiltott,
+hogy ne törölhesse az importált eventeket. A felület jelzi a Phase 3 szükségességét.
+
+Validator: `src/utils/sessionImport.ts`; csak schemaVersion 1 támogatott.
+Az ismeretlen root/nested mezőket elhagyjuk, csak ismert mezőkből építünk új objektumot.
+Ismeretlen eventtípus/opció és hiányzó playerreferencia hibát jelent. Korábban hard
+delete-tel eltávolított játékosra mutató Phase 1 export is elutasításra kerül;
+az import nem talál ki hiányzó játékost és nem remapeli az ID-kat.
 
 #### 11.2 Backend / account / sync – későbbi, opcionális irány
 

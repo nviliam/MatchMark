@@ -101,7 +101,7 @@ test("Settings exposes export; VideoPlayer exports current saved state without p
   update(); nodes(tree, n => n.type === "video")[0].props.onLoadedMetadata(); update();
   component(Buttons).props.onOpenSettings(); update();
   let panel = h.render(Settings, component(Settings).props);
-  assert(text(panel).includes("Import is not available yet."));
+  assert(text(panel).includes("import a local backup."));
   const exportButton = nodes(panel, n => n.type === "button" && text(n) === "Export session")[0];
   assert(exportButton); assert.equal(exportButton.props.disabled, false);
   h.media.currentTime = 23.75; h.media.paused = false;

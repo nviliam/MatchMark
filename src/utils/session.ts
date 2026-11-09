@@ -7,6 +7,7 @@ type SnapshotInput = {
   players: readonly Player[];
   video: SessionVideoMetadata;
   nextPlayerId: number;
+  nextEventId?: number;
   createdAt: string;
   exportedAt: string;
   match?: MatchMetadata;
@@ -33,7 +34,7 @@ export function createSessionSnapshot(input: SnapshotInput): MatchMarkSession {
     events: events.map((event) => ({ ...event })),
     nextPlayerId: input.nextPlayerId,
     // Import must initialize its allocator from this value, never from array length.
-    nextEventId: events.reduce((highest, event) => Math.max(highest, event.id), 0) + 1,
+    nextEventId: input.nextEventId ?? events.reduce((highest, event) => Math.max(highest, event.id), 0) + 1,
   };
 }
 

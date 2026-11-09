@@ -199,13 +199,11 @@ export default function HowToUsePanel({ onClose }: Props) {
         >
           <h3 id="how-to-use-warning-title">Important</h3>
           <p>
-            In this early version, your tagged events and player changes are not
-            saved permanently yet. Refreshing the page or closing the browser
-            window will reset the current session.
+            Your current session is not saved automatically yet. Use Export session
+            to create a local backup that you can import later.
           </p>
           <p>
-            Make sure you finish your review before leaving or refreshing the
-            page.
+            Refreshing or closing the browser still clears unsaved runtime data.
           </p>
         </section>
       </div>

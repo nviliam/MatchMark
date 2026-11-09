@@ -18,6 +18,8 @@ import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts
 import { createMatchEvent } from "../utils/events";
 import HowToUse from "./HowToUse";
 import { createSessionSnapshot, downloadSession } from "../utils/session";
+import type { MatchMarkSession, MatchMetadata, SessionVideoMetadata } from "../types/session";
+import SessionImport from "./SessionImport";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -56,6 +58,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [players, setPlayers] = useState<Player[]>(() => DEFAULT_PLAYERS.map((player) => ({ ...player })));
   // Session allocator: deleting players or changing videos must never reuse IDs.
   const nextPlayerId = useRef(DEFAULT_PLAYERS.reduce((highest, player) => Math.max(highest, player.id), 0) + 1);
+  const nextEventId = useRef(1);
+  const matchMetadata = useRef<MatchMetadata>({});
+  const [importedVideo, setImportedVideo] = useState<SessionVideoMetadata | null>(null);
   const sessionCreatedAt = useRef("");
   const videoFileSize = useRef<number | null>(null);
   const [exportError, setExportError] = useState("");
@@ -129,17 +134,44 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }
 
   function handleExportSession() {
-    if (eventsDisabled || !isSettingsOpen) return;
+    if (!importedVideo && (eventsDisabled || !isSettingsOpen)) return;
     try {
       downloadSession(createSessionSnapshot({
-        events, players, nextPlayerId: nextPlayerId.current,
+        events, players, nextPlayerId: nextPlayerId.current, nextEventId: nextEventId.current,
+        match: matchMetadata.current,
         createdAt: sessionCreatedAt.current, exportedAt: new Date().toISOString(),
-        video: { fileName: videoName, fileSize: videoFileSize.current, duration: videoRef.current?.duration ?? null },
+        video: importedVideo ?? { fileName: videoName, fileSize: videoFileSize.current, duration: videoRef.current?.duration ?? null },
       }));
       setExportError("");
     } catch {
       setExportError("Session export failed. Please try again. Your current work is unchanged.");
     }
+  }
+
+  function handleImportSession(session: MatchMarkSession) {
+    if (pending || pendingDeleteId !== null || isReviewMode) return;
+    videoRef.current?.pause();
+    setVideoUrl(null);
+    setVideoName("");
+    videoFileSize.current = null;
+    setEvents(session.events.map(event => ({ ...event })));
+    setPlayers(session.players.map(player => ({ ...player })));
+    nextPlayerId.current = session.nextPlayerId;
+    nextEventId.current = session.nextEventId;
+    sessionCreatedAt.current = session.createdAt;
+    matchMetadata.current = { ...session.match };
+    setImportedVideo({ ...session.video });
+    setFilters(DEFAULT_EVENT_FILTERS);
+    setReviewIndex(null);
+    setOverlay(null);
+    setPending(null);
+    setPendingDeleteId(null);
+    setShowSavedEvent(false);
+    setResumeTime(null);
+    setIsVideoReady(false);
+    setError("");
+    setExportError("");
+    onAnalysisActiveChange(false);
   }
 
   function handleOpenPlayers() {
@@ -295,6 +327,11 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    if (importedVideo) {
+      event.currentTarget.value = "";
+      setError("Video re-attachment will be available in Phase 3. Your imported session has been kept.");
+      return;
+    }
     const file = event.currentTarget.files?.[0];
     if (!file) return;
     // Allow selecting the same file again after a playback failure.
@@ -307,6 +344,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     }
     setError("");
     setEvents([]);
+    nextEventId.current = 1;
+    matchMetadata.current = {};
     resetEventFilters();
     setOverlay(null);
     setPendingDeleteId(null);
@@ -359,7 +398,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     if (!pending || !isVideoReady || !isAnalysisActive || isReviewMode || pending.type !== details.type) return;
     if (playerId !== undefined && !players.some((player) => player.id === playerId)) return;
     const saved = createMatchEvent(details, {
-      id: pending.mode === "edit" ? pending.original.id : events.length + 1,
+      id: pending.mode === "edit" ? pending.original.id : nextEventId.current,
       timestamp: pending.timestamp,
     }, playerId);
     if (!saved) return;
@@ -369,6 +408,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
         ? saved
         : event));
     } else {
+      nextEventId.current++;
       setEvents((previousEvents) => [
         ...previousEvents,
         saved,
@@ -389,6 +429,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   return (
     <section className="video-player" aria-label="Video player">
+      {!isAnalysisActive && !videoUrl && <div className="landing-help"><HowToUse /></div>}
       {!isAnalysisActive && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
         <div className="video-picker-copy">
           <p className="eyebrow">{videoUrl ? "Match video" : ""}</p>
@@ -405,11 +446,18 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
           <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
             <span>{videoUrl ? "Change video" : "Select video"}</span>
             <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
-              aria-label={videoUrl ? "Change video" : "Select video"} onChange={handleFileChange} />
+              aria-label={videoUrl ? "Change video" : "Select video"} disabled={importedVideo !== null} onChange={handleFileChange} />
           </label>
-          {!videoUrl && <HowToUse />}
+          {!videoUrl && <SessionImport onImport={handleImportSession} />}
         </div>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded to the cloud.</p>}
+        {importedVideo && <div className="session-imported" role="status">
+          <p>Session imported. Reattach the original video to continue the analysis.</p>
+          <p>Video re-attachment will be available in Phase 3. Expected video: {importedVideo.fileName}.</p>
+          <p>{events.length} saved events · {players.length} players</p>
+          <button type="button" onClick={handleExportSession}>Export session</button>
+          {exportError && <p className="error-message" role="alert">{exportError}</p>}
+        </div>}
       </div>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (
@@ -450,7 +498,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               )}
               {isSettingsOpen && isAnalysisActive && (
                 <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings}
-                  onExportSession={handleExportSession} exportError={exportError} />
+                  onExportSession={handleExportSession} exportError={exportError} onImportSession={handleImportSession} />
               )}
               {isPlayersOpen && isAnalysisActive && (
                 <PlayersPanel players={players} events={events} onAdd={handleAddPlayer} onUpdate={handleUpdatePlayer}

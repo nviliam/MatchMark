@@ -15,19 +15,22 @@ function mountPanel(h, props = {}, modal = {
   return { tree, modal, ctx, Panel };
 }
 
-test("landing places How to use beside the unchanged Select video flow and omits it from analysis/Resume", () => {
+test("landing separates How to use from Select video and Import session, and omits help from analysis/Resume", () => {
   const h = createHarness(), ctx = h.context(true);
   const Video = h.load("src/components/VideoPlayer.tsx").default;
   const Help = h.load("src/components/HowToUse.tsx").default;
   const Buttons = h.load("src/components/EventButtons.tsx").default;
+  const Import = h.load("src/components/SessionImport.tsx").default;
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
   let active = false, tree;
   const update = () => tree = h.render(Video, { isAnalysisActive: active,
     onAnalysisActiveChange: value => active = value, eventShortcuts: DEFAULT_EVENT_SHORTCUTS }, ctx);
   update();
   const actions = nodes(tree, n => n.props?.className === "video-picker-actions")[0];
-  const children = nodes(actions, n => n.type === "label" || n.type === Help);
-  assert.deepEqual(children.map(n => n.type), ["label", Help]);
+  const children = nodes(actions, n => n.type === "label" || n.type === Help || n.type === Import);
+  assert.deepEqual(children.map(n => n.type), ["label", Import]);
+  const helpPlacement = nodes(tree, n => n.props?.className === "landing-help")[0];
+  assert.equal(nodes(helpPlacement, n => n.type === Help).length, 1);
   assert.equal(text(children[0]), "Select video");
   assert(children[0].props.className.includes("button-primary"));
   const input = nodes(tree, n => n.type === "input")[0];
@@ -126,9 +129,9 @@ test("help contains all six sections, exact Quick Seek pairs, platform Save shor
   const warning = nodes(tree, n => n.props?.className === "how-to-use-warning")[0];
   assert.equal(warning.type, "section"); assert.equal(warning.props.role, undefined);
   assert.equal(text(nodes(warning, n => n.type === "p")[0]),
-    "In this early version, your tagged events and player changes are not saved permanently yet. Refreshing the page or closing the browser window will reset the current session.");
+    "Your current session is not saved automatically yet. Use Export session to create a local backup that you can import later.");
   assert.equal(text(nodes(warning, n => n.type === "p")[1]),
-    "Make sure you finish your review before leaving or refreshing the page.");
+    "Refreshing or closing the browser still clears unsaved runtime data.");
   assert.equal(nodes(tree, n => n.type === "input" || n.type === "video").length, 0);
   h.dispose(ctx);
 });
