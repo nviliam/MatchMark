@@ -986,33 +986,118 @@ a help megnyitás/Close/Escape/focus-return, tartalom, shortcutleírások, warni
 a négy valódi kép és a fallback kezelésének regresszióival. A komponens- és
 videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyettesítik.
 
-### 11. Tartós adatmentés és backend
+### 11. Tartós adatmentés – local-first alap, opcionális backend
 
 **Állapot: tervezett / nincs implementálva.** A v1 nem ment tartós meccset,
-eventet vagy rostert. A jelenlegi session refresh és ablakbezárás után elvész.
-Exit/Resume csak ugyanazon betöltött oldal memóriáját őrzi meg; nem saved session.
+eventet vagy rostert. Exit/Resume csak az aktuális oldal memóriáját őrzi meg.
+A meglévő localStorage kizárólag az event shortcutokat tárolja.
 
-- [ ] Persistent match/event storage.
-- [ ] Backend és tartós rostermentés.
-- [ ] Authentication / felhasználói fiókok.
-- [ ] Saved sessions: session mentése, későbbi megnyitása és folytatása.
+#### 11.1 Helyi session- és rostermentés – első prioritás
 
-Ezek jövőbeli fejlesztések. A meglévő localStorage kizárólag az event shortcutok
-kiosztását őrzi meg; nem tárol videót, eventeket vagy játékosmódosításokat.
+- [ ] Verziózott JSON session export/import: eventek, roster, minimális match metadata
+      (például csapatok, dátum), videóreferencia és a visszaállításhoz szükséges adatok.
+- [ ] A helyi videó újracsatolása fájlválasztással; név, méret és időtartam alapján
+      eltérésjelzés. A videót és a futásidejű blob URL-t nem mentjük a sessionfájlba.
+- [ ] IndexedDB autosave és recovery a már elmentett eventekre és roster-módosításokra,
+      látható mentési állapottal és hibakezeléssel.
+- [ ] Importvalidáció és `schemaVersion`; hibás vagy nem támogatott fájl ne írja felül
+      csendben az aktuális munkát. A roster cseréjének szabálya legyen egyértelmű.
+- [ ] Stabil player/event kapcsolatok és a `nextPlayerId` megőrzése; import után se
+      lehessen korábban használt játékos-ID-t tévesen új játékoshoz kiosztani.
+- [ ] Az importált adatokat futásidőben is validáljuk: egyedi, érvényes azonosítók,
+      véges és nem negatív timestamp, típushelyes eventmezők és playerkapcsolatok.
+      Az event-ID-k kiosztása se ütközhessen a visszatöltött eseményekkel.
+- [ ] Az import első körben teljes sessioncsere legyen, ne összeolvasztás;
+      az aktuális munka lecserélése előtt legyen egyértelmű megerősítés.
+      A videó újracsatolása ne fusson át az új videó szokásos session-reset ágán.
 
-## Következő fejlesztések javasolt sorrendje
+A videó neve, mérete és időtartama csak eltérésjelzésre alkalmas, nem bizonyítja
+a fájl azonosságát. Sikertelen import vagy recovery hagyja meg az aktuális munkát.
 
-1. Eventmodell további stabilizálása és későbbi migrációs stratégia (6.1 / 6.3);
-   a központi metadata-refaktor és a v1 eventkészlet már elkészült.
-2. Roster további bővítése (7.): active/inactive modell és későbbi backend-betöltés;
-   Add / Edit / Delete már elkészült.
-3. Keyboard shortcut rendszer bővítése (8.1–8.3, közös action modellre építve).
-4. Backend / tartós match- és eventmentés / saved sessions (11.).
-5. Opcionális account-alapú settings sync és további video control beállítások (8.4).
+**Fontos:** az event továbbra is explicit Save / Ctrl+Enter / Cmd+Enter művelettel
+kerül a mentett események közé. A session háttérmentése nem véglegesíthet félkész draftot.
+A JSON export hordozható biztonsági másolat; az IndexedDB nem garantált archívum.
+A CSV külön elemzési kimenet, nem a sessionformátum helyettesítője.
 
-A Custom / Other event (6.2) és a How to use (10.) implementált;
-a későbbi export és backendintegráció továbbra is nyitott fejlesztés.
+A jelenlegi stabil ID-kra és típusos eventmodellre építünk. A jelenlegi adatszerződést
+rögzíteni kell, de nem szükséges minden jövőbeli eventet véglegesíteni a mentés előtt.
 
-Az eventtípusok és a roster még változni fognak. Ezeket célszerű a tartós
-adatmentés bevezetése előtt stabilizálni, hogy később ne kelljen nagy
-adatmigrációkat és kompatibilitási javításokat végezni.
+#### 11.2 Backend / account / sync – későbbi, opcionális irány
+
+- [ ] Backend alapú match/event/roster tárolás, ha tényleges használati igény indokolja.
+- [ ] Authentication és eszközök közötti session/settings sync, külön fejlesztésként.
+
+A backend és a login nem előfeltétele a helyi sessionmentésnek.
+
+## Kutatásból levont fejlesztési irányok – 2026. november 9.
+
+**Állapot: dokumentált javaslatok; nem implementált funkciók.**
+Forrás: [MatchMark konkurenskutatás és roadmap](https://chatgpt.com/library?file_id=libfile_8117403daa308191bdd61ef508afd1ba&account_id=personal),
+az aktuális IDEAS.md alapján pontosított változat.
+
+### Termékirány és megtartandó alapok
+
+A MatchMark maradjon ingyenes, egyszerű, local-first tagging/review eszköz.
+A cél a gyors eseményrögzítés és néhány hasznos jelenet könnyű visszanézése,
+minimális egérmozgással, videófeltöltés és drága infrastruktúra nélkül.
+A következő ajánlások backend és fizetős külső szolgáltatás nélkül megvalósíthatók.
+
+A kész alapokat bővítjük: explicit event Save, utolsó event Edit/Delete,
+Event type + Player szűrés és találatszám, szűrt Review Previous/Next,
+3 másodperces lead-in, valamint védett és menthető event-shortcutok.
+Ezek nem újra megépítendő feladatok. A fix cockpit és az 56 px-es bottom rail
+ne váljon zsúfolttá; az új részletek meglévő panelekbe vagy opcionális műveletekbe kerüljenek.
+
+### Következő fejlesztések javasolt sorrendje
+
+Az alábbi sorrend a kutatás utáni ajánlás; a korábbi, backendközpontú sorrendet váltja fel.
+P0: a munka megőrzése; P1: következő hasznos bővítések; P2: közepes, későbbi lépés.
+
+| # | Fejlesztési irány | Lényeg | Prioritás |
+| --- | --- | --- | --- |
+| 1 | Session JSON save/load + videó újracsatolás | Verziózott, hordozható elemzés; 11.1 pont | P0 |
+| 2 | IndexedDB autosave + recovery | A már mentett munka folytatható refresh után | P0 |
+| 3 | Roster active/inactive bővítés | A rostermentés már P0; itt a használt játékosok archiválása a cél | P1 |
+| 4 | Event/player/outcome summary + CSV | Egyszerű, kattintható összesítések és export | P1 |
+| 5 | Egységes event + video-control shortcutok | A 8.1–8.3 szerinti közös action/collision modell | P1 |
+| 6 | Review shortcutok + lead-in settings | A kész Previous/Next billentyűzetről is; a 3 s alap marad | P1 |
+| 7 | Outcome/subtype és No player filter | A meglévő kombinált szűrés célzott bővítése | P1 |
+| 8 | Egy lépéses undo | Utolsó létrehozás/törlés visszavonása a kész Edit/Delete mellé | P1 |
+| 9 | Favorite + opcionális note | Fontos jelenetek kijelölése, rövid edzői megjegyzés | P1 |
+| 10 | Virtuális clip range + selected/favorite playlist | Kezdő/végidő és rendezett válogatás a helyi videóból | P2 |
+
+### Lényeges megvalósítási döntések
+
+- **Roster:** eventben használt játékos archiválása/inaktívvá tétele megőrizheti a nevet,
+  miközben az új eventek playerlistájából elrejti. Az `Unknown player` fallback maradjon.
+  A korábban hard delete-tel eltávolított nevek utólag nem állíthatók vissza a playerId-ból.
+  Az archivált játékos maradjon látható a történeti listákban és szűrőkben;
+  a hozzá kapcsolt régi event szerkesztése ne kényszerítsen új játékos választására.
+- **Undo:** az utolsó létrehozás vagy törlés vonható vissza; törlésnél az eredeti
+  ID, timestamp és listapozíció álljon vissza. Más mentett adatmódosítás, sessioncsere
+  vagy videócsere érvénytelenítse az undo állapotát; draft/Edit/Delete confirmation
+  és Review közben ne legyen használható. A visszavonás is kerüljön háttérmentésre.
+- **Statisztika:** kizárólag a taggelt események összesítése. A Pass Completed/Incomplete
+  adataiból számolható sikeresség, de nem állítható, hogy minden meccsbeli passzt rögzítettünk.
+- **Duplaszámolás:** a Goal tag és a Shot → Goal ugyanazt a gólt is jelentheti;
+  első körben külön számlálók, automatikus összevont gólszám nélkül.
+- **Szűrés:** a `No player` a hozzárendelés nélküli Custom eventet jelenti,
+  nem a törölt vagy ismeretlen játékost. Outcome/subtype filter csak releváns eventnél jelenjen meg.
+- **Note:** opcionális megjegyzés bármely eventhez; nem azonos a Custom kötelező descriptionjével,
+  és ne adjon új kötelező lépést a tagging folyamathoz.
+- **Playlist:** a szűrt, kézi Review már kész. Új a kijelölt/favorite eventek egyedi sorrendje
+  és a clip start/end. Autoplay csak világos megállási szabállyal, ezek után készüljön.
+- **Klip:** először virtuális időablak az eredeti videón; renderelt MP4-export külön, nagyobb feladat.
+
+### Később / használati igény alapján
+
+Timeline markerek, korlátozott tagging presetek/custom template-ek, több session könyvtára,
+meccsóra/félidő offset, offline PWA és egyszerű állóképes nyíl/kör/szöveg annotáció.
+Ezek ne előzzék meg a megbízható mentést és az alap review/export értéket.
+
+### Jelenleg nem cél
+
+Automatikus player/ball tracking, computer vision és AI event detection, automatikus xG,
+cloud video hosting/transcoding, live streaming, enterprise collaboration/jogosultságrendszer,
+komplex 3D tactical drawing suite, többkamerás szinkron és nagy scouting adatbázis.
+Renderelt videóexport és backend/account/sync csak ismétlődő felhasználói igény esetén kerüljön előre.

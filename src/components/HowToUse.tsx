@@ -12,10 +12,15 @@ export default function HowToUse() {
 
   return (
     <>
-      <button ref={buttonRef} className="how-to-use-button" type="button"
-        aria-haspopup="dialog" aria-expanded={isHowToUseOpen}
+      <button
+        ref={buttonRef}
+        className="how-to-use-button"
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={isHowToUseOpen}
         aria-controls={isHowToUseOpen ? "how-to-use-panel" : undefined}
-        onClick={() => setIsHowToUseOpen(true)}>
+        onClick={() => setIsHowToUseOpen(true)}
+      >
         How to use
       </button>
       {isHowToUseOpen && <HowToUsePanel onClose={closeHelp} />}
