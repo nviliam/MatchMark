@@ -11,9 +11,11 @@ type Props = {
   shortcuts: EventShortcuts;
   onChange: (shortcuts: EventShortcuts) => void;
   onClose: () => void;
+  onExportSession?: () => void;
+  exportError?: string;
 };
 
-export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props) {
+export default function ShortcutSettings({ shortcuts, onChange, onClose, onExportSession, exportError }: Props) {
   const [waitingFor, setWaitingFor] = useState<EventType | null>(null);
   const [error, setError] = useState("");
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -83,6 +85,11 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose }: Props
         Select a shortcut, then press a key. Esc cancels key capture.
       </p>
       <div className="shortcut-settings-content">
+        {onExportSession && <div className="session-export">
+          <button type="button" disabled={waitingFor !== null} onClick={onExportSession}>Export session</button>
+          <p className="shortcut-settings-hint">Download saved events and players as JSON. Import is not available yet.</p>
+          {exportError && <p className="error-message" role="alert">{exportError}</p>}
+        </div>}
         <ul className="shortcut-settings-list" aria-label="Event shortcuts">
           {EVENT_SHORTCUT_TYPES.map((type) => (
             <li key={type}>

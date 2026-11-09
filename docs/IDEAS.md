@@ -110,7 +110,7 @@ a Save gombbal vagy az ugyanazt a handlert hívó Ctrl+Enter / Cmd+Enter kombin�
       valamint a már elmentett esemény összefoglalóját is. Új videó resetelje ezeket.
 - [x] A workflow ugyanabban a fix, 56 px-es bottom railben jelenjen meg;
       lépésváltáskor ne változzon a grid méretezése. Szűk helyen csak a sáv belseje görgethető.
-- [ ] Az új workflow összes lépését böngészőben is ellenőrizni 1920×1080,
+- [x] Az új workflow összes lépését böngészőben is ellenőrizni 1920×1080,
       1366×768 és 1280×720 méreten: illeszkedés, stabil videóméret és oldalgörgetés hiánya.
 - Függőség: a fix elemzői nézet kialakítása.
 
@@ -613,16 +613,16 @@ az eventtípusok későbbi módosítása és migrációja továbbra is külön r
 - [x] Right rail, felülről lefelé: **Tackle, Interception, Clearance, Ball Recovery, Aerial Duel**.
 - [x] A subtype-ok a fő eventhez tartoznak, nem külön action gombok vagy filtertípusok:
 
-| Fő event | Specifikációk, sorrendben |
-| --- | --- |
-| Pass | Pass type: Regular / Key Pass / Long Ball → Outcome: Completed / Incomplete |
-| Shot | Outcome: Goal / On Target / Off Target / Blocked → Body Part: Foot / Head / Other |
-| Cross | Outcome: Completed / Incomplete |
-| Dribble, Ball Control | Outcome: Successful / Unsuccessful |
-| Goalkeeper | Goalkeeper type: Save / Catch |
-| Tackle, Aerial Duel | Outcome: Won / Lost |
-| Custom | Kötelező, legfeljebb 160 karakteres Description; opcionális játékos |
-| Ball Loss, Goal, Chance, Interception, Clearance, Ball Recovery | Nincs további event-specifikus mező |
+| Fő event                                                        | Specifikációk, sorrendben                                                         |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Pass                                                            | Pass type: Regular / Key Pass / Long Ball → Outcome: Completed / Incomplete       |
+| Shot                                                            | Outcome: Goal / On Target / Off Target / Blocked → Body Part: Foot / Head / Other |
+| Cross                                                           | Outcome: Completed / Incomplete                                                   |
+| Dribble, Ball Control                                           | Outcome: Successful / Unsuccessful                                                |
+| Goalkeeper                                                      | Goalkeeper type: Save / Catch                                                     |
+| Tackle, Aerial Duel                                             | Outcome: Won / Lost                                                               |
+| Custom                                                          | Kötelező, legfeljebb 160 karakteres Description; opcionális játékos               |
+| Ball Loss, Goal, Chance, Interception, Clearance, Ball Recovery | Nincs további event-specifikus mező                                               |
 
 - [x] A Player lépés az event mezői után következik, majd Review event és explicit Save.
       Custom kivételével minden fő eventhez kötelező a játékos.
@@ -885,11 +885,11 @@ Ezek nem helyettesítik a valódi böngészős vizuális és page reload ellenő
 - [ ] A felhasználó egyértelműen lássa, hogy a Quick Seek funkciók léteznek.
 - [ ] A beállítási felület bevezetésekor a jelenlegi defaultok maradjanak:
 
-| Időlépés | Előre | Hátra |
-| --- | --- | --- |
-| 1.2 s | `2` → +1.2 s | `Shift+2` → -1.2 s |
-| 1.5 s | `3` → +1.5 s | `Shift+3` → -1.5 s |
-| 2.0 s | `4` → +2.0 s | `Shift+4` → -2.0 s |
+| Időlépés | Előre        | Hátra              |
+| -------- | ------------ | ------------------ |
+| 1.2 s    | `2` → +1.2 s | `Shift+2` → -1.2 s |
+| 1.5 s    | `3` → +1.5 s | `Shift+3` → -1.5 s |
+| 2.0 s    | `4` → +2.0 s | `Shift+4` → -2.0 s |
 
 #### 8.2 Video control shortcutok testreszabása
 
@@ -988,14 +988,21 @@ videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyet
 
 ### 11. Tartós adatmentés – local-first alap, opcionális backend
 
-**Állapot: tervezett / nincs implementálva.** A v1 nem ment tartós meccset,
-eventet vagy rostert. Exit/Resume csak az aktuális oldal memóriáját őrzi meg.
+**Állapot: részben elkészült – Phase 1: session schema + JSON export implementálva.**
+A Settings panel Export session gombja a mentett eventeket és az aktuális rostert
+verziózott JSON-fájlként tölti le, üres eseménylistával is. Import még nincs;
+refresh után a runtime adatok továbbra is elvesznek. Exit/Resume csak az aktuális oldal memóriáját őrzi meg.
 A meglévő localStorage kizárólag az event shortcutokat tárolja.
 
 #### 11.1 Helyi session- és rostermentés – első prioritás
 
-- [ ] Verziózott JSON session export/import: eventek, roster, minimális match metadata
-      (például csapatok, dátum), videóreferencia és a visszaállításhoz szükséges adatok.
+- [x] Phase 1 – session schema + JSON export: `src/types/session.ts`,
+      `src/utils/session.ts`; schemaVersion 1, createdAt/exportedAt, opcionális match
+      metadata, videónév/méret/időtartam, roster, saved events, nextPlayerId, nextEventId.
+      A videó, draftok, UI-state és shortcutbeállítások nem kerülnek exportba.
+- [ ] Phase 2 – JSON import + runtime validation.
+- [ ] Phase 3 – video re-attachment / session restoration.
+- [ ] Phase 4 – IndexedDB autosave + recovery.
 - [ ] A helyi videó újracsatolása fájlválasztással; név, méret és időtartam alapján
       eltérésjelzés. A videót és a futásidejű blob URL-t nem mentjük a sessionfájlba.
 - [ ] IndexedDB autosave és recovery a már elmentett eventekre és roster-módosításokra,
@@ -1022,6 +1029,11 @@ A CSV külön elemzési kimenet, nem a sessionformátum helyettesítője.
 A jelenlegi stabil ID-kra és típusos eventmodellre építünk. A jelenlegi adatszerződést
 rögzíteni kell, de nem szükséges minden jövőbeli eventet véglegesíteni a mentés előtt.
 
+Phase 1 megjegyzés: az event creation továbbra is `events.length + 1` ID-t használ.
+A snapshot `nextEventId` értéke max(mentett event-ID-k) + 1; a későbbi importnak
+ebből kell indítania egy ütközésmentes allocatort. Az export nem módosítja az ID-kat.
+A createdAt az elfogadott videóválasztás ideje; exportedAt az export ideje (UTC ISO).
+
 #### 11.2 Backend / account / sync – későbbi, opcionális irány
 
 - [ ] Backend alapú match/event/roster tárolás, ha tényleges használati igény indokolja.
@@ -1032,8 +1044,6 @@ A backend és a login nem előfeltétele a helyi sessionmentésnek.
 ## Kutatásból levont fejlesztési irányok – 2026. november 9.
 
 **Állapot: dokumentált javaslatok; nem implementált funkciók.**
-Forrás: [MatchMark konkurenskutatás és roadmap](https://chatgpt.com/library?file_id=libfile_8117403daa308191bdd61ef508afd1ba&account_id=personal),
-az aktuális IDEAS.md alapján pontosított változat.
 
 ### Termékirány és megtartandó alapok
 
@@ -1053,18 +1063,18 @@ ne váljon zsúfolttá; az új részletek meglévő panelekbe vagy opcionális m
 Az alábbi sorrend a kutatás utáni ajánlás; a korábbi, backendközpontú sorrendet váltja fel.
 P0: a munka megőrzése; P1: következő hasznos bővítések; P2: közepes, későbbi lépés.
 
-| # | Fejlesztési irány | Lényeg | Prioritás |
-| --- | --- | --- | --- |
-| 1 | Session JSON save/load + videó újracsatolás | Verziózott, hordozható elemzés; 11.1 pont | P0 |
-| 2 | IndexedDB autosave + recovery | A már mentett munka folytatható refresh után | P0 |
-| 3 | Roster active/inactive bővítés | A rostermentés már P0; itt a használt játékosok archiválása a cél | P1 |
-| 4 | Event/player/outcome summary + CSV | Egyszerű, kattintható összesítések és export | P1 |
-| 5 | Egységes event + video-control shortcutok | A 8.1–8.3 szerinti közös action/collision modell | P1 |
-| 6 | Review shortcutok + lead-in settings | A kész Previous/Next billentyűzetről is; a 3 s alap marad | P1 |
-| 7 | Outcome/subtype és No player filter | A meglévő kombinált szűrés célzott bővítése | P1 |
-| 8 | Egy lépéses undo | Utolsó létrehozás/törlés visszavonása a kész Edit/Delete mellé | P1 |
-| 9 | Favorite + opcionális note | Fontos jelenetek kijelölése, rövid edzői megjegyzés | P1 |
-| 10 | Virtuális clip range + selected/favorite playlist | Kezdő/végidő és rendezett válogatás a helyi videóból | P2 |
+| #   | Fejlesztési irány                                 | Lényeg                                                            | Prioritás |
+| --- | ------------------------------------------------- | ----------------------------------------------------------------- | --------- |
+| 1   | Session JSON save/load + videó újracsatolás       | Verziózott, hordozható elemzés; 11.1 pont                         | P0        |
+| 2   | IndexedDB autosave + recovery                     | A már mentett munka folytatható refresh után                      | P0        |
+| 3   | Roster active/inactive bővítés                    | A rostermentés már P0; itt a használt játékosok archiválása a cél | P1        |
+| 4   | Event/player/outcome summary + CSV                | Egyszerű, kattintható összesítések és export                      | P1        |
+| 5   | Egységes event + video-control shortcutok         | A 8.1–8.3 szerinti közös action/collision modell                  | P1        |
+| 6   | Review shortcutok + lead-in settings              | A kész Previous/Next billentyűzetről is; a 3 s alap marad         | P1        |
+| 7   | Outcome/subtype és No player filter               | A meglévő kombinált szűrés célzott bővítése                       | P1        |
+| 8   | Egy lépéses undo                                  | Utolsó létrehozás/törlés visszavonása a kész Edit/Delete mellé    | P1        |
+| 9   | Favorite + opcionális note                        | Fontos jelenetek kijelölése, rövid edzői megjegyzés               | P1        |
+| 10  | Virtuális clip range + selected/favorite playlist | Kezdő/végidő és rendezett válogatás a helyi videóból              | P2        |
 
 ### Lényeges megvalósítási döntések
 

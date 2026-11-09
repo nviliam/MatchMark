@@ -7,7 +7,7 @@ import ts from "typescript";
 import * as jsx from "react/jsx-runtime";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-export function createHarness(transformSource = source => source) {
+export function createHarness(transformSource = source => source, globals = {}) {
   const cache = new Map(), listeners = new Set(), capturePhase = new Map();
   let current;
   const media = { currentTime: 0, duration: 1000, paused: true, error: null, pause() { this.paused = true; }, focus() {} };
@@ -59,6 +59,7 @@ export function createHarness(transformSource = source => source) {
         removeEventListener: (_, fn) => { listeners.delete(fn); capturePhase.delete(fn); },
       },
       URL: { createObjectURL: () => "blob:video", revokeObjectURL() {} },
+      ...globals,
     }, { filename });
     return module.exports;
   }

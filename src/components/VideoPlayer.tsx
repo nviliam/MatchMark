@@ -17,6 +17,7 @@ import ReviewControls from "./ReviewControls";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
 import { createMatchEvent } from "../utils/events";
 import HowToUse from "./HowToUse";
+import { createSessionSnapshot, downloadSession } from "../utils/session";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -55,6 +56,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [players, setPlayers] = useState<Player[]>(() => DEFAULT_PLAYERS.map((player) => ({ ...player })));
   // Session allocator: deleting players or changing videos must never reuse IDs.
   const nextPlayerId = useRef(DEFAULT_PLAYERS.reduce((highest, player) => Math.max(highest, player.id), 0) + 1);
+  const sessionCreatedAt = useRef("");
+  const videoFileSize = useRef<number | null>(null);
+  const [exportError, setExportError] = useState("");
   const isReviewMode = reviewIndex !== null;
   const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
   const isEventsOpen = overlay === "events";
@@ -120,7 +124,22 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   function handleOpenSettings() {
     if (eventsDisabled) return;
+    setExportError("");
     setOverlay("settings");
+  }
+
+  function handleExportSession() {
+    if (eventsDisabled || !isSettingsOpen) return;
+    try {
+      downloadSession(createSessionSnapshot({
+        events, players, nextPlayerId: nextPlayerId.current,
+        createdAt: sessionCreatedAt.current, exportedAt: new Date().toISOString(),
+        video: { fileName: videoName, fileSize: videoFileSize.current, duration: videoRef.current?.duration ?? null },
+      }));
+      setExportError("");
+    } catch {
+      setExportError("Session export failed. Please try again. Your current work is unchanged.");
+    }
   }
 
   function handleOpenPlayers() {
@@ -297,6 +316,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     setResumeTime(null);
     onAnalysisActiveChange(false);
     setVideoName(file.name);
+    videoFileSize.current = Number.isFinite(file.size) ? file.size : null;
+    sessionCreatedAt.current = new Date().toISOString();
     setVideoUrl(URL.createObjectURL(file));
   }
 
@@ -428,7 +449,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                   onClose={handleCloseEvents} onSeek={seekToEvent} onStartReview={handleStartReview} />
               )}
               {isSettingsOpen && isAnalysisActive && (
-                <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings} />
+                <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings}
+                  onExportSession={handleExportSession} exportError={exportError} />
               )}
               {isPlayersOpen && isAnalysisActive && (
                 <PlayersPanel players={players} events={events} onAdd={handleAddPlayer} onUpdate={handleUpdatePlayer}
