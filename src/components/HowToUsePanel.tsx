@@ -199,8 +199,8 @@ export default function HowToUsePanel({ onClose }: Props) {
         >
           <h3 id="how-to-use-warning-title">Important</h3>
           <p>
-            Your current session is not saved automatically yet. Use Export session
-            to create a local backup that you can import later.
+            Automatic saving is not available yet. Export a session to save your
+            analysis locally. Import it later and reattach the original video to continue.
           </p>
           <p>
             Refreshing or closing the browser still clears unsaved runtime data.

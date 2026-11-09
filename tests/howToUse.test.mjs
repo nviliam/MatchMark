@@ -129,7 +129,7 @@ test("help contains all six sections, exact Quick Seek pairs, platform Save shor
   const warning = nodes(tree, n => n.props?.className === "how-to-use-warning")[0];
   assert.equal(warning.type, "section"); assert.equal(warning.props.role, undefined);
   assert.equal(text(nodes(warning, n => n.type === "p")[0]),
-    "Your current session is not saved automatically yet. Use Export session to create a local backup that you can import later.");
+    "Automatic saving is not available yet. Export a session to save your analysis locally. Import it later and reattach the original video to continue.");
   assert.equal(text(nodes(warning, n => n.type === "p")[1]),
     "Refreshing or closing the browser still clears unsaved runtime data.");
   assert.equal(nodes(tree, n => n.type === "input" || n.type === "video").length, 0);

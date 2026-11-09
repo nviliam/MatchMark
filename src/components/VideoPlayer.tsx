@@ -20,6 +20,8 @@ import HowToUse from "./HowToUse";
 import { createSessionSnapshot, downloadSession } from "../utils/session";
 import type { MatchMarkSession, MatchMetadata, SessionVideoMetadata } from "../types/session";
 import SessionImport from "./SessionImport";
+import VideoReattachment from "./VideoReattachment";
+import { VIDEO_FILE_ACCEPT, VIDEO_FORMAT_ERROR, isSupportedVideoFile } from "../utils/video";
 
 const seekShortcuts: Readonly<Record<string, number>> = {
   Digit2: 1.2,
@@ -61,6 +63,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const nextEventId = useRef(1);
   const matchMetadata = useRef<MatchMetadata>({});
   const [importedVideo, setImportedVideo] = useState<SessionVideoMetadata | null>(null);
+  // Retain the reference for retrying a restored video's playback failure safely.
+  const attachedImportedVideo = useRef<SessionVideoMetadata | null>(null);
   const sessionCreatedAt = useRef("");
   const videoFileSize = useRef<number | null>(null);
   const [exportError, setExportError] = useState("");
@@ -161,6 +165,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     sessionCreatedAt.current = session.createdAt;
     matchMetadata.current = { ...session.match };
     setImportedVideo({ ...session.video });
+    attachedImportedVideo.current = null;
     setFilters(DEFAULT_EVENT_FILTERS);
     setReviewIndex(null);
     setOverlay(null);
@@ -329,20 +334,19 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     if (importedVideo) {
       event.currentTarget.value = "";
-      setError("Video re-attachment will be available in Phase 3. Your imported session has been kept.");
+      setError("Use Reattach video to continue your imported session. Your session has been kept.");
       return;
     }
     const file = event.currentTarget.files?.[0];
     if (!file) return;
     // Allow selecting the same file again after a playback failure.
     event.currentTarget.value = "";
-    const isSupportedContainer = file.type === "video/mp4" || file.type === "video/webm"
-      || /\.(mp4|webm)$/i.test(file.name);
-    if (!isSupportedContainer) {
-      setError("Please select an MP4 or WebM video. Recommended format: MP4 (H.264).");
+    if (!isSupportedVideoFile(file)) {
+      setError(VIDEO_FORMAT_ERROR);
       return;
     }
     setError("");
+    attachedImportedVideo.current = null;
     setEvents([]);
     nextEventId.current = 1;
     matchMetadata.current = {};
@@ -360,7 +364,35 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     setVideoUrl(URL.createObjectURL(file));
   }
 
+  function handleAttachVideo(file: File, metadata: SessionVideoMetadata) {
+    if (!importedVideo || videoUrl) return;
+    // Deliberately separate from handleFileChange: no analysis data or allocator resets.
+    try {
+      const url = URL.createObjectURL(file);
+      setVideoName(file.name);
+      videoFileSize.current = metadata.fileSize;
+      attachedImportedVideo.current = { ...metadata };
+      setError("");
+      setVideoUrl(url);
+    } catch {
+      setError("This video could not be attached. Your imported session has been kept. Please try again.");
+    }
+  }
+
   function handleVideoError() {
+    if (importedVideo || attachedImportedVideo.current) {
+      // A failed restored video must never run the normal session-clearing error path.
+      setImportedVideo(importedVideo ?? attachedImportedVideo.current);
+      setVideoUrl(null);
+      setVideoName("");
+      setIsVideoReady(false);
+      setResumeTime(null);
+      setOverlay(null);
+      setReviewIndex(null);
+      onAnalysisActiveChange(false);
+      setError("This video could not be played. Your session has been kept. Please reattach a supported video.");
+      return;
+    }
     resetEventFilters();
     setOverlay(null);
     setIsVideoReady(false);
@@ -433,7 +465,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
       {!isAnalysisActive && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
         <div className="video-picker-copy">
           <p className="eyebrow">{videoUrl ? "Match video" : ""}</p>
-          <h2>{videoUrl ? videoName : "Choose a local video file to start tagging."}</h2>
+          <h2>{videoUrl ? videoName : importedVideo ? "Continue your imported analysis." : "Choose a local video file to start tagging."}</h2>
           <p>{videoUrl ? "Your video stays on your device." : ""}</p>
           <p className="privacy-note" id="video-format-hint">Recommended format: MP4 (H.264)</p>
         </div>
@@ -443,18 +475,20 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               Resume analysis
             </button>
           )}
-          <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
+          {!importedVideo && <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
             <span>{videoUrl ? "Change video" : "Select video"}</span>
-            <input type="file" accept=".mp4,.webm,video/mp4,video/webm" aria-describedby="video-format-hint"
+            <input type="file" accept={VIDEO_FILE_ACCEPT} aria-describedby="video-format-hint"
               aria-label={videoUrl ? "Change video" : "Select video"} disabled={importedVideo !== null} onChange={handleFileChange} />
-          </label>
+          </label>}
           {!videoUrl && <SessionImport onImport={handleImportSession} />}
         </div>
         {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded to the cloud.</p>}
-        {importedVideo && <div className="session-imported" role="status">
+        {importedVideo && <div className="session-imported">
           <p>Session imported. Reattach the original video to continue the analysis.</p>
-          <p>Video re-attachment will be available in Phase 3. Expected video: {importedVideo.fileName}.</p>
+          <p>Expected video: {importedVideo.fileName}.</p>
           <p>{events.length} saved events · {players.length} players</p>
+          {!videoUrl ? <VideoReattachment expected={importedVideo} events={events} onAttach={handleAttachVideo} />
+            : <p role="status">Opening the attached video…</p>}
           <button type="button" onClick={handleExportSession}>Export session</button>
           {exportError && <p className="error-message" role="alert">{exportError}</p>}
         </div>}
@@ -473,6 +507,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
               <video key={videoUrl} ref={videoRef} src={videoUrl}
                 onLoadedMetadata={() => {
                   if (!isVideoReady) {
+                    if (importedVideo) {
+                      if (videoRef.current) {
+                        videoRef.current.pause();
+                        videoRef.current.currentTime = 0;
+                      }
+                      setImportedVideo(null);
+                    }
                     setIsVideoReady(true);
                     onAnalysisActiveChange(true);
                   }

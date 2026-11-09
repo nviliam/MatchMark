@@ -990,7 +990,7 @@ videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyet
 
 ### 11. Tartós adatmentés – local-first alap, opcionális backend
 
-**Állapot: részben elkészült – Phase 1 és Phase 2 implementálva.**
+**Állapot: részben elkészült – Phase 1, Phase 2 és Phase 3 implementálva.**
 A Settings panel Export session gombja a mentett eventeket és az aktuális rostert
 verziózott JSON-fájlként tölti le, üres eseménylistával is. Az Import session
 runtime validáció és explicit megerősítés után teljes sessioncserét végez;
@@ -1006,9 +1006,9 @@ A meglévő localStorage kizárólag az event shortcutokat tárolja.
 - [x] Phase 2 – JSON import + runtime validation + sessionadatok visszaállítása.
       Settingsből és videó nélküli kezdőnézetből is elérhető. Hibánál és Cancelnél
       a jelenlegi munka érintetlen marad; megerősítés után a régi videót lecsatoljuk.
-- [ ] Phase 3 – video re-attachment.
+- [x] Phase 3 – video re-attachment, metadata mismatch warning és importált session folytatása.
 - [ ] Phase 4 – IndexedDB autosave + recovery.
-- [ ] A helyi videó újracsatolása fájlválasztással; név, méret és időtartam alapján
+- [x] A helyi videó újracsatolása fájlválasztással; név, méret és időtartam alapján
       eltérésjelzés. A videót és a futásidejű blob URL-t nem mentjük a sessionfájlba.
 - [ ] IndexedDB autosave és recovery a már elmentett eventekre és roster-módosításokra,
       látható mentési állapottal és hibakezeléssel.
@@ -1021,7 +1021,7 @@ A meglévő localStorage kizárólag az event shortcutokat tárolja.
       Az event-ID-k kiosztása se ütközhessen a visszatöltött eseményekkel.
 - [x] Az import első körben teljes sessioncsere legyen, ne összeolvasztás;
       az aktuális munka lecserélése előtt legyen egyértelmű megerősítés.
-- [ ] A videó újracsatolása ne fusson át az új videó szokásos session-reset ágán.
+- [x] A videó újracsatolása ne fusson át az új videó szokásos session-reset ágán.
 
 A videó neve, mérete és időtartama csak eltérésjelzésre alkalmas, nem bizonyítja
 a fájl azonosságát. Sikertelen import vagy recovery hagyja meg az aktuális munkát.
@@ -1040,8 +1040,8 @@ fogyaszt ID-t. Az export a runtime allocator értékét őrzi meg.
 A createdAt az elfogadott videóválasztás ideje; exportedAt az export ideje (UTC ISO).
 Import után a createdAt és match/video metadata megmarad. A filterek All értékre,
 Review, overlay, draft, pending delete, Saved summary és Resume state alapállapotra kerülnek.
-Az importált session videó nélkül újra exportálható; a normál Select video tiltott,
-hogy ne törölhesse az importált eventeket. A felület jelzi a Phase 3 szükségességét.
+Az importált session videó nélkül újra exportálható; a normál Select video helyett
+Reattach video érhető el, hogy a videóválasztás ne törölhesse az importált eventeket.
 
 Validator: `src/utils/sessionImport.ts`; csak schemaVersion 1 támogatott.
 Az ismeretlen root/nested mezőket elhagyjuk, csak ismert mezőkből építünk új objektumot.
@@ -1073,7 +1073,7 @@ az import nem talál ki hiányzó játékost és nem remapeli az ID-kat.
   lecsatolódik; a session createdAt, match/video metadata, roster, eventek és
   allocatorok ténylegesen visszakerülnek a runtime state-be. A felület jelzi:
   `Session imported. Reattach the original video to continue the analysis.`
-  A tényleges újracsatolás továbbra is a Phase 3 feladata.
+  A tényleges újracsatolást az alábbi Phase 3 folyamat végzi.
 - A Review, timestamp capture, EventForm, explicit Save és shortcutok működése
   változatlan; a taggingben kizárólag az event-ID kiosztása változott.
   IndexedDB, autosave/recovery, backend, account/sync és új dependency nem került be.
@@ -1084,6 +1084,46 @@ roundtripet, a hibás adatok elutasítását, a hibás import és Cancel mellett
 állapotmegőrzést, valamint a monoton ID-kiosztást (1, 4, 8 → következő ID: 9;
 törlés után sincs újrafelhasználás). A komponens-/videóellenőrzések szimuláltak;
 a böngészős vizuális ellenőrzést nem helyettesítik.
+
+**Phase 3 – megvalósított video re-attachment:**
+
+- Az importált session kezdőkártyáján Reattach video a fő CTA. Natív file inputot
+  használ, ugyanazzal az MP4/WebM ellenőrzéssel, mint a normál Select video
+  (`src/utils/video.ts`). Nincs feltöltés, fájlútvonal-mentés, hash vagy file handle.
+- A `VideoReattachment` külön candidate videón olvassa a metaadatokat, kizárólag
+  File → Object URL → video útvonalon. A teljes videót nem olvassa memóriába.
+  Hibás fájl, metadatahiba, Cancel vagy Choose another nem módosítja a sessiont.
+- Pure comparison helper: `src/utils/videoReattachment.ts`. A filename pontos string-
+  egyezéssel, a fileSize pontos számértékkel hasonlítódik; null metadata esetén
+  unknown az eredmény. A duration toleranciája **0,5 másodperc**, a határértékkel együtt.
+  Strukturált eredmény: fileName/fileSize/duration/eventTimestamps mezőnként
+  match/mismatch/unknown, valamint maxEventTimestamp és hasWarning.
+- A kiválasztott duration + 0,5 s legalább a legnagyobb event timestamp legyen;
+  ellenkező esetben külön figyelmeztetés jelenik meg. Az eventek nem törlődnek,
+  timestampjük nem módosul. Metadataegyezés nem bizonyítja a fájl azonosságát.
+- Egyezésnél Continue analysis, eltérésnél amber warning, Choose another video és
+  explicit Use this video anyway döntés következik. Ismeretlen metadata esetén
+  a felület jelzi az összehasonlítás korlátját; nincs automatikus elutasítás.
+- Az elfogadás külön `handleAttachVideo` ágat használ, a normál session-reset nélkül.
+  Events, players, ID-k, allocatorok, createdAt és match metadata változatlan marad.
+  A meglévő workspace 0:00-nál, paused állapotban nyílik meg; nincs playback-position
+  persistence. A várakozó állapot eltűnik, Events/Review/Edit/Delete és tagging újra használható.
+- Export újracsatolás előtt az importált, utána a ténylegesen csatolt videó metaadatait
+  használja. A candidate URL-ek cserénél/hibánál/unmountkor felszabadulnak;
+  az aktív URL a meglévő player lifecycle-t követi. Újracsatolt videó lejátszási
+  hibája megőrzi a sessiont és újracsatolást enged.
+- A How to use jelzi az export → import → eredeti videó újracsatolás folyamatot,
+  és továbbra is az automatikus mentés hiányára figyelmeztet.
+
+IndexedDB autosave/recovery, saved analyses lista, backend/account/sync továbbra is
+tervezett; a Phase 3 nem adott új dependency-t, és nem változtatta meg a Review vagy player CRUD logikát.
+
+Phase 3 ellenőrzés: **121/121 automatizált teszt sikeres**, lint és build sikeres.
+Az új tesztek lefedik a metadataegyezést/eltérést és null értékeket, a 0,5 s-os
+határértékeket, event timestamp sanity checket, Cancel/hibák melletti adatmegőrzést,
+candidate és aktív URL-ek felszabadítását, illetve az export → import → reattach →
+tagging/Review/player CRUD integrációt. A média-/komponensellenőrzések szimuláltak;
+a valódi böngészős, helyi videófájlos ellenőrzés még hátravan.
 
 #### 11.2 Backend / account / sync – későbbi, opcionális irány
 

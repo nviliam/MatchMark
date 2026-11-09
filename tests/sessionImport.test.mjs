@@ -105,7 +105,7 @@ test("file UI stages valid data, reports errors and only applies on explicit con
 
 function videoSetup(transform = source => source) {
   const h = createHarness(transform), ctx = h.context(true);
-  const names = ["VideoPlayer", "EventButtons", "EventForm", "ShortcutSettings", "SessionImport", "SavedEventSummary", "DeleteEventConfirmation"];
+  const names = ["VideoPlayer", "EventButtons", "EventForm", "ShortcutSettings", "SessionImport", "SavedEventSummary", "DeleteEventConfirmation", "VideoReattachment"];
   const components = Object.fromEntries(names.map(name => [name, h.load(`src/components/${name}.tsx`).default]));
   let tree, active = false, exported;
   h.load("src/utils/session.ts").downloadSession = value => exported = value;
@@ -123,9 +123,8 @@ test("confirmed import restores data, detaches video, resets workflow and protec
   s.component("EventButtons").props.onOpenSettings(); s.update();
   s.component("ShortcutSettings").props.onImportSession(session); s.update();
   assert.equal(nodes(s.tree, n => n.type === "video").length, 0);
-  assert(text(s.tree).includes("Session imported.")); assert(text(s.tree).includes("Phase 3"));
-  const input = nodes(s.tree, n => n.type === "input")[0]; assert.equal(input.props.disabled, true);
-  input.props.onChange({ currentTarget: { value: "", files: [{ name: "other.mp4" }] } }); s.update();
+  assert(text(s.tree).includes("Session imported.")); assert(s.component("VideoReattachment"));
+  assert.equal(nodes(s.tree, n => n.type === "input" && n.props.accept?.includes("video/mp4")).length, 0);
   nodes(s.tree, n => n.type === "button" && text(n) === "Export session")[0].props.onClick(); s.update();
   for (const key of ["players", "events", "nextPlayerId", "nextEventId", "video", "match", "createdAt"]) {
     assert.equal(JSON.stringify(s.exported[key]), JSON.stringify(session[key]), key);
@@ -152,16 +151,13 @@ test("invalid import and cancelled confirmation preserve existing video, events 
 });
 
 test("imported sparse IDs resume at 9 and deletion never reuses the allocated ID", () => {
-  // Simulate an attached media element after apply, solely to exercise the allocator.
-  // Production Phase 2 still detaches media; the re-attachment UI is deliberately absent.
-  const s = videoSetup((source, filename) => filename.endsWith("VideoPlayer.tsx") ? source
-    .replace('setVideoUrl(null);', 'setVideoUrl("blob:test");')
-    .replaceAll('setIsVideoReady(false);', 'setIsVideoReady(true);')
-    .replaceAll('onAnalysisActiveChange(false);', 'onAnalysisActiveChange(true);') : source);
+  const s = videoSetup();
   const { session } = setup();
   session.events = [1, 4, 8].map(id => ({ id, type: "custom", timestamp: id, description: "Existing" }));
   session.nextEventId = 9;
-  s.component("SessionImport").props.onImport(session); s.update(); s.save();
+  s.component("SessionImport").props.onImport(session); s.update();
+  s.component("VideoReattachment").props.onAttach({ name: "match.mp4", type: "video/mp4", size: session.video.fileSize }, session.video); s.update();
+  nodes(s.tree, n => n.type === "video")[0].props.onLoadedMetadata(); s.update(); s.save();
   assert.equal(s.component("SavedEventSummary").props.event.id, 9);
   s.component("SavedEventSummary").props.onDelete(); s.update();
   s.component("DeleteEventConfirmation").props.onConfirm(); s.update(); s.save();

@@ -1246,6 +1246,52 @@ body:has(.app-analysis) {
 .session-import-confirmation button + button {
   margin-left: 8px;
 }
+.video-reattachment {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.session-imported {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.video-match-result {
+  padding: 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  background: var(--panel-row-bg);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.video-match-result h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.video-match-result dl {
+  font-size: 0.8rem;
+}
+.video-match-result dt {
+  font-weight: 600;
+  margin-top: 8px;
+}
+.video-match-result dd {
+  margin-left: 0;
+  color: var(--text-secondary);
+}
+.video-match-warning {
+  border-color: rgb(235 181 71 / 45%);
+  background: rgb(235 181 71 / 8%);
+}
+.video-match-warning h3 {
+  color: #f3d18c;
+}
+.reattachment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
 .shortcut-settings-list li {
   display: flex;
   align-items: center;
