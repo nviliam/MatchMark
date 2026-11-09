@@ -958,7 +958,8 @@ seek.backward.large
 **Állapot: elkészült / implementált.** A felhasználó a jelenlegi help felületet és
 a négy végleges screenshotot manuálisan is ellenőrizte a release előtt.
 
-- [x] Secondary How to use gomb a landing Select video gombja mellett.
+- [x] Diszkrét secondary How to use gomb a kezdőképernyő jobb felső részén;
+      a fő cardban a Select video és Import session marad együtt, egységes méretezéssel.
 - [x] Külön `HowToUse` launcher és `HowToUsePanel` natív modal, izolált
       `isHowToUseOpen` állapottal; az analysis overlayek state-je nem változott.
 - [x] Close és Escape bezárás, fókusz visszaadása a launchernek, háttérinterakciók
@@ -978,8 +979,9 @@ a négy végleges screenshotot manuálisan is ellenőrizte a release előtt.
       Az event shortcutokhoz a gombokon látható badge-ekre és a Settingsre utal, nem duplikálja a mappinget.
 - [x] Ctrl+Enter (Windows/Linux) és Cmd+Enter (macOS): Save current event;
       a leírás jelzi, hogy csak a menthető végső lépésben használható.
-- [x] Külön, visszafogott amber Important blokk jelzi, hogy refresh vagy ablakbezárás
-      törli az eventeket és a játékosmódosításokat; ez nem hibajelzés és nem persistence-funkció.
+- [x] Külön, visszafogott amber Important blokk jelzi, hogy nincs automatikus mentés;
+      Export session segítségével helyi, később importálható biztonsági másolat készíthető.
+      Refresh vagy ablakbezárás továbbra is törli a memóriában lévő sessiont.
 
 Release-ellenőrzés: a teljes csomag 98 automatizált tesztet tartalmaz, köztük
 a help megnyitás/Close/Escape/focus-return, tartalom, shortcutleírások, warning,
@@ -1037,7 +1039,7 @@ az importált értékről folytatva. A törlés nem csökkenti az allocatort; az
 fogyaszt ID-t. Az export a runtime allocator értékét őrzi meg.
 A createdAt az elfogadott videóválasztás ideje; exportedAt az export ideje (UTC ISO).
 Import után a createdAt és match/video metadata megmarad. A filterek All értékre,
-Review, overlay, draft, pending delete és Resume state alapállapotra kerülnek.
+Review, overlay, draft, pending delete, Saved summary és Resume state alapállapotra kerülnek.
 Az importált session videó nélkül újra exportálható; a normál Select video tiltott,
 hogy ne törölhesse az importált eventeket. A felület jelzi a Phase 3 szükségességét.
 
@@ -1046,6 +1048,42 @@ Az ismeretlen root/nested mezőket elhagyjuk, csak ismert mezőkből építünk 
 Ismeretlen eventtípus/opció és hiányzó playerreferencia hibát jelent. Korábban hard
 delete-tel eltávolított játékosra mutató Phase 1 export is elutasításra kerül;
 az import nem talál ki hiányzó játékost és nem remapeli az ID-kat.
+
+**Phase 2 – megvalósított importfolyamat és validáció:**
+
+- A `readSessionFile` / `parseSession` / `validateSession` külön kezeli az olvasási
+  hibát, üres fájlt, hibás JSON-t, érvénytelen sessiont és nem támogatott verziót.
+  Strukturált eredmény: `{ valid: true, session }` vagy
+  `{ valid: false, error: { code, message } }`; a felület érthető hibát mutat.
+- A kötelező root mezők és az értelmezhető createdAt/exportedAt dátumok ellenőrzöttek.
+  A match metadata lehet üres; a videó fileName string, fileSize/duration pedig
+  null vagy véges, nem negatív szám. Maga a videó és a blob URL nem áll helyre.
+- A player-ID-k egyedi, pozitív, biztonságosan ábrázolható egészek; a név és az
+  opcionális mezszám a meglévő roster szabályait követi. Hibás értéket nem normalizálunk.
+- Mind a 15 eventtípus és a releváns subtype/outcome/bodyPart/description mezők
+  a meglévő eventdefiníciók alapján validáltak. Az event-ID-k egyediek, pozitív
+  egészek; a timestamp véges, nem negatív szám. Kötelező player nem hiányozhat;
+  Custom esetén a player opcionális, de minden megadott playerId-nak léteznie kell.
+- A nextPlayerId és nextEventId érvényes egész, a hozzá tartozó összes importált
+  ID-nál nagyobb. Az import megtartja az eredeti azonosítókat és kapcsolatokat.
+- Érvényes fájl is csak a `Replace current session?` kérdés explicit jóváhagyása
+  után alkalmazódik. Előtte kizárólag külön jelölt session készül; hiba vagy Cancel
+  nem módosítja az aktuális rostert, eventeket, videót, filtereket és Review-állapotot.
+- Jóváhagyáskor teljes csere történik, merge nélkül. A régi videó megáll és
+  lecsatolódik; a session createdAt, match/video metadata, roster, eventek és
+  allocatorok ténylegesen visszakerülnek a runtime state-be. A felület jelzi:
+  `Session imported. Reattach the original video to continue the analysis.`
+  A tényleges újracsatolás továbbra is a Phase 3 feladata.
+- A Review, timestamp capture, EventForm, explicit Save és shortcutok működése
+  változatlan; a taggingben kizárólag az event-ID kiosztása változott.
+  IndexedDB, autosave/recovery, backend, account/sync és új dependency nem került be.
+
+Phase 2 ellenőrzés: **113/113 automatizált teszt sikeres**, lint és build sikeres.
+A tesztek lefedik az összes eventtípust és konfigurált opciót, az export/import
+roundtripet, a hibás adatok elutasítását, a hibás import és Cancel melletti
+állapotmegőrzést, valamint a monoton ID-kiosztást (1, 4, 8 → következő ID: 9;
+törlés után sincs újrafelhasználás). A komponens-/videóellenőrzések szimuláltak;
+a böngészős vizuális ellenőrzést nem helyettesítik.
 
 #### 11.2 Backend / account / sync – későbbi, opcionális irány
 
