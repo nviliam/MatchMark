@@ -3,20 +3,112 @@
 A projekttel kapcsolatos, még kidolgozásra váró ötletek gyűjtőhelye.
 Ha egy ötlet konkrét fejlesztési feladattá válik, GitHub issue készülhet belőle.
 
-Az alábbi sorrend javasolt megvalósítási sorrend is: először az elemzői nézet
-kerete, majd az eseményrögzítés folyamata készüljön el.
+Az eredeti szekciók a fejlesztés történetét is őrzik. Az aktuális állapotot az
+alábbi dátumozott összefoglaló jelzi; a további termékirányt a dokumentum végén
+szereplő roadmap írja le. Az elemzői nézet és az eseményrögzítés alapjai már készek.
 
 Állapotok: **elkészült**, **részben elkészült**, **tervezett**, **ötlet**.
 A kipipált részfeladatok már megvalósultak; az üres jelölők a hátralévő munkát jelzik.
 
-**MatchMark v1 release-állapot (2026. november 7.):** a 15 fő eventet kezelő
+**Történeti MatchMark v1 release-állapot (2026. november 7.):** a 15 fő eventet kezelő
 modell, a runtime roster CRUD, a dark premium / Broadcast Review design és a
 screenshotokkal támogatott How to use elkészült. A jelenlegi felületet a felhasználó
 manuálisan is ellenőrizte. A korábbi szekciók tesztszámai történeti ellenőrzéseket
-jelölnek; a release teljes ellenőrzése 98 tesztből áll.
-Az eventek és a játékosmódosítások továbbra is csak az aktuális sessionben élnek:
-refresh vagy böngészőablak-bezárás után elvesznek. Kizárólag a shortcutkiosztás
-megőrzése implementált; a tartós session-mentés a 11. pontban jövőbeli feladat.
+jelölnek; az akkori release teljes ellenőrzése 98 tesztből állt.
+Azóta a kézi JSON export/import és videó-újracsatolás is elkészült (11. pont).
+Automatikus sessionmentés és refresh recovery továbbra sincs; export nélkül a
+runtime eventek és játékosmódosítások elvesznek. A shortcutkiosztás automatikusan megmarad.
+
+## Aktuális állapot – 2026. november 13.
+
+**Állapot: clean-code / robustness refaktor és dokumentáció elkészült, mainre kiadva.**
+A refaktor nem adott új dependency-t, backendréteget vagy globális state store-t.
+A 15 eventes domainmodell, schemaVersion 1, explicit Save, roster hard delete,
+Unknown player fallback, szűrt Review és a tagging workflow megmaradt.
+
+### Session roundtrip és biztonságos videóválasztás
+
+- [x] Törölt játékosra hivatkozó történeti event exportálható és visszaimportálható.
+  Az eredeti numerikus `playerId` megmarad; a hiányzó roster-bejegyzést nem hozzuk
+  létre és az ID-t nem remapeljük. A felület továbbra is `Unknown player` állapotot mutat.
+- [x] Az import `nextPlayerId` ellenőrzése a roster és az eventek történeti player-ID-it
+  is figyelembe veszi. Például történeti ID 4 mellett a következő ID 3 érvénytelen,
+  5 érvényes. Hibás ID, hiányzó kötelező player, hibás event és allocatorütközés továbbra is elutasított.
+- [x] Normál videóválasztásnál előbb fájlvalidáció és `createObjectURL`, csak siker
+  után analysis/workflow reset és aktiválás történik. URL-létrehozási hibánál a régi
+  videó, URL, eventek, roster és draft megmarad; érthető hibaüzenet jelenik meg.
+  Sikeres új normál videónál az eventtörténet, event allocator és session metadata
+  újraindul, a roster és player allocator megmarad. Reattach esetén nincs domainreset.
+
+### React-felelősségek szétválasztása
+
+- [x] `src/hooks/useMatchSession.ts`: players/events state, session metadata és
+  monoton player/event allocatorok; domain CRUD, validált import alkalmazása,
+  reset és snapshothoz szükséges adatok. Nem foglalkozik videóval vagy UI-state-tel.
+- [x] `src/hooks/useVideoSource.ts`: File, active/candidate URL, metadata/readiness,
+  import miatti detach, reattach és cleanup. Minden hookpéldány csak a saját URL-jeit
+  szabadítja fel. A workspace és a probe külön példány; elfogadáskor külön aktív URL
+  készül, nem történik URL-tulajdonjog-átadás. Replacement/discard/unmount cleanup
+  és a stale candidate callbackek védelme tesztelt.
+- [x] `src/hooks/useAnalysisShortcuts.ts`: globális event-tagging és Quick Seek
+  listenerek, külön enablement, typing/modifier/repeat/composition guardok és cleanup.
+  A fizikai Digit2/3/4, Shift irányváltás és a Settings capture prioritása megmaradt.
+- [x] `src/components/VideoPicker.tsx`: landing/inactive/Resume/importált session
+  megjelenítés és callbackek. Nincs saját domain-, JSON- vagy URL-lifecycle logikája;
+  a Resume ref és a `VideoReattachment` beágyazása megmaradt.
+- A `VideoPlayer` továbbra is koordinátor: video element ref, playback/seek,
+  draft/edit/delete workflow, filterek, Review index, overlayk, Escape-prioritás,
+  fókusz, import/export és reattach összekötése. A snapshot és metadata comparison
+  pure utility maradt. Ezek további szétbontása nem része az elkészült munkának.
+
+### TypeScript, CSS és accessibility
+
+- [x] `tsconfig.app.json`: `strict: true`; nem került be `noUncheckedIndexedAccess`
+  vagy `exactOptionalPropertyTypes`. A strict ellenőrzés a jelenlegi kódon hibamentes.
+- [x] Bizonyítottan elavult CSS eltávolítása, köztük a régi EventForm/fieldset/legend,
+  radio és `.player-picker` szabályok; a használt responsive/state override-ok megtartásával.
+- [x] Funkcionális CSS-felbontás: `App.css` app/workspace layout; `styles/panels.css`,
+  `eventWorkflow.css`, `howToUse.css`, `review.css` funkcionális stílusok; `index.css`
+  globális alapok/tokenek. Az `App.tsx` import sorrendje: App → panels → eventWorkflow
+  → howToUse → review. Az Exit Review explicit `.review-exit` classt kapott a
+  DOM-pozíciótól függő `button:last-child` helyett. A felbontás nem redesign.
+- [x] Import confirmation natív `<dialog>` / `showModal()`, kezdeti Cancel-fókusz,
+  Escape cancel, fókusz-visszaadás, accessible name/description és inert háttér.
+  A reattach reading/result/return fókuszcélokat, a player form mezőhöz kötött
+  hibaüzeneteket és a Saved státusz régióját is pontosítottuk.
+- [x] A natív dialogra maradt régi, széles és áttetsző confirmation-stílus javítása:
+  legfeljebb 480 px-es navy panel, 16 px viewport-margó, sötétített/enyhén blurölt
+  `::backdrop`, külön tördelhető actions sor, secondary Cancel és primary Import.
+  600 px alatt kisebb padding; szűk/alacsony viewporton wrap és belső scroll.
+  Az importvalidáció, sessioncsere és accessibility-viselkedés nem változott.
+
+### Dokumentáció, ellenőrzés és kiadás
+
+- [x] A gyökér `README.md` teljes angol újraírása a tényleges funkciók, local-first
+  workflow, stack, korlátok, meglévő screenshotok és football-analysis háttér alapján.
+- [x] Új gyökér `ARCHITECTURE.md`: domainmodell, state/URL ownership, import validation,
+  allocatorok, keyboard/Review flow, atomic error handling és a tesztharness korlátai.
+- A november 13-i, merge utáni ellenőrzés: **159/159 teszt sikeres**, `npm run lint`,
+  `npm run build`, külön `npx tsc -p tsconfig.app.json --noEmit --incremental false --strict`
+  és `git diff --check` sikeres. Ez a kiadáskor ténylegesen lefuttatott ellenőrzés,
+  nem a jelen dokumentációfrissítéskor újrafuttatott eredmény.
+- A tesztek domain CRUD/allocator, törölt player roundtrip, normál video-select
+  atomicitás, active/probe URL lifecycle, shortcut/capture, VideoPicker és accessibility
+  markup/handler regressziókat is lefednek. A custom harness szimulált hooks/media
+  környezet; nem valódi browser DOM/E2E, és nem igazol teljes WCAG megfelelést.
+- `develop` → `main` fast-forward merge és push: `44a4a5b`, konfliktus nélkül.
+  A GitHub–Vercel repository-kapcsolatot és MatchMark-hozzáférést helyreállítottuk;
+  a Production branch `main`. A korábbi kapcsolatvesztés pontos oka nem igazolt.
+  Kézzel indított deployment után a `44a4a5b` **Ready / Production** állapotát
+  screenshot igazolta; a felhasználó az éles Import session működését is ellenőrizte.
+  A következő main push automatikus deploymentjét még külön meg kell figyelni.
+- További manuális browser QA: teljes import Cancel/Escape/Tab/fókusz flow,
+  reattach match/mismatch és retry, panel/Review regressziók, valamint keskeny viewportok.
+  A sikeres importpróba nem helyettesíti ezeket az ellenőrzéseket.
+
+**Következő termékprioritás:** IndexedDB autosave/recovery. A kézi session export/import/
+reattach már kész alap; a saved analyses könyvtár, summaries/CSV, Review shortcutok
+és lead-in settings továbbra is tervezettek. Újabb általános React-refaktor nem önálló cél.
 
 ## Magas prioritás
 
@@ -245,8 +337,9 @@ vizuális ellenőrzés még hátravan.
 
 Megvalósult felépítés:
 
-- A játékoslista központi forrása továbbra is `src/data/players.ts`. A VideoPlayer
-  ezt adja át az EventsPanelnek; a select opciói dinamikusan készülnek belőle.
+- A runtime játékoslista tulajdonosa a `useMatchSession`; a `src/data/players.ts`
+  csak a kezdeti demo seed. A VideoPlayer az aktuális rostert adja át az EventsPanelnek;
+  a select opciói dinamikusan készülnek belőle.
   A filter nem feltételez fix játékosszámot vagy konkrét neveket/mezszámokat.
 - A filter stabil `playerId` alapján működik: a jelenlegi numerikus ID-k és a domain
   típusok változatlanok. A név és a mezszám kizárólag display adat; az event struktúra
@@ -663,7 +756,7 @@ active/inactive modell későbbi feladat.
 #### 7.1 Add Player / editable roster foundation
 
 - A `src/data/players.ts` kizárólag immutable default/demo seedet exportál
-  `DEFAULT_PLAYERS` néven. A tömb és elemei fagyasztottak; a VideoPlayer saját
+  `DEFAULT_PLAYERS` néven. A tömb és elemei fagyasztottak; a `useMatchSession` saját
   tömböt és saját Player objektumokat másol a kezdeti `players` React state-be.
   Futás közben egyetlen roster van; a form csak a mezőértékeket és a hibát tárolja.
 - A `PlayersPanel` az Events/Settings melletti Players gombbal nyitható overlay,
@@ -682,7 +775,7 @@ active/inactive modell későbbi feladat.
 - Sikeres Add után a form kiürül, a fókusz a Name mezőre kerül, és az új játékos
   azonnal megjelenik a listában. A Player filter, az EventForm create/edit lépése,
   az Events listája, a Saved summary és a ReviewControls ugyanazt az aktuális
-  rostert kapja propsként; a statikus seedet csak a VideoPlayer importálja.
+  rostert kapja propsként; a statikus seedet csak a `useMatchSession` importálja.
 - Create/Edit draft, event Delete confirmation és Review alatt Players nem nyitható.
   A közös overlay state biztosítja, hogy Events/Settings/Players közül csak egy
   legyen nyitva. Players alatt az event shortcutok tiltottak; inputmezőn kívül
@@ -716,7 +809,7 @@ még hátravan; a komponensvizsgálatok szimulált hookokkal/videóval futottak.
   `validatePlayerInput` helpert használja, mint az Add, a formban és a state-ownernél is.
   A név trimelt, kötelező, legfeljebb 80 karakter; a mezszám opcionális, 0–99 közötti
   egész. A mezszám törölhető, azonos név és mezszám továbbra is megengedett.
-- A VideoPlayer funkcionális state-frissítése a `src/utils/roster.ts` `updatePlayer`
+- A `useMatchSession` funkcionális state-frissítése a `src/utils/roster.ts` `updatePlayer`
   helperével új tömböt és a szerkesztett játékoshoz új objektumot készít.
   A numerikus ID változatlan, a többi játékos objektuma és az immutable demo seed érintetlen.
   A Player és MatchEvent domain modell nem változott; nincs player snapshot vagy event migration.
@@ -765,7 +858,7 @@ vizuális és scroll-ellenőrzése elérhető böngésző hiányában továbbra 
 - Ha a törölt ID az aktív Player filter, csak `filters.playerId` áll vissza `all`-ra.
   Az Event type filter és másik játékos aktív filtere megmarad. All players alatt
   a fel nem oldható playerId-jú eventek is szerepelnek; a szűrés nem dobja el őket.
-- Az új ID-t a VideoPlayer `nextPlayerId` refje osztja ki. Kezdőértéke a demo roster
+- Az új ID-t a `useMatchSession` `nextPlayerId` refje osztja ki. Kezdőértéke a demo roster
   legnagyobb ID-ja + 1; minden érvényes Add eggyel növeli, a React state-updateren kívül.
   Az `appendPlayer` már explicit kiosztott ID-t kap, és tiszta frissítés marad.
   Delete és Edit nem csökkenti/reseteli a számlálót, üres roster, Exit/Resume,
@@ -1045,9 +1138,10 @@ Reattach video érhető el, hogy a videóválasztás ne törölhesse az importá
 
 Validator: `src/utils/sessionImport.ts`; csak schemaVersion 1 támogatott.
 Az ismeretlen root/nested mezőket elhagyjuk, csak ismert mezőkből építünk új objektumot.
-Ismeretlen eventtípus/opció és hiányzó playerreferencia hibát jelent. Korábban hard
-delete-tel eltávolított játékosra mutató Phase 1 export is elutasításra kerül;
-az import nem talál ki hiányzó játékost és nem remapeli az ID-kat.
+Ismeretlen eventtípus/opció, hiányzó kötelező playerId és érvénytelen player-ID hibát jelent.
+A hard delete-tel eltávolított játékosra mutató, érvényes numerikus történeti playerId
+elfogadott akkor is, ha nincs a rosterben. Az import nem talál ki hiányzó játékost
+és nem remapeli az ID-kat; az `Unknown player` fallback megmarad.
 
 **Phase 2 – megvalósított importfolyamat és validáció:**
 
@@ -1063,9 +1157,11 @@ az import nem talál ki hiányzó játékost és nem remapeli az ID-kat.
 - Mind a 15 eventtípus és a releváns subtype/outcome/bodyPart/description mezők
   a meglévő eventdefiníciók alapján validáltak. Az event-ID-k egyediek, pozitív
   egészek; a timestamp véges, nem negatív szám. Kötelező player nem hiányozhat;
-  Custom esetén a player opcionális, de minden megadott playerId-nak léteznie kell.
+  Custom esetén a player opcionális, de minden megadott playerId érvényes ID kell legyen;
+  a rosterbeli jelenlét nem importkövetelmény, a történeti hivatkozás megmarad.
 - A nextPlayerId és nextEventId érvényes egész, a hozzá tartozó összes importált
-  ID-nál nagyobb. Az import megtartja az eredeti azonosítókat és kapcsolatokat.
+  ID-nál nagyobb. A nextPlayerId az eventek történeti playerId értékeit is figyelembe
+  veszi, nem csak a jelenlegi rostert. Az import megtartja az eredeti azonosítókat és kapcsolatokat.
 - Érvényes fájl is csak a `Replace current session?` kérdés explicit jóváhagyása
   után alkalmazódik. Előtte kizárólag külön jelölt session készül; hiba vagy Cancel
   nem módosítja az aktuális rostert, eventeket, videót, filtereket és Review-állapotot.
@@ -1110,7 +1206,8 @@ a böngészős vizuális ellenőrzést nem helyettesítik.
   persistence. A várakozó állapot eltűnik, Events/Review/Edit/Delete és tagging újra használható.
 - Export újracsatolás előtt az importált, utána a ténylegesen csatolt videó metaadatait
   használja. A candidate URL-ek cserénél/hibánál/unmountkor felszabadulnak;
-  az aktív URL a meglévő player lifecycle-t követi. Újracsatolt videó lejátszási
+  az aktív URL-t a workspace külön `useVideoSource` példánya birtokolja és takarítja.
+  A probe URL nem kerül át az aktív példányhoz. Újracsatolt videó lejátszási
   hibája megőrzi a sessiont és újracsatolást enged.
 - A How to use jelzi az export → import → eredeti videó újracsatolás folyamatot,
   és továbbra is az automatikus mentés hiányára figyelmeztet.
@@ -1156,7 +1253,7 @@ P0: a munka megőrzése; P1: következő hasznos bővítések; P2: közepes, ké
 
 | #   | Fejlesztési irány                                 | Lényeg                                                            | Prioritás |
 | --- | ------------------------------------------------- | ----------------------------------------------------------------- | --------- |
-| 1   | Session JSON save/load + videó újracsatolás       | Verziózott, hordozható elemzés; 11.1 pont                         | P0        |
+| 1   | Session JSON save/load + videó újracsatolás – elkészült | Meglévő alap; roundtrip/allocator javítás kész, 11.1 pont     | Kész      |
 | 2   | IndexedDB autosave + recovery                     | A már mentett munka folytatható refresh után                      | P0        |
 | 3   | Roster active/inactive bővítés                    | A rostermentés már P0; itt a használt játékosok archiválása a cél | P1        |
 | 4   | Event/player/outcome summary + CSV                | Egyszerű, kattintható összesítések és export                      | P1        |
