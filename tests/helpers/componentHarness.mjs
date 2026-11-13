@@ -9,6 +9,7 @@ import * as jsx from "react/jsx-runtime";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 export function createHarness(transformSource = source => source, globals = {}) {
   const cache = new Map(), listeners = new Set(), capturePhase = new Map();
+  const presentationComponents = new Set();
   let current;
   const media = { currentTime: 0, duration: 1000, paused: true, error: null, pause() { this.paused = true; }, focus() {} };
   class Element { closest() { return null; } }
@@ -27,7 +28,7 @@ export function createHarness(transformSource = source => source, globals = {}) 
     },
     useEffect(fn, deps) {
       const ctx = current, index = ctx.e++, old = ctx.effects[index];
-      if (!old || deps.some((value, i) => !Object.is(value, old.deps[i]))) {
+      if (!old || deps === undefined || deps.some((value, i) => !Object.is(value, old.deps[i]))) {
         ctx.jobs.push(() => { old?.cleanup?.(); ctx.effects[index] = { deps, cleanup: fn() }; });
       }
     },
@@ -61,12 +62,24 @@ export function createHarness(transformSource = source => source, globals = {}) 
       URL: { createObjectURL: () => "blob:video", revokeObjectURL() {} },
       ...globals,
     }, { filename });
+    // Expand the stateless picker wrapper for existing workspace queries; its
+    // stateful import, reattachment and help children remain shallow boundaries.
+    if (filename === path.resolve(root, "src/components/VideoPicker.tsx")) {
+      presentationComponents.add(module.exports.default);
+    }
     return module.exports;
+  }
+  function expandPresentation(tree) {
+    if (!tree || typeof tree !== "object") return tree;
+    if (Array.isArray(tree)) return tree.map(expandPresentation);
+    if (presentationComponents.has(tree.type)) return expandPresentation(tree.type(tree.props));
+    if (!tree.props) return tree;
+    return { ...tree, props: { ...tree.props, children: expandPresentation(tree.props.children) } };
   }
   const context = (video = false) => ({ video, states: [], refs: [], effects: [], memos: [] });
   function render(Component, props, ctx = context()) {
     current = ctx; ctx.s = ctx.r = ctx.e = ctx.m = 0; ctx.jobs = [];
-    const result = Component(props); ctx.jobs.forEach(job => job()); return result;
+    const result = Component(props); ctx.jobs.forEach(job => job()); return expandPresentation(result);
   }
   function press(key, extra = {}) {
     const event = { key, code: `Key${key.toUpperCase()}`, target: new Element(), defaultPrevented: false,

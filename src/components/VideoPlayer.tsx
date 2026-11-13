@@ -5,6 +5,8 @@ import { REVIEW_LEAD_IN_SECONDS } from "../config/review";
 import { getReviewSeekTime } from "../utils/review";
 import type { Player } from "../types/player";
 import { useMatchSession } from "../hooks/useMatchSession";
+import { useVideoSource } from "../hooks/useVideoSource";
+import { useAnalysisShortcuts } from "../hooks/useAnalysisShortcuts";
 import PlayersPanel from "./PlayersPanel";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
@@ -13,19 +15,10 @@ import ShortcutSettings from "./ShortcutSettings";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import ReviewControls from "./ReviewControls";
-import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
-import HowToUse from "./HowToUse";
+import type { EventShortcuts } from "../config/eventShortcuts";
+import VideoPicker from "./VideoPicker";
 import { createSessionSnapshot, downloadSession } from "../utils/session";
 import type { MatchMarkSession, SessionVideoMetadata } from "../types/session";
-import SessionImport from "./SessionImport";
-import VideoReattachment from "./VideoReattachment";
-import { VIDEO_FILE_ACCEPT, VIDEO_FORMAT_ERROR, isSupportedVideoFile } from "../utils/video";
-
-const seekShortcuts: Readonly<Record<string, number>> = {
-  Digit2: 1.2,
-  Digit3: 1.5,
-  Digit4: 2,
-};
 
 type EventDraft = PendingEvent & (
   | { mode: "create" }
@@ -43,11 +36,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const session = useMatchSession();
   const { events, players } = session;
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoName, setVideoName] = useState("");
+  const source = useVideoSource();
+  const { importedVideo } = source;
+  const videoUrl = source.active?.url ?? null;
+  const videoName = source.active?.metadata.fileName ?? "";
+  const isVideoReady = source.active?.ready ?? false;
   const [error, setError] = useState("");
   const [pending, setPending] = useState<EventDraft | null>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
   const [resumeTime, setResumeTime] = useState<number | null>(null);
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
@@ -56,10 +51,6 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
   // Review owns an index only; the existing filtered list remains its source of truth.
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
-  const [importedVideo, setImportedVideo] = useState<SessionVideoMetadata | null>(null);
-  // Retain the reference for retrying a restored video's playback failure safely.
-  const attachedImportedVideo = useRef<SessionVideoMetadata | null>(null);
-  const videoFileSize = useRef<number | null>(null);
   const [exportError, setExportError] = useState("");
   const isReviewMode = reviewIndex !== null;
   const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
@@ -135,7 +126,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     try {
       downloadSession(createSessionSnapshot({
         ...session.getSessionData(), exportedAt: new Date().toISOString(),
-        video: importedVideo ?? { fileName: videoName, fileSize: videoFileSize.current, duration: videoRef.current?.duration ?? null },
+        video: importedVideo ?? { fileName: videoName, fileSize: source.active?.metadata.fileSize ?? null, duration: videoRef.current?.duration ?? null },
       }));
       setExportError("");
     } catch {
@@ -146,12 +137,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   function handleImportSession(importedSession: MatchMarkSession) {
     if (pending || pendingDeleteId !== null || isReviewMode) return;
     videoRef.current?.pause();
-    setVideoUrl(null);
-    setVideoName("");
-    videoFileSize.current = null;
+    source.detachForImport(importedSession.video);
     session.applyImportedSession(importedSession);
-    setImportedVideo({ ...importedSession.video });
-    attachedImportedVideo.current = null;
     setFilters(DEFAULT_EVENT_FILTERS);
     setReviewIndex(null);
     setOverlay(null);
@@ -159,7 +146,6 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     setPendingDeleteId(null);
     setShowSavedEvent(false);
     setResumeTime(null);
-    setIsVideoReady(false);
     setError("");
     setExportError("");
     onAnalysisActiveChange(false);
@@ -198,63 +184,19 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     setPending({ mode: "create", type, timestamp: video.currentTime });
   }, [eventActionsDisabled]);
 
-  useEffect(() => {
-    if (eventActionsDisabled) return;
-
-    function handleEventKeyDown(event: KeyboardEvent) {
-      if (event.repeat || event.defaultPrevented || event.isComposing
-        || event.ctrlKey || event.altKey || event.metaKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement
-        && (target.closest("input, textarea, select") || target.isContentEditable)) return;
-      // Reserve the physical number keys for Quick Seek, including shifted variants.
-      if (Object.hasOwn(seekShortcuts, event.code)) return;
-      const type = findEventShortcut(eventShortcuts, event.key);
-      if (!type) return;
-      event.preventDefault();
-      handleEvent(type);
-    }
-
-    window.addEventListener("keydown", handleEventKeyDown);
-    return () => window.removeEventListener("keydown", handleEventKeyDown);
-  }, [eventActionsDisabled, eventShortcuts, handleEvent]);
+  useAnalysisShortcuts({
+    shortcuts: eventShortcuts,
+    eventShortcutsEnabled: !eventActionsDisabled,
+    quickSeekEnabled: Boolean(videoUrl && isVideoReady && isAnalysisActive),
+    videoRef,
+    onEventShortcut: handleEvent,
+  });
 
   useEffect(() => {
     if (resumeTime === null) return;
     if (isAnalysisActive) videoRef.current?.focus();
     else resumeButtonRef.current?.focus();
   }, [isAnalysisActive, resumeTime]);
-
-  useEffect(() => {
-    return () => {
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
-    };
-  }, [videoUrl]);
-
-  useEffect(() => {
-    if (!videoUrl || !isVideoReady || !isAnalysisActive) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.repeat || event.defaultPrevented || event.isComposing
-        || event.ctrlKey || event.altKey || event.metaKey) return;
-
-      const target = event.target;
-      if (target instanceof HTMLElement
-        && (target.closest("input, textarea, select") || target.isContentEditable)) return;
-
-      const jumpAmount = seekShortcuts[event.code];
-      const video = videoRef.current;
-      if (typeof jumpAmount !== "number" || !video || video.error
-        || !Number.isFinite(video.duration)) return;
-
-      event.preventDefault();
-      const offset = event.shiftKey ? -jumpAmount : jumpAmount;
-      video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + offset));
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [videoUrl, isVideoReady, isAnalysisActive]);
 
   const handleCancel = useCallback(() => {
     if (pendingDeleteId !== null) {
@@ -318,55 +260,29 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     if (!file) return;
     // Allow selecting the same file again after a playback failure.
     event.currentTarget.value = "";
-    if (!isSupportedVideoFile(file)) {
-      setError(VIDEO_FORMAT_ERROR);
-      return;
-    }
-    let url: string;
-    try {
-      url = URL.createObjectURL(file);
-    } catch {
-      setError("This video could not be opened. Your current session has been kept. Please try again.");
-      return;
-    }
-    setError("");
-    attachedImportedVideo.current = null;
-    session.resetAnalysisSession(new Date().toISOString());
-    resetEventFilters();
-    setOverlay(null);
-    setPendingDeleteId(null);
-    setShowSavedEvent(false);
-    setPending(null);
-    setIsVideoReady(false);
-    setResumeTime(null);
-    onAnalysisActiveChange(false);
-    setVideoName(file.name);
-    videoFileSize.current = Number.isFinite(file.size) ? file.size : null;
-    setVideoUrl(url);
+    const result = source.selectNewVideo(file, () => {
+      session.resetAnalysisSession(new Date().toISOString());
+      resetEventFilters();
+      setOverlay(null);
+      setPendingDeleteId(null);
+      setShowSavedEvent(false);
+      setPending(null);
+      setResumeTime(null);
+      onAnalysisActiveChange(false);
+    });
+    setError(result.ok ? "" : result.error);
   }
 
   function handleAttachVideo(file: File, metadata: SessionVideoMetadata) {
     if (!importedVideo || videoUrl) return;
     // Deliberately separate from handleFileChange: no analysis data or allocator resets.
-    try {
-      const url = URL.createObjectURL(file);
-      setVideoName(file.name);
-      videoFileSize.current = metadata.fileSize;
-      attachedImportedVideo.current = { ...metadata };
-      setError("");
-      setVideoUrl(url);
-    } catch {
-      setError("This video could not be attached. Your imported session has been kept. Please try again.");
-    }
+    const result = source.acceptReattachment(file, metadata);
+    setError(result.ok ? "" : result.error);
   }
 
   function handleVideoError() {
-    if (importedVideo || attachedImportedVideo.current) {
+    if (source.handleActiveError()) {
       // A failed restored video must never run the normal session-clearing error path.
-      setImportedVideo(importedVideo ?? attachedImportedVideo.current);
-      setVideoUrl(null);
-      setVideoName("");
-      setIsVideoReady(false);
       setResumeTime(null);
       setOverlay(null);
       setReviewIndex(null);
@@ -376,11 +292,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     }
     resetEventFilters();
     setOverlay(null);
-    setIsVideoReady(false);
     setResumeTime(null);
     onAnalysisActiveChange(false);
-    setVideoUrl(null);
-    setVideoName("");
     session.clearEvents();
     setPendingDeleteId(null);
     setShowSavedEvent(false);
@@ -428,38 +341,11 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   return (
     <section className="video-player" aria-label="Video player">
-      {!isAnalysisActive && !videoUrl && <div className="landing-help"><HowToUse /></div>}
-      {!isAnalysisActive && <div className={videoUrl ? "video-picker panel video-picker-compact" : "video-picker panel"}>
-        <div className="video-picker-copy">
-          <p className="eyebrow">{videoUrl ? "Match video" : ""}</p>
-          <h2>{videoUrl ? videoName : importedVideo ? "Continue your imported analysis." : "Choose a local video file to start tagging."}</h2>
-          <p>{videoUrl ? "Your video stays on your device." : ""}</p>
-          <p className="privacy-note" id="video-format-hint">Recommended format: MP4 (H.264)</p>
-        </div>
-        <div className="video-picker-actions">
-          {videoUrl && isVideoReady && resumeTime !== null && (
-            <button ref={resumeButtonRef} className="button-primary" type="button" onClick={handleResume}>
-              Resume analysis
-            </button>
-          )}
-          {!importedVideo && <label className={resumeTime !== null ? "file-button" : "file-button button-primary"}>
-            <span>{videoUrl ? "Change video" : "Select video"}</span>
-            <input type="file" accept={VIDEO_FILE_ACCEPT} aria-describedby="video-format-hint"
-              aria-label={videoUrl ? "Change video" : "Select video"} disabled={importedVideo !== null} onChange={handleFileChange} />
-          </label>}
-          {!videoUrl && <SessionImport onImport={handleImportSession} />}
-        </div>
-        {!videoUrl && <p className="privacy-note">Your video stays on your device. It is never uploaded to the cloud.</p>}
-        {importedVideo && <div className="session-imported">
-          <p>Session imported. Reattach the original video to continue the analysis.</p>
-          <p>Expected video: {importedVideo.fileName}.</p>
-          <p>{events.length} saved events · {players.length} players</p>
-          {!videoUrl ? <VideoReattachment expected={importedVideo} events={events} onAttach={handleAttachVideo} />
-            : <p role="status">Opening the attached video…</p>}
-          <button type="button" onClick={handleExportSession}>Export session</button>
-          {exportError && <p className="error-message" role="alert">{exportError}</p>}
-        </div>}
-      </div>}
+      {!isAnalysisActive && <VideoPicker hasVideo={videoUrl !== null} videoName={videoName}
+        canResume={videoUrl !== null && isVideoReady && resumeTime !== null} hasResumeTime={resumeTime !== null}
+        importedVideo={importedVideo} events={events} playerCount={players.length} exportError={exportError}
+        resumeButtonRef={resumeButtonRef} onSelectVideo={handleFileChange} onResume={handleResume}
+        onImportSession={handleImportSession} onReattachVideo={handleAttachVideo} onExportSession={handleExportSession} />}
       {error && <p className="error-message" role="alert">{error}</p>}
       {videoUrl && (
         <>
@@ -479,9 +365,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                         videoRef.current.pause();
                         videoRef.current.currentTime = 0;
                       }
-                      setImportedVideo(null);
                     }
-                    setIsVideoReady(true);
+                    source.markActiveReady(videoRef.current?.duration ?? null);
                     onAnalysisActiveChange(true);
                   }
                 }}
