@@ -1,77 +1,130 @@
-﻿# MatchMark
+# MatchMark
 
-Simple football video tagging for youth coaches. React, TypeScript and Vite;
-no extra libraries, backend or database.
+A local-first football video tagging and review tool for youth coaches, smaller clubs, analysts and scouts. Built with React and TypeScript.
 
-<img width="1907" height="942" alt="7b2dc268-0c55-4660-8848-5b829af6d5c5" src="https://github.com/user-attachments/assets/fb189ffc-1566-4117-939a-3a4765951b1d" />
+[Run locally](#running-locally) · [Screenshots](#screenshots) · [Architecture](#architecture)
 
-<img width="1905" height="932" alt="00934fd6-aeed-48ac-877f-215ef38cff05" src="https://github.com/user-attachments/assets/c3740f75-d1d0-46a0-8ec7-de2c4f742f8d" />
+## Overview
 
+MatchMark helps you mark football events while watching a local match video, assign players and revisit relevant moments. It runs in the browser without an account or backend. Analysis can be exported as JSON and resumed later by importing the session and reattaching the video.
 
-## Run
+## Why I built it
 
-Use Node.js 22.12+ or 24 LTS.
+After more than a decade working in football scouting and video analysis, I wanted to build a straightforward tool for the everyday work of coaches and analysts at smaller clubs. The focus is quick tagging, useful review and keeping video files on the user's device.
+
+## Key Features
+
+- **Local video analysis:** load MP4/WebM files with native playback controls; Exit/Resume preserves your place and draft within the current page session.
+- **Structured tagging:** 15 event types with relevant subtypes, outcomes, body parts or a Custom description. Save explicitly, then edit or delete the latest saved event.
+- **Player management:** add, edit and delete roster entries; assign players to events. Historical events survive player deletion.
+- **Keyboard controls:** configurable event shortcuts, saved in localStorage; Quick Seek moves by 1.2, 1.5 or 2 seconds using physical `2`/`3`/`4` keys. Hold Shift to move backward. Ctrl+Enter / Cmd+Enter saves a completed event form.
+- **Filtering and Review:** combine event-type and player filters, seek to exact event timestamps, or use Previous/Next in Review with a three-second lead-in.
+- **Portable sessions:** versioned JSON export/import, runtime validation and video reattachment with filename, size and duration comparison plus mismatch warnings.
+- **Accessibility:** native import/help dialogs, explicit focus transitions, named controls and field-linked validation messages.
+
+**Event types:** Pass, Shot, Cross, Dribble, Ball Control, Ball Loss, Goal, Chance, Goalkeeper, Custom, Tackle, Interception, Clearance, Ball Recovery and Aerial Duel.
+
+All types require a player except Custom, which allows an unassigned note. Event fields and labels come from [central event definitions](src/config/eventDefinitions.ts).
+
+## Session Workflow
+
+1. Choose a local video, tag events and manage the roster.
+2. Select **Settings → Export session** before closing the browser.
+3. Later, use **Import session** and confirm replacement of the current analysis.
+4. Choose **Reattach video** and select the original local file.
+5. Review the comparison, then select **Continue analysis** or explicitly accept a mismatch with **Use this video anyway**.
+
+The JSON contains saved events, players, video metadata and ID allocators, **not the video itself**. Metadata comparison is a matching hint, not proof of file identity. Reattachment preserves the imported analysis data.
+
+## Tech Stack
+
+| Area | Technology |
+| --- | --- |
+| UI | React 19, TypeScript 6 in strict mode |
+| Tooling | Vite 8, Oxlint |
+| Styling | Plain CSS, custom properties and responsive media queries |
+| Browser APIs | File API, HTML video, Blob/Object URLs, native dialog, localStorage |
+| Tests | Node.js built-in test runner and a custom component-handler harness |
+
+No backend, database or external state-management library is required.
+
+## Architecture
+
+[VideoPlayer](src/components/VideoPlayer.tsx) coordinates the workflow and connects three focused hooks to presentation components:
+
+| Boundary | Responsibility |
+| --- | --- |
+| [useMatchSession](src/hooks/useMatchSession.ts) | Events, roster, CRUD, monotonic ID allocation and imported domain data |
+| [useVideoSource](src/hooks/useVideoSource.ts) | Local files, active/probe Object URL ownership, metadata and cleanup |
+| [useAnalysisShortcuts](src/hooks/useAnalysisShortcuts.ts) | Global event-tagging and Quick Seek listeners with separate enablement rules |
+| [Components](src/components/) | VideoPicker, event forms, panels and Review controls |
+| [Pure utilities](src/utils/) | Validation, filtering, session snapshots/serialization and video comparison |
+
+The event model is a TypeScript discriminated union. Runtime import validation checks external JSON independently of compile-time types. Deleted IDs are not recycled; imported allocators also account for historical player references.
+
+Styles are split between app/workspace layout in `App.css`, global foundations in `index.css` and [feature stylesheets](src/styles/).
+
+## Testing and Code Quality
+
+Automated tests cover domain operations, event payloads, filtering, shortcut guards, session roundtrips, invalid imports, allocator conflicts, Object URL cleanup and failure paths. Accessibility tests check markup and handlers.
 
 ```sh
+npm test
+npm run lint
+npm run build
+```
+
+The build includes TypeScript checking. Component tests simulate hooks and media rather than rendering a browser DOM; native dialog focus containment, Tab order, screen-reader announcements and responsive visuals still require browser checks.
+
+## Privacy and Local-First Design
+
+The selected video stays on your device. MatchMark plays it through a browser Object URL and does not upload it to a backend. Session JSON stores analysis data and video metadata, not video bytes or reusable blob URLs.
+
+Only event-shortcut settings persist automatically in localStorage. Keep exported session files to retain your analysis between browser sessions.
+
+## Screenshots
+
+Annotated screenshots from the in-app guide:
+
+**Tagging workspace and event-specific details**
+
+![MatchMark tagging workspace with event rails and Pass subtype options](src/assets/how-to-use/tag-events.png)
+
+**Events panel: filtering, saved timestamps and the entry point to Review**
+
+![MatchMark Events panel with event-type and player filters, saved events and the Review events button](src/assets/how-to-use/review-events.png)
+
+## Running Locally
+
+Use Node.js 24 and npm, a modern browser, and a local match video. MP4 with H.264 is recommended; codec support depends on the browser.
+
+```sh
+git clone https://github.com/nviliam/MatchMark.git
+cd MatchMark
 npm install
 npm run dev
 ```
 
-If PowerShell blocks `npm.ps1`, use `npm.cmd` instead of `npm`.
+Open the local URL printed by Vite and select your video. On PowerShell, use `npm.cmd` if script policy blocks `npm.ps1`.
 
-## Checks
+## Current Limitations
 
-```sh
-npm run lint
-npm run build
-npm run preview
-```
+- No analysis autosave or refresh recovery. Export saved work before refreshing or closing the page; drafts and playback position are not included in the JSON.
+- No accounts, backend or cloud sync. Imported sessions require manual video reattachment, and metadata matching is not cryptographic verification.
+- Selecting another video through the normal picker starts fresh event history while retaining the roster.
+- No rendered video clips, statistics dashboard or automatic event detection.
 
-## Tagging workflow
+## Roadmap
 
-1. Choose a local video. It stays on your device and plays with native controls.
-2. Click an event button to capture the current video time.
-3. Select a player and the fields required by that event.
-4. Save to add it to the list, or Cancel to discard it.
-5. Click a recorded event to seek to its original timestamp.
+Planned directions from [development ideas](docs/IDEAS.md):
 
-The timestamp is captured when the event button is pressed, even if playback
-continues while the form is open. Times are stored in seconds with fractional
-precision and displayed as MM:SS (total minutes).
+- IndexedDB autosave and recovery.
+- A library of saved analyses.
+- Event/player/outcome summaries and CSV export.
+- Review shortcuts and configurable lead-in time.
 
-| Group | Event | Required fields besides player |
-| --- | --- | --- |
-| Attacking | Shot | Outcome: Goal / On Target / Off Target / Blocked; Body Part: Foot / Head / Other |
-| Attacking | Pass | Outcome: Completed / Incomplete |
-| Attacking | Key Pass | None |
-| Attacking | Dribble | Outcome: Successful / Unsuccessful |
-| Attacking | Progressive Carry | None |
-| Defending | Tackle | Outcome: Won / Lost |
-| Defending | Interception | None |
-| Defending | Ball Recovery | None |
-| Defending | Duel | Outcome: Won / Lost |
-| Other | Ball Loss | None |
+## Author
 
-All selections start empty. Events are held in React state only: refreshing the
-page or choosing another video clears them. Changing videos also discards the
-open form. The three sample players live in `src/data/players.ts`.
+Built by **Viliam Nagy**, drawing on more than a decade of football scouting and video-analysis experience.
 
-## Structure and model
-
-- `src/components/VideoPlayer.tsx`: local video URL lifecycle, video ref, pending
-  timestamp, saved events and seeking.
-- `src/components/EventButtons.tsx`: Attacking / Defending / Other button groups.
-- `src/components/EventForm.tsx`: player selection and type-specific required fields.
-- `src/components/EventList.tsx`: event descriptions and seek buttons.
-- `src/types/event.ts`: shared `BaseEvent` (`id`, `playerId`, `timestamp`) and ten
-  concrete types combined into the `MatchEvent` discriminated union. The `type`
-  field determines which fields exist; only Shot has `bodyPart`, and events
-  without outcomes have no `outcome` property.
-- `src/types/shot.ts`: re-exports the shot types for compatibility.
-- `src/types/player.ts`: player ID, name and shirt number.
-- `src/utils/events.ts`: English labels, outcome options, validated event details
-  and timestamp formatting.
-- `src/App.tsx`, `src/App.css`, `src/index.css`: application shell and styles.
-
-No persistence, statistics, shot maps, authentication or video upload is included.
-The long-term project plan is in `utanpotlas_foci_video_tagging_app_terv.docx`.
+[GitHub](https://github.com/nviliam)
