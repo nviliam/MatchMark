@@ -805,61 +805,11 @@ body:has(.how-to-use-panel[open]) {
   gap: 8px 16px;
   border-top: 3px solid var(--accent);
 }
-.event-form h2 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-}
-.event-form fieldset {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  min-width: 0;
-  margin: 0;
-  padding: 0 8px 4px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-.event-form legend {
-  padding: 0 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
 .event-form label,
 .event-form-actions {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-.event-form fieldset label {
-  min-height: 36px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-.event-form input[type="radio"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
-.event-form .player-picker {
-  flex-direction: column;
-  align-items: stretch;
-  font-size: 0.75rem;
-  font-weight: 600;
-  gap: 2px;
-}
-.player-picker select {
-  min-width: 0;
-  width: 190px;
-  max-width: 100%;
-  padding: 6px;
-  background: var(--surface);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: 6px;
 }
 .event-form-actions {
   margin-left: 0;
@@ -968,22 +918,6 @@ body:has(.app-analysis) {
   min-width: 0;
   max-width: 100%;
 }
-.app-analysis .event-form fieldset {
-  gap: 2px 8px;
-  padding: 0 6px 1px;
-}
-.app-analysis .event-form legend {
-  line-height: 1.2;
-}
-.app-analysis .event-form fieldset label {
-  min-height: 30px;
-}
-.app-analysis .event-form .player-picker {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-}
-.app-analysis .player-picker select,
 .app-analysis .event-form-actions button {
   min-height: 36px;
   padding: 4px 8px;
@@ -1005,10 +939,6 @@ body:has(.app-analysis) {
   }
   .app-analysis .event-form > * {
     flex-shrink: 0;
-  }
-  .app-analysis .event-form h2,
-  .app-analysis .event-form fieldset {
-    flex-wrap: nowrap;
   }
 }
 

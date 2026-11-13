@@ -87,7 +87,7 @@ textarea:focus-visible, video:focus-visible, .file-button:focus-within {
   outline-offset: 3px;
 }
 
-button:disabled, fieldset:disabled button {
+button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
