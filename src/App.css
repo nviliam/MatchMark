@@ -557,18 +557,47 @@ body:has(.app-analysis) {
   margin-bottom: 12px;
 }
 .session-import-confirmation {
+  width: min(480px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow-y: auto;
   color: var(--text-primary);
-  padding: 12px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: var(--panel-row-bg);
+  padding: var(--space-6);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  box-shadow: var(--shadow), 0 24px 80px rgb(0 0 0 / 40%);
+}
+.session-import-confirmation::backdrop {
+  background: rgb(2 8 13 / 65%);
+  backdrop-filter: blur(3px);
+}
+.session-import-confirmation h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.4;
 }
 .session-import-confirmation p {
-  margin: 8px 0;
+  margin: var(--space-3) 0 var(--space-6);
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
-.session-import-confirmation button + button {
-  margin-left: 8px;
+.session-import-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.session-import-confirmation-actions button {
+  flex: 1 1 140px;
+  min-width: 0;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .session-import-confirmation {
+    padding: var(--space-4);
+  }
 }
 .video-reattachment {
   display: grid;
