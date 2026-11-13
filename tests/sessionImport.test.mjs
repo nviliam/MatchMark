@@ -58,20 +58,59 @@ test("invalid dates, metadata, players and allocators are rejected without norma
   assert.equal(validator.validateSession({ ...session, video: { ...session.video, fileSize: null, duration: null } }).valid, true);
 });
 
-test("invalid event fields, identities, references and optional player values are rejected", () => {
+test("invalid event fields, identities, player IDs and optional player values are rejected", () => {
   const { validator, session } = setup();
   const first = session.events[0];
   const invalid = [
     ...[-1, NaN, Infinity, "1"].map(timestamp => ({ ...first, timestamp })),
     ...[-1, 0, 1.5, "1", Infinity].map(id => ({ ...first, id })),
     { ...first, type: "super-pass" }, { ...first, subtype: "invalid" }, { ...first, outcome: "invalid" },
-    { ...first, playerId: undefined }, { ...first, playerId: 99 },
+    ...[undefined, null, "7", 0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER].map(playerId => ({ ...first, playerId })),
     { id: 1, type: "shot", playerId: 7, timestamp: 0, outcome: "goal", bodyPart: "elbow" },
     ...["", " ", " x ", "x".repeat(161), 3].map(description => ({ id: 1, type: "custom", timestamp: 0, description })),
     { id: 1, type: "custom", timestamp: 0, description: "Valid", playerId: null },
   ];
   for (const event of invalid) assert.equal(validator.validateSession({ ...session, events: [event] }).valid, false, JSON.stringify(event));
   assert.equal(validator.validateSession({ ...session, events: [first, first] }).valid, false);
+});
+
+test("deleted player events roundtrip with their original ID and Unknown player display", () => {
+  const { h, validator, utils, session } = setup();
+  const { appendPlayer, removePlayer } = h.load("src/utils/roster.ts");
+  const { createMatchEvent } = h.load("src/utils/events.ts");
+  const { formatEventPlayer } = h.load("src/utils/players.ts");
+  let players = appendPlayer([], { name: "Historical player", number: 9 }, 4);
+  const event = createMatchEvent({ type: "goal" }, { id: 1, timestamp: 12.5 }, players[0].id);
+  assert(event);
+  players = removePlayer(players, 4);
+  const exported = utils.createSessionSnapshot({ ...session, players, events: [event], nextPlayerId: 5, nextEventId: 2 });
+  const result = validator.parseSession(utils.serializeSession(exported));
+  assert.equal(result.valid, true);
+  assert.equal(result.session.players.length, 0);
+  assert.equal(result.session.events[0].playerId, 4);
+  assert.equal(JSON.stringify(result.session), JSON.stringify(exported));
+  assert.equal(formatEventPlayer(result.session.events[0].playerId, result.session.players), "Unknown player");
+  const updatedPlayers = appendPlayer(result.session.players, { name: "New player" }, result.session.nextPlayerId);
+  assert.equal(updatedPlayers[0].id, 5);
+  assert.equal(formatEventPlayer(result.session.events[0].playerId, updatedPlayers), "Unknown player");
+});
+
+test("player allocator must exceed historical references for required and optional players", () => {
+  const { validator, session } = setup();
+  const players = [{ id: 1, name: "One" }, { id: 2, name: "Two" }];
+  for (const event of [
+    { id: 1, type: "goal", timestamp: 10, playerId: 4 },
+    { id: 1, type: "custom", timestamp: 10, description: "Historical", playerId: 4 },
+  ]) {
+    for (const nextPlayerId of [3, 4]) {
+      const result = validator.validateSession({ ...session, players, events: [event], nextPlayerId });
+      assert.equal(result.valid, false);
+      assert.equal(result.error.code, "allocator");
+    }
+    const result = validator.validateSession({ ...session, players, events: [event], nextPlayerId: 5 });
+    assert.equal(result.valid, true);
+    assert.equal(result.session.events[0].playerId, 4);
+  }
 });
 
 test("unknown fields are stripped at every level, including prototype-looking keys", () => {

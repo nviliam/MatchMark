@@ -55,9 +55,6 @@ export function validateSession(value: unknown): SessionValidationResult {
       || typeof event.type !== "string" || !isEventType(event.type)) return badEvent();
     const definition = getEventDefinition(event.type)!;
     if ((definition.playerRequired || Object.hasOwn(event, "playerId")) && !id(event.playerId)) return badEvent();
-    if (event.playerId !== undefined && !playerIds.has(event.playerId as number)) {
-      return sessionImportError("references", "The session refers to a player missing from its roster.");
-    }
     for (const field of definition.fields) {
       const fieldValue = event[field.id];
       if (typeof fieldValue !== "string") return badEvent();
@@ -79,6 +76,8 @@ export function validateSession(value: unknown): SessionValidationResult {
     events.push(saved);
   }
   if (!id(value.nextPlayerId) || players.some(player => player.id >= (value.nextPlayerId as number))
+    // Deleted players remain referenced by historical events; their IDs must never be reused.
+    || events.some(event => event.playerId !== undefined && event.playerId >= (value.nextPlayerId as number))
     || !id(value.nextEventId) || events.some(event => event.id >= (value.nextEventId as number))) {
     return sessionImportError("allocator", "The session contains conflicting next player or event IDs.");
   }

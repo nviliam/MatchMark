@@ -3,9 +3,8 @@ import type { EventDetails, EventType, MatchEvent, PendingEvent } from "../types
 import { DEFAULT_EVENT_FILTERS, getFilteredEvents, type EventFilters } from "../utils/eventFiltering";
 import { REVIEW_LEAD_IN_SECONDS } from "../config/review";
 import { getReviewSeekTime } from "../utils/review";
-import { DEFAULT_PLAYERS } from "../data/players";
 import type { Player } from "../types/player";
-import { appendPlayer, removePlayer, updatePlayer, validatePlayerInput } from "../utils/roster";
+import { useMatchSession } from "../hooks/useMatchSession";
 import PlayersPanel from "./PlayersPanel";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
@@ -15,10 +14,9 @@ import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import ReviewControls from "./ReviewControls";
 import { findEventShortcut, type EventShortcuts } from "../config/eventShortcuts";
-import { createMatchEvent } from "../utils/events";
 import HowToUse from "./HowToUse";
 import { createSessionSnapshot, downloadSession } from "../utils/session";
-import type { MatchMarkSession, MatchMetadata, SessionVideoMetadata } from "../types/session";
+import type { MatchMarkSession, SessionVideoMetadata } from "../types/session";
 import SessionImport from "./SessionImport";
 import VideoReattachment from "./VideoReattachment";
 import { VIDEO_FILE_ACCEPT, VIDEO_FORMAT_ERROR, isSupportedVideoFile } from "../utils/video";
@@ -43,10 +41,11 @@ type Props = {
 
 function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts, onEventShortcutsChange }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const session = useMatchSession();
+  const { events, players } = session;
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
   const [error, setError] = useState("");
-  const [events, setEvents] = useState<MatchEvent[]>([]);
   const [pending, setPending] = useState<EventDraft | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [resumeTime, setResumeTime] = useState<number | null>(null);
@@ -57,15 +56,9 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
   // Review owns an index only; the existing filtered list remains its source of truth.
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
-  const [players, setPlayers] = useState<Player[]>(() => DEFAULT_PLAYERS.map((player) => ({ ...player })));
-  // Session allocator: deleting players or changing videos must never reuse IDs.
-  const nextPlayerId = useRef(DEFAULT_PLAYERS.reduce((highest, player) => Math.max(highest, player.id), 0) + 1);
-  const nextEventId = useRef(1);
-  const matchMetadata = useRef<MatchMetadata>({});
   const [importedVideo, setImportedVideo] = useState<SessionVideoMetadata | null>(null);
   // Retain the reference for retrying a restored video's playback failure safely.
   const attachedImportedVideo = useRef<SessionVideoMetadata | null>(null);
-  const sessionCreatedAt = useRef("");
   const videoFileSize = useRef<number | null>(null);
   const [exportError, setExportError] = useState("");
   const isReviewMode = reviewIndex !== null;
@@ -141,9 +134,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     if (!importedVideo && (eventsDisabled || !isSettingsOpen)) return;
     try {
       downloadSession(createSessionSnapshot({
-        events, players, nextPlayerId: nextPlayerId.current, nextEventId: nextEventId.current,
-        match: matchMetadata.current,
-        createdAt: sessionCreatedAt.current, exportedAt: new Date().toISOString(),
+        ...session.getSessionData(), exportedAt: new Date().toISOString(),
         video: importedVideo ?? { fileName: videoName, fileSize: videoFileSize.current, duration: videoRef.current?.duration ?? null },
       }));
       setExportError("");
@@ -152,19 +143,14 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     }
   }
 
-  function handleImportSession(session: MatchMarkSession) {
+  function handleImportSession(importedSession: MatchMarkSession) {
     if (pending || pendingDeleteId !== null || isReviewMode) return;
     videoRef.current?.pause();
     setVideoUrl(null);
     setVideoName("");
     videoFileSize.current = null;
-    setEvents(session.events.map(event => ({ ...event })));
-    setPlayers(session.players.map(player => ({ ...player })));
-    nextPlayerId.current = session.nextPlayerId;
-    nextEventId.current = session.nextEventId;
-    sessionCreatedAt.current = session.createdAt;
-    matchMetadata.current = { ...session.match };
-    setImportedVideo({ ...session.video });
+    session.applyImportedSession(importedSession);
+    setImportedVideo({ ...importedSession.video });
     attachedImportedVideo.current = null;
     setFilters(DEFAULT_EVENT_FILTERS);
     setReviewIndex(null);
@@ -191,25 +177,16 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
 
   function handleAddPlayer(name: string, number: string): boolean {
     if (eventsDisabled || !isPlayersOpen) return false;
-    const result = validatePlayerInput(name, number);
-    if (!result.ok) return false;
-    // Allocate outside the updater so React can replay the pure update safely.
-    const id = nextPlayerId.current++;
-    setPlayers((currentPlayers) => appendPlayer(currentPlayers, result.value, id));
-    return true;
+    return session.addPlayer(name, number);
   }
 
   function handleUpdatePlayer(id: Player["id"], name: string, number: string): boolean {
-    if (eventsDisabled || !isPlayersOpen || !players.some((player) => player.id === id)) return false;
-    const result = validatePlayerInput(name, number);
-    if (!result.ok) return false;
-    setPlayers((currentPlayers) => updatePlayer(currentPlayers, id, result.value));
-    return true;
+    if (eventsDisabled || !isPlayersOpen) return false;
+    return session.updatePlayer(id, name, number);
   }
 
   function handleDeletePlayer(id: Player["id"]): boolean {
-    if (eventsDisabled || !isPlayersOpen || !players.some((player) => player.id === id)) return false;
-    setPlayers((currentPlayers) => removePlayer(currentPlayers, id));
+    if (eventsDisabled || !isPlayersOpen || !session.deletePlayer(id)) return false;
     setFilters((current) => current.playerId === id ? { ...current, playerId: "all" } : current);
     return true;
   }
@@ -345,11 +322,16 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
       setError(VIDEO_FORMAT_ERROR);
       return;
     }
+    let url: string;
+    try {
+      url = URL.createObjectURL(file);
+    } catch {
+      setError("This video could not be opened. Your current session has been kept. Please try again.");
+      return;
+    }
     setError("");
     attachedImportedVideo.current = null;
-    setEvents([]);
-    nextEventId.current = 1;
-    matchMetadata.current = {};
+    session.resetAnalysisSession(new Date().toISOString());
     resetEventFilters();
     setOverlay(null);
     setPendingDeleteId(null);
@@ -360,8 +342,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     onAnalysisActiveChange(false);
     setVideoName(file.name);
     videoFileSize.current = Number.isFinite(file.size) ? file.size : null;
-    sessionCreatedAt.current = new Date().toISOString();
-    setVideoUrl(URL.createObjectURL(file));
+    setVideoUrl(url);
   }
 
   function handleAttachVideo(file: File, metadata: SessionVideoMetadata) {
@@ -400,7 +381,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     onAnalysisActiveChange(false);
     setVideoUrl(null);
     setVideoName("");
-    setEvents([]);
+    session.clearEvents();
     setPendingDeleteId(null);
     setShowSavedEvent(false);
     setPending(null);
@@ -421,31 +402,17 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   function handleConfirmDelete() {
     if (pendingDeleteId === null || savedEvent?.id !== pendingDeleteId
       || pending || !isVideoReady || !isAnalysisActive || isReviewMode) return;
-    setEvents((previousEvents) => previousEvents.filter((event) => event.id !== pendingDeleteId));
+    session.deleteEvent(pendingDeleteId);
     setPendingDeleteId(null);
     videoRef.current?.focus();
   }
 
   function handleSave(playerId: number | undefined, details: EventDetails) {
     if (!pending || !isVideoReady || !isAnalysisActive || isReviewMode || pending.type !== details.type) return;
-    if (playerId !== undefined && !players.some((player) => player.id === playerId)) return;
-    const saved = createMatchEvent(details, {
-      id: pending.mode === "edit" ? pending.original.id : nextEventId.current,
-      timestamp: pending.timestamp,
-    }, playerId);
+    const saved = pending.mode === "edit"
+      ? session.updateEvent(pending.original, playerId, details)
+      : session.saveEvent(pending.timestamp, playerId, details);
     if (!saved) return;
-    if (pending.mode === "edit") {
-      const editedId = pending.original.id;
-      setEvents((previousEvents) => previousEvents.map((event) => event.id === editedId
-        ? saved
-        : event));
-    } else {
-      nextEventId.current++;
-      setEvents((previousEvents) => [
-        ...previousEvents,
-        saved,
-      ]);
-    }
     setShowSavedEvent(true);
     setPending(null);
     videoRef.current?.focus();
