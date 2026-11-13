@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { MatchEvent } from "../types/event";
 import type { SessionVideoMetadata } from "../types/session";
 import { compareVideoMetadata } from "../utils/videoReattachment";
@@ -18,6 +18,22 @@ export default function VideoReattachment({ expected, events, onAttach }: Props)
   const inputRef = useRef<HTMLInputElement | null>(null);
   const source = useVideoSource();
   const { candidate } = source;
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const readingRef = useRef<HTMLParagraphElement | null>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
+  const hadCandidate = useRef(false);
+
+  useEffect(() => { launcherRef.current?.focus(); }, []);
+  useEffect(() => {
+    if (candidate) {
+      hadCandidate.current = true;
+      if (candidate.metadata) resultRef.current?.focus();
+      else readingRef.current?.focus();
+    } else if (hadCandidate.current || error) {
+      hadCandidate.current = false;
+      launcherRef.current?.focus();
+    }
+  }, [candidate, error]);
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -38,7 +54,7 @@ export default function VideoReattachment({ expected, events, onAttach }: Props)
   const allMatch = comparison && [comparison.fileName, comparison.fileSize, comparison.duration].every(value => value === "match");
   return <div className="video-reattachment">
     <input ref={inputRef} type="file" accept={VIDEO_FILE_ACCEPT} hidden aria-label="Reattach original video" onChange={selectFile} />
-    {!candidate && <button className="button-primary" type="button" onClick={() => inputRef.current?.click()}>Reattach video</button>}
+    {!candidate && <button ref={launcherRef} className="button-primary" type="button" onClick={() => inputRef.current?.click()}>Reattach video</button>}
     {error && <p className="error-message" role="alert">{error}</p>}
     {candidate && <>
       <video key={candidate.url} src={candidate.url} preload="metadata" hidden aria-label="Video metadata preview"
@@ -48,10 +64,10 @@ export default function VideoReattachment({ expected, events, onAttach }: Props)
           if (!Number.isFinite(duration) || duration < 0) { metadataFailed(); return; }
           source.recordCandidateMetadata(candidate.url, duration);
         }} onError={metadataFailed} />
-      {!comparison && <p role="status">Reading video metadata…</p>}
+      {!comparison && <p ref={readingRef} tabIndex={-1} role="status">Reading video metadata…</p>}
       {comparison && metadata && <section className={comparison.hasWarning ? "video-match-result video-match-warning" : "video-match-result"}
-        aria-label="Video comparison" role="status">
-        <h3>{comparison.hasWarning ? "This video may not match the imported session."
+        ref={resultRef} tabIndex={-1} aria-label="Video comparison" aria-describedby="video-comparison-title">
+        <h3 id="video-comparison-title">{comparison.hasWarning ? "This video may not match the imported session."
           : allMatch ? "Video matches the imported session metadata." : "Some video metadata could not be compared."}</h3>
         <p>Metadata is a matching hint and does not prove file identity.</p>
         <dl>

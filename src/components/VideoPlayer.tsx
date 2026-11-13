@@ -62,6 +62,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const playersButtonRef = useRef<HTMLButtonElement | null>(null);
+  const focusAttachedVideo = useRef(false);
   const workflowDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
     || pending !== null || pendingDeleteId !== null;
   // Guarded adjustment for external list/session changes: discard an invalid Review
@@ -197,6 +198,13 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     if (isAnalysisActive) videoRef.current?.focus();
     else resumeButtonRef.current?.focus();
   }, [isAnalysisActive, resumeTime]);
+
+  useEffect(() => {
+    if (focusAttachedVideo.current && isAnalysisActive && isVideoReady) {
+      focusAttachedVideo.current = false;
+      videoRef.current?.focus();
+    }
+  }, [isAnalysisActive, isVideoReady]);
 
   const handleCancel = useCallback(() => {
     if (pendingDeleteId !== null) {
@@ -361,6 +369,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                 onLoadedMetadata={() => {
                   if (!isVideoReady) {
                     if (importedVideo) {
+                      focusAttachedVideo.current = true;
                       if (videoRef.current) {
                         videoRef.current.pause();
                         videoRef.current.currentTime = 0;

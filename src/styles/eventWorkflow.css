@@ -1,0 +1,162 @@
+.event-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  border-top: 3px solid var(--accent);
+}
+.event-form label,
+.event-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.event-form-actions {
+  margin-left: 0;
+}
+.event-form-actions button {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+.app-analysis .event-form {
+  gap: 4px 8px;
+  padding: 2px 8px;
+  min-height: 100%;
+  align-content: center;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  box-shadow: none;
+  background: transparent;
+}
+.app-analysis .event-form > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-analysis .event-form-actions button {
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+@media (min-width: 900px) {
+  /* One compact form row; narrower windows can scroll only the bottom rail. */
+  .app-analysis .event-form {
+    flex-wrap: nowrap;
+    min-width: max-content;
+  }
+  .app-analysis .event-form > * {
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 600px) {
+  .event-form {
+    gap: 8px;
+  }
+}
+
+/* The workflow occupies the existing fixed track; only its content changes. */
+.app-analysis .event-workflow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: max-content;
+  height: 100%;
+  gap: 12px;
+}
+.workflow-summary,
+.workflow-step,
+.saved-event-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.workflow-summary {
+  font-weight: 600;
+}
+.workflow-summary-text,
+.event-summary-text {
+  display: block;
+  max-width: 34ch;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  max-height: 2.5em;
+  overflow: auto;
+}
+.workflow-text-field textarea {
+  display: block;
+  width: clamp(180px, 23vw, 320px);
+  height: 40px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.2;
+  resize: none;
+}
+.workflow-text-field textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.workflow-text-hint {
+  max-width: 20ch;
+  white-space: normal;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.workflow-step-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+.app-analysis .workflow-step button {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+.workflow-step button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.workflow-step:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.saved-event-summary {
+  min-height: 100%;
+  padding: 4px 12px;
+  width: max-content;
+}
+.saved-event-label {
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+.saved-event-summary button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+.saved-event-summary .button-danger {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+}
+.saved-event-summary .button-danger:hover:not(:disabled) {
+  background: var(--danger-soft-hover);
+  border-color: var(--danger);
+}
+.saved-event-summary .button-danger-confirm {
+  color: #fff;
+  background: var(--danger-fill);
+  border-color: var(--danger-border);
+}
+.saved-event-summary .button-danger-confirm:hover:not(:disabled) {
+  background: var(--danger-fill-hover);
+  border-color: var(--danger);
+}

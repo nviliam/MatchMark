@@ -1,4 +1,8 @@
 import "./App.css";
+import "./styles/panels.css";
+import "./styles/eventWorkflow.css";
+import "./styles/howToUse.css";
+import "./styles/review.css";
 import { useEffect, useState } from "react";
 
 import VideoPlayer from "./components/VideoPlayer";

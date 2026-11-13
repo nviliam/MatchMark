@@ -1,0 +1,322 @@
+.events-panel,
+.shortcut-settings,
+.players-panel {
+  /* Shared smoked glass skin; geometry and scrolling remain unchanged. */
+  /* Keep secondary copy legible over bright frames with the lighter glass. */
+  --text-secondary: var(--panel-text-secondary);
+  color-scheme: dark;
+  color: var(--text-primary);
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: min(360px, 35vw);
+  max-width: calc(100% - 16px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel-glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid var(--panel-glass-border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 3%);
+}
+.players-panel {
+  border-radius: 16px;
+  background-clip: padding-box;
+  /* The shared overflow: hidden clips children; the body retains its own scroll. */
+}
+.players-panel-header {
+  border-radius: 15px 15px 0 0;
+}
+.events-panel-header,
+.shortcut-settings-header,
+.players-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-control-bg);
+}
+.events-panel-header h2,
+.shortcut-settings-header h2,
+.players-panel-header h2 {
+  font-size: 0.8rem;
+}
+.panel-close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+  padding: 0;
+  background: var(--panel-control-bg);
+}
+.panel-close-button:hover:not(:disabled) {
+  background: var(--panel-row-bg);
+  border-color: var(--border-medium);
+}
+.events-panel-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+}
+.players-panel-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 10px;
+}
+.events-panel-content,
+.players-panel-content,
+.shortcut-settings-content {
+  scrollbar-color: var(--panel-scroll-thumb) transparent;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-track {
+  background: transparent;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb {
+  background: var(--panel-scroll-thumb);
+  border-radius: 8px;
+}
+:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-scroll-hover);
+}
+.add-player-form { display: grid; gap: 8px; margin-bottom: 12px; font-size: 0.8rem; }
+.add-player-form h3 { margin: 0; font-size: 0.85rem; }
+.add-player-form label { display: flex; flex-wrap: wrap; gap: 4px; }
+.add-player-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-control-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  caret-color: var(--accent);
+}
+.add-player-form button { min-height: 36px; padding: 6px 10px; justify-self: start; }
+.optional-field { color: var(--text-secondary); }
+.player-form-error { color: var(--danger); }
+.roster-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; }
+.roster-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.roster-list li > span { flex: 1; min-width: 0; }
+.roster-list li { background: var(--panel-row-bg); }
+.player-edit-button,
+.player-delete-button { flex-shrink: 0; min-height: 32px; padding: 4px 8px; font-size: 0.75rem; }
+.player-delete-button { color: var(--danger); border-color: var(--danger-border); background: var(--danger-soft); }
+.player-delete-button:hover:not(:disabled) { background: var(--danger-soft-hover); border-color: var(--danger); }
+.player-delete-confirmation { display: grid; gap: 10px; margin-bottom: 12px; font-size: 0.8rem; overflow-wrap: anywhere; }
+.player-delete-confirmation h3 { margin: 0; font-size: 0.85rem; }
+.player-delete-confirmation button { min-height: 36px; padding: 6px 10px; }
+.player-delete-confirm { color: #fff; background: var(--danger-fill); border-color: var(--danger-border); }
+.player-delete-confirm:hover:not(:disabled) { background: var(--danger-fill-hover); border-color: var(--danger); }
+.player-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.events-empty {
+  padding: 8px;
+  font-size: 0.8rem;
+}
+.events-count {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.events-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+.events-filter > span { flex-shrink: 0; color: var(--text-secondary); }
+.events-filter select {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-control-bg);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+.events-filter option {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.event-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.event-list li {
+  min-width: 0;
+}
+.event-list button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 8px;
+  background: var(--panel-row-bg);
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.event-list button:focus-visible {
+  outline-offset: -3px;
+}
+.event-list-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.event-list-heading strong {
+  min-width: 0;
+  font-weight: 500;
+}
+.event-list-details {
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+.event-list .timestamp {
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
+@media (max-width: 899px) {
+  .events-panel,
+  .shortcut-settings,
+  .players-panel {
+    width: min(360px, calc(100% - 16px));
+  }
+}
+
+/* Shortcut editing is an overlay: only its list scrolls, never the cockpit. */
+.shortcut-settings-hint {
+  padding: 8px 10px;
+  font-size: 0.75rem;
+}
+.shortcut-settings-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 10px;
+}
+.shortcut-settings-list {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.shortcut-settings-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  background: var(--panel-row-bg);
+  border-radius: 8px;
+}
+.shortcut-settings-list button {
+  min-height: 36px;
+  min-width: 48px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  background: var(--badge-background);
+  border-color: var(--badge-border);
+  color: var(--badge-text);
+}
+.shortcut-settings-list button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.shortcut-settings-list button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.shortcut-settings-list kbd {
+  font: inherit;
+  font-weight: 700;
+}
+.shortcut-settings-footer {
+  flex-shrink: 0;
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+.shortcut-settings-footer p {
+  font-size: 0.75rem;
+}
+.shortcut-settings-footer button {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Extra room on the left only: preserve right-aligned actions and Events spacing. */
+.players-panel-header,
+.players-panel-content,
+.shortcut-settings-header,
+.shortcut-settings-hint,
+.shortcut-settings-content,
+.shortcut-settings-footer {
+  padding-left: 12px;
+}
+.roster-list li,
+.shortcut-settings-list li {
+  padding-left: 4px;
+}
+
+/* Events footer actions share the primary button styling with the player form. */
+.events-panel-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+}
+.events-panel-footer button {
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.events-panel-footer button,
+.add-player-form button[type="submit"] {
+  background: var(--primary-fill);
+  border-color: var(--badge-border);
+  color: var(--text-primary);
+}
+.events-panel-footer button:hover:not(:disabled),
+.add-player-form button[type="submit"]:hover:not(:disabled) {
+  background: var(--primary-fill-hover);
+  border-color: var(--accent);
+}

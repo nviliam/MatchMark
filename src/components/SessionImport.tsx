@@ -12,8 +12,27 @@ export default function SessionImport({ onImport, disabled = false }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmationWasOpen = useRef(false);
   useEffect(() => () => { request.current++; }, []);
-  useEffect(() => { if (candidate) cancelRef.current?.focus(); }, [candidate]);
+  useEffect(() => { if (error) launcherRef.current?.focus(); }, [error]);
+  useEffect(() => {
+    if (!candidate) {
+      if (confirmationWasOpen.current) launcherRef.current?.focus();
+      confirmationWasOpen.current = false;
+      return;
+    }
+    confirmationWasOpen.current = true;
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    cancelRef.current?.focus();
+    return () => { if (dialog?.open) dialog.close(); };
+  }, [candidate]);
+
+  function closeConfirmation() {
+    dialogRef.current?.close();
+    setCandidate(null);
+  }
 
   async function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -35,11 +54,14 @@ export default function SessionImport({ onImport, disabled = false }: Props) {
     <input ref={inputRef} type="file" accept=".json,application/json" aria-label="Import session JSON" hidden onChange={selectFile} />
     {reading && <p role="status">Reading session…</p>}
     {error && <p className="error-message" role="alert">{error}</p>}
-    {candidate && <section className="session-import-confirmation" role="alertdialog" aria-label="Replace current session?">
-      <h3>Replace current session?</h3>
-      <p>Importing this session will replace the current events and player roster. The current video will be detached.</p>
-      <button ref={cancelRef} type="button" onClick={() => { setCandidate(null); launcherRef.current?.focus(); }}>Cancel</button>
-      <button type="button" disabled={disabled} onClick={() => { if (!disabled) { onImport(candidate); setCandidate(null); } }}>Import session</button>
-    </section>}
+    {candidate && <dialog ref={dialogRef} className="session-import-confirmation" aria-modal="true"
+      aria-labelledby="session-import-title" aria-describedby="session-import-description"
+      onKeyDown={(event) => event.stopPropagation()}
+      onCancel={(event) => { event.preventDefault(); event.stopPropagation(); closeConfirmation(); }}>
+      <h3 id="session-import-title">Replace current session?</h3>
+      <p id="session-import-description">Importing this session will replace the current events and player roster. The current video will be detached.</p>
+      <button ref={cancelRef} type="button" autoFocus onClick={closeConfirmation}>Cancel</button>
+      <button type="button" disabled={disabled} onClick={() => { if (!disabled) { dialogRef.current?.close(); onImport(candidate); setCandidate(null); } }}>Import session</button>
+    </dialog>}
   </div>;
 }

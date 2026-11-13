@@ -29,7 +29,7 @@ export default function ReviewControls({ players, event, index, total, onPreviou
       <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
       {playerLabel && <span>{playerLabel}</span>}
       <span className="event-summary-text" title={formatEventDetails(event)}>{formatEventDetails(event)}</span>
-      <button type="button" onClick={onExit}>Exit Review</button>
+      <button className="review-exit" type="button" onClick={onExit}>Exit Review</button>
     </div>
   );
 }

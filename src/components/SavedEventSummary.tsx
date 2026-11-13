@@ -12,8 +12,8 @@ export default function SavedEventSummary({ players, event, onEdit, onDelete, di
   ].filter(Boolean).join(" · ");
 
   return (
-    <div className="saved-event-summary" role="status">
-      <strong className="saved-event-label">Saved</strong>
+    <div className="saved-event-summary">
+      <strong className="saved-event-label" role="status">Saved</strong>
       <span className="timestamp">{formatTimestamp(event.timestamp)}</span>
       <span className="event-summary-text" title={summary}>{summary}</span>
       <button type="button" disabled={disabled} onClick={onEdit}>Edit</button>

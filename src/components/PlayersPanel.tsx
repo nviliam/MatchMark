@@ -26,6 +26,14 @@ export default function PlayersPanel({ players, events, onAdd, onUpdate, onDelet
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const cancelDeleteRef = useRef<HTMLButtonElement | null>(null);
+  const numberRef = useRef<HTMLInputElement | null>(null);
+  const invalidField = error ? (validatePlayerInput(name, "").ok ? "number" : "name") : null;
+
+  useEffect(() => {
+    // Focus after the error description and aria-invalid state have committed.
+    if (invalidField === "name") nameRef.current?.focus();
+    else if (invalidField === "number") numberRef.current?.focus();
+  }, [invalidField, error]);
 
   useEffect(() => { closeRef.current?.focus(); }, []);
   useEffect(() => {
@@ -115,10 +123,12 @@ export default function PlayersPanel({ players, events, onAdd, onUpdate, onDelet
             <h3>{editingPlayerId === null ? "Add player" : "Edit player"}</h3>
             <label>Name
               <input ref={nameRef} name="playerName" value={name} required maxLength={PLAYER_NAME_MAX_LENGTH}
+                aria-invalid={invalidField === "name"} aria-describedby={invalidField === "name" ? "add-player-error" : undefined}
                 onChange={(event) => { setName(event.currentTarget.value); setError(""); }} />
             </label>
             <label>Shirt number <span className="optional-field">(optional, 0–99)</span>
-              <input name="shirtNumber" value={number} inputMode="numeric"
+              <input ref={numberRef} name="shirtNumber" value={number} inputMode="numeric"
+                aria-invalid={invalidField === "number"} aria-describedby={invalidField === "number" ? "add-player-error" : undefined}
                 onChange={(event) => { setNumber(event.currentTarget.value); setError(""); }} />
             </label>
             {error && <p className="player-form-error" id="add-player-error" role="alert">{error}</p>}

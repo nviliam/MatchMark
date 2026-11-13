@@ -195,217 +195,12 @@
   right: clamp(16px, 2.5vw, 32px);
   max-width: calc(100% - 32px);
 }
-.how-to-use-button {
-  min-height: 44px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
-  background: var(--panel-control-bg);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-.how-to-use-button:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-body:has(.how-to-use-panel[open]) {
-  overflow: hidden;
-}
 @media (max-width: 480px) {
   .landing-help {
     top: 72px;
   }
   .app:not(.app-analysis):has(.landing-help) > .video-player {
     padding-top: 88px;
-  }
-}
-.how-to-use-panel {
-  position: fixed;
-  inset: 0;
-  width: min(960px, calc(100vw - 32px));
-  max-width: 960px;
-  height: fit-content;
-  max-height: 85dvh;
-  margin: auto;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--border-medium);
-  border-radius: 16px;
-  background: var(--panel-glass-bg);
-  color: var(--text-primary);
-  text-align: left;
-  box-shadow: var(--shadow), 0 24px 80px rgb(0 0 0 / 40%);
-  backdrop-filter: blur(18px);
-}
-.how-to-use-panel[open] {
-  display: flex;
-  flex-direction: column;
-}
-.how-to-use-panel::backdrop {
-  background: rgb(2 8 13 / 76%);
-  backdrop-filter: blur(6px);
-}
-.how-to-use-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 24px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.how-to-use-header > div {
-  min-width: 0;
-}
-.how-to-use-panel .how-to-use-header h2 {
-  font-size: 1.25rem;
-  line-height: 1.3;
-  letter-spacing: -0.025em;
-}
-.how-to-use-header p {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-.how-to-use-close {
-  flex-shrink: 0;
-  background: var(--panel-control-bg);
-}
-.how-to-use-content {
-  min-height: 0;
-  padding: 0 24px 24px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-color: var(--panel-scroll-thumb) transparent;
-}
-.how-to-use-content:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -3px;
-}
-.how-to-use-content h3 {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-.how-to-use-content p {
-  font-size: 0.85rem;
-  line-height: 1.6;
-}
-.how-to-use-step {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  align-items: center;
-  gap: 20px;
-  padding-block: 20px;
-  border-bottom: 1px solid var(--border);
-}
-.how-to-use-screenshot {
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel-row-bg);
-}
-.how-to-use-screenshot img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.how-to-use-screenshot-missing {
-  display: grid;
-  gap: 8px;
-  padding: 20px;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  line-height: 1.5;
-}
-.how-to-use-screenshot-missing span {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-.how-to-use-shortcuts {
-  padding-top: 20px;
-}
-.how-to-use-shortcuts > p + p {
-  margin-top: 8px;
-}
-.how-to-use-shortcut-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-.how-to-use-seek-pair,
-.how-to-use-save-shortcuts {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel-row-bg);
-  font-size: 0.8rem;
-}
-.how-to-use-shortcut-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.how-to-use-shortcut-row > span:last-child {
-  color: var(--text-secondary);
-}
-.how-to-use-keys {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.how-to-use-keys kbd {
-  display: inline-grid;
-  place-items: center;
-  min-width: 26px;
-  min-height: 26px;
-  padding: 2px 6px;
-  border: 1px solid var(--border-medium);
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  background: var(--badge-background);
-  color: var(--badge-text);
-  font: inherit;
-  font-weight: 650;
-}
-.how-to-use-save-shortcuts {
-  margin-top: 12px;
-}
-.how-to-use-warning {
-  margin-top: 24px;
-  padding: 18px;
-  border: 1px solid rgb(226 178 89 / 28%);
-  border-radius: 12px;
-  background: rgb(139 101 29 / 12%);
-}
-.how-to-use-warning h3 {
-  color: #e3bc77;
-}
-.how-to-use-warning p + p {
-  margin-top: 8px;
-}
-@media (max-width: 640px) {
-  .how-to-use-panel {
-    width: calc(100vw - 16px);
-    max-height: calc(100dvh - 16px);
-  }
-  .how-to-use-header {
-    gap: 12px;
-    padding: 16px;
-  }
-  .how-to-use-content {
-    padding: 0 16px 16px;
-  }
-  .how-to-use-step {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
   }
 }
 .tagging-workspace[hidden] {
@@ -568,168 +363,6 @@ body:has(.how-to-use-panel[open]) {
   /* Keep keyboard focus visible inside the stage's clipped rounded edge. */
   outline-offset: -3px;
 }
-.events-panel,
-.shortcut-settings,
-.players-panel {
-  /* Shared smoked glass skin; geometry and scrolling remain unchanged. */
-  /* Keep secondary copy legible over bright frames with the lighter glass. */
-  --text-secondary: var(--panel-text-secondary);
-  color-scheme: dark;
-  color: var(--text-primary);
-  position: absolute;
-  z-index: 1;
-  top: 8px;
-  right: 8px;
-  bottom: 8px;
-  width: min(360px, 35vw);
-  max-width: calc(100% - 16px);
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--panel-glass-bg);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
-  backdrop-filter: blur(16px) saturate(120%);
-  border: 1px solid var(--panel-glass-border);
-  border-radius: var(--radius);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 3%);
-}
-.players-panel {
-  border-radius: 16px;
-  background-clip: padding-box;
-  /* The shared overflow: hidden clips children; the body retains its own scroll. */
-}
-.players-panel-header {
-  border-radius: 15px 15px 0 0;
-}
-.events-panel-header,
-.shortcut-settings-header,
-.players-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 4px 10px;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel-control-bg);
-}
-.events-panel-header h2,
-.shortcut-settings-header h2,
-.players-panel-header h2 {
-  font-size: 0.8rem;
-}
-.panel-close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  min-width: 32px;
-  min-height: 32px;
-  width: 32px;
-  height: 32px;
-  line-height: 1;
-  padding: 0;
-  background: var(--panel-control-bg);
-}
-.panel-close-button:hover:not(:disabled) {
-  background: var(--panel-row-bg);
-  border-color: var(--border-medium);
-}
-.events-panel-content {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px;
-}
-.players-panel-content {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 8px 10px;
-}
-.events-panel-content,
-.players-panel-content,
-.shortcut-settings-content {
-  scrollbar-color: var(--panel-scroll-thumb) transparent;
-}
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-track {
-  background: transparent;
-}
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb {
-  background: var(--panel-scroll-thumb);
-  border-radius: 8px;
-}
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-scroll-hover);
-}
-.add-player-form { display: grid; gap: 8px; margin-bottom: 12px; font-size: 0.8rem; }
-.add-player-form h3 { margin: 0; font-size: 0.85rem; }
-.add-player-form label { display: flex; flex-wrap: wrap; gap: 4px; }
-.add-player-form input {
-  width: 100%;
-  min-width: 0;
-  min-height: 36px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-control-bg);
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  caret-color: var(--accent);
-}
-.add-player-form button { min-height: 36px; padding: 6px 10px; justify-self: start; }
-.optional-field { color: var(--text-secondary); }
-.player-form-error { color: var(--danger); }
-.roster-list { list-style: none; margin: 0; padding: 0; font-size: 0.8rem; }
-.roster-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
-.roster-list li > span { flex: 1; min-width: 0; }
-.roster-list li { background: var(--panel-row-bg); }
-.player-edit-button,
-.player-delete-button { flex-shrink: 0; min-height: 32px; padding: 4px 8px; font-size: 0.75rem; }
-.player-delete-button { color: var(--danger); border-color: var(--danger-border); background: var(--danger-soft); }
-.player-delete-button:hover:not(:disabled) { background: var(--danger-soft-hover); border-color: var(--danger); }
-.player-delete-confirmation { display: grid; gap: 10px; margin-bottom: 12px; font-size: 0.8rem; overflow-wrap: anywhere; }
-.player-delete-confirmation h3 { margin: 0; font-size: 0.85rem; }
-.player-delete-confirmation button { min-height: 36px; padding: 6px 10px; }
-.player-delete-confirm { color: #fff; background: var(--danger-fill); border-color: var(--danger-border); }
-.player-delete-confirm:hover:not(:disabled) { background: var(--danger-fill-hover); border-color: var(--danger); }
-.player-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.events-empty {
-  padding: 8px;
-  font-size: 0.8rem;
-}
-.events-count {
-  color: var(--text-secondary);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-.events-filter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  min-width: 0;
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.75rem;
-}
-.events-filter > span { flex-shrink: 0; color: var(--text-secondary); }
-.events-filter select {
-  flex: 1;
-  min-width: 0;
-  min-height: 32px;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-control-bg);
-  color: var(--text-primary);
-  font-size: 0.75rem;
-}
-.events-filter option {
-  background: var(--surface);
-  color: var(--text-primary);
-}
 .bottom-rail {
   grid-area: bottom;
   height: var(--bottom-rail-height);
@@ -741,54 +374,6 @@ body:has(.how-to-use-panel[open]) {
   overflow: auto;
   overscroll-behavior: contain;
 }
-.event-list {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 4px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-.event-list li {
-  min-width: 0;
-}
-.event-list button {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  gap: 2px;
-  width: 100%;
-  min-height: 44px;
-  padding: 4px 8px;
-  background: var(--panel-row-bg);
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-.event-list button:focus-visible {
-  outline-offset: -3px;
-}
-.event-list-heading {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.event-list-heading strong {
-  min-width: 0;
-  font-weight: 500;
-}
-.event-list-details {
-  color: var(--text-secondary);
-  line-height: 1.2;
-}
-.event-list .timestamp {
-  padding: 1px 5px;
-  font-weight: 600;
-}
 .timestamp {
   flex-shrink: 0;
   padding: 2px 5px;
@@ -797,26 +382,6 @@ body:has(.how-to-use-panel[open]) {
   border-radius: 4px;
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
-}
-.event-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  border-top: 3px solid var(--accent);
-}
-.event-form label,
-.event-form-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.event-form-actions {
-  margin-left: 0;
-}
-.event-form-actions button {
-  padding: 6px 14px;
-  font-size: 0.8rem;
 }
 .error-message {
   padding: 16px;
@@ -904,24 +469,6 @@ body:has(.app-analysis) {
 .app-analysis .video-stage {
   overflow: hidden;
 }
-.app-analysis .event-form {
-  gap: 4px 8px;
-  padding: 2px 8px;
-  min-height: 100%;
-  align-content: center;
-  border: 0;
-  border-radius: 0 0 8px 8px;
-  box-shadow: none;
-  background: transparent;
-}
-.app-analysis .event-form > * {
-  min-width: 0;
-  max-width: 100%;
-}
-.app-analysis .event-form-actions button {
-  min-height: 36px;
-  padding: 4px 8px;
-}
 
 @media (min-width: 900px) {
   /* Read the left rail from bottom to top, matching its rotated labels. */
@@ -931,14 +478,6 @@ body:has(.app-analysis) {
   /* The trailing badge sits below the label after the clockwise rotation. */
   .action-rail-right button {
     transform: translate(-50%, -50%) rotate(90deg);
-  }
-  /* One compact form row; narrower windows can scroll only the bottom rail. */
-  .app-analysis .event-form {
-    flex-wrap: nowrap;
-    min-width: max-content;
-  }
-  .app-analysis .event-form > * {
-    flex-shrink: 0;
   }
 }
 
@@ -966,11 +505,6 @@ body:has(.app-analysis) {
     flex-basis: 100%;
     order: -1;
     justify-content: flex-end;
-  }
-  .events-panel,
-  .shortcut-settings,
-  .players-panel {
-    width: min(360px, calc(100% - 16px));
   }
   .action-rail-left .action-slot,
   .action-rail-right .action-slot {
@@ -1016,148 +550,6 @@ body:has(.app-analysis) {
   .action-rail button {
     padding: 6px 10px;
   }
-  .event-form {
-    gap: 8px;
-  }
-}
-
-/* The workflow occupies the existing fixed track; only its content changes. */
-.app-analysis .event-workflow {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  min-width: max-content;
-  height: 100%;
-  gap: 12px;
-}
-.workflow-summary,
-.workflow-step,
-.saved-event-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  font-size: 0.8rem;
-}
-.workflow-summary {
-  font-weight: 600;
-}
-.workflow-summary-text,
-.event-summary-text {
-  display: block;
-  max-width: 34ch;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
-  max-height: 2.5em;
-  overflow: auto;
-}
-.workflow-text-field textarea {
-  display: block;
-  width: clamp(180px, 23vw, 320px);
-  height: 40px;
-  padding: 3px 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text-primary);
-  font: inherit;
-  line-height: 1.2;
-  resize: none;
-}
-.workflow-text-field textarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-.workflow-text-hint {
-  max-width: 20ch;
-  white-space: normal;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-.workflow-step-label {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-}
-.app-analysis .workflow-step button {
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-}
-.workflow-step button[aria-pressed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.workflow-step:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-.saved-event-summary {
-  min-height: 100%;
-  padding: 4px 12px;
-  width: max-content;
-}
-.saved-event-label {
-  color: var(--accent);
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-}
-.saved-event-summary button {
-  min-height: 36px;
-  padding: 4px 10px;
-  font-size: 0.8rem;
-}
-.saved-event-summary .button-danger {
-  color: var(--danger);
-  border-color: var(--danger-border);
-  background: var(--danger-soft);
-}
-.saved-event-summary .button-danger:hover:not(:disabled) {
-  background: var(--danger-soft-hover);
-  border-color: var(--danger);
-}
-.saved-event-summary .button-danger-confirm {
-  color: #fff;
-  background: var(--danger-fill);
-  border-color: var(--danger-border);
-}
-.saved-event-summary .button-danger-confirm:hover:not(:disabled) {
-  background: var(--danger-fill-hover);
-  border-color: var(--danger);
-}
-
-/* Shortcut editing is an overlay: only its list scrolls, never the cockpit. */
-.shortcut-settings-hint {
-  padding: 8px 10px;
-  font-size: 0.75rem;
-}
-.shortcut-settings-content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0 10px;
-}
-.shortcut-settings-list {
-  display: grid;
-  gap: 4px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
 }
 .session-export, .session-import, .session-imported {
   display: grid;
@@ -1165,6 +557,8 @@ body:has(.app-analysis) {
   margin-bottom: 12px;
 }
 .session-import-confirmation {
+  max-width: calc(100vw - 32px);
+  color: var(--text-primary);
   padding: 12px;
   border: 1px solid var(--accent);
   border-radius: 8px;
@@ -1198,6 +592,11 @@ body:has(.app-analysis) {
   margin: 0 0 8px;
   font-size: 1rem;
 }
+.video-match-result:focus-visible,
+.video-reattachment > [role="status"]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
 .video-match-result dl {
   font-size: 0.8rem;
 }
@@ -1222,196 +621,6 @@ body:has(.app-analysis) {
   justify-content: center;
   gap: 8px;
 }
-.shortcut-settings-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 0.8rem;
-  background: var(--panel-row-bg);
-  border-radius: 8px;
-}
-.shortcut-settings-list button {
-  min-height: 36px;
-  min-width: 48px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  background: var(--badge-background);
-  border-color: var(--badge-border);
-  color: var(--badge-text);
-}
-.shortcut-settings-list button:hover:not(:disabled) {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-.shortcut-settings-list button[aria-pressed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-.shortcut-settings-list kbd {
-  font: inherit;
-  font-weight: 700;
-}
-.shortcut-settings-footer {
-  flex-shrink: 0;
-  display: grid;
-  gap: 8px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--border);
-}
-.shortcut-settings-footer p {
-  font-size: 0.75rem;
-}
-.shortcut-settings-footer button {
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-}
-
-/* Extra room on the left only: preserve right-aligned actions and Events spacing. */
-.players-panel-header,
-.players-panel-content,
-.shortcut-settings-header,
-.shortcut-settings-hint,
-.shortcut-settings-content,
-.shortcut-settings-footer {
-  padding-left: 12px;
-}
-.roster-list li,
-.shortcut-settings-list li {
-  padding-left: 4px;
-}
-
-/* Review navigation occupies the existing fixed-height bottom rail. */
-.events-panel-footer {
-  flex-shrink: 0;
-  margin-top: auto;
-  padding: 6px 10px;
-  border-top: 1px solid var(--border);
-}
-.events-panel-footer button {
-  width: 100%;
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-}
-.events-panel-footer button,
-.add-player-form button[type="submit"] {
-  background: var(--primary-fill);
-  border-color: var(--badge-border);
-  color: var(--text-primary);
-}
-.events-panel-footer button:hover:not(:disabled),
-.add-player-form button[type="submit"]:hover:not(:disabled) {
-  background: var(--primary-fill-hover);
-  border-color: var(--accent);
-}
-.review-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 100%;
-  width: max-content;
-  padding: 4px 12px;
-  white-space: nowrap;
-  font-size: 0.8rem;
-}
-.review-controls button {
-  min-height: 36px;
-  padding: 4px 10px;
-  font-size: 0.8rem;
-}
-.review-position { font-variant-numeric: tabular-nums; }
-.review-controls:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-/* Release all three action-rail tracks to the video at every viewport width. */
-.app-analysis .tagging-workspace-review {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) var(--bottom-rail-height);
-  grid-template-areas: "video" "bottom";
-  background-color: var(--review-bg);
-  border-color: rgb(74 155 184 / 34%);
-  box-shadow: 0 0 22px rgb(25 110 151 / 8%);
-}
-
-/* Existing Review state supplies the visual mode; keep geometry and accents intact. */
-.app-analysis:has(.tagging-workspace-review) {
-  --review-bg: #071622;
-  --review-ambient: rgb(55 139 181 / 16%);
-  background:
-    radial-gradient(ellipse at 0% 0%, var(--review-ambient), transparent 42%),
-    radial-gradient(ellipse at 100% 0%, var(--review-ambient), transparent 42%),
-    var(--review-bg);
-}
 .app-analysis .bottom-rail {
   transition: background-color 200ms ease, border-color 200ms ease;
-}
-.app-analysis .tagging-workspace-review > .bottom-rail {
-  background:
-    linear-gradient(180deg, rgb(74 155 184 / 12%), transparent 65%),
-    var(--review-bg);
-  border-top-color: rgb(86 175 207 / 44%);
-  box-shadow: inset 0 1px 0 rgb(121 198 223 / 10%);
-}
-.app-analysis .tagging-workspace-review > .video-stage {
-  outline-color: rgb(100 181 209 / 22%);
-}
-
-/* Broadcast control surfaces preserve the existing rail size and button positions. */
-.app-analysis .tagging-workspace-review .review-controls button {
-  background:
-    linear-gradient(180deg, rgb(88 160 190 / 8%), transparent),
-    #0b293d;
-  border-color: rgb(84 167 201 / 42%);
-  color: var(--text-primary);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
-  transition: background-color 200ms ease, border-color 200ms ease;
-}
-.app-analysis .tagging-workspace-review .review-controls button:hover:not(:disabled) {
-  background-color: #12394f;
-  border-color: rgb(112 193 222 / 64%);
-}
-.app-analysis .tagging-workspace-review .review-controls button:active:not(:disabled) {
-  background-color: #092236;
-}
-.app-analysis .tagging-workspace-review .review-controls button:disabled {
-  border-color: rgb(84 167 201 / 20%);
-}
-/* Exit Review is the existing final action; retain the shared danger palette. */
-.app-analysis .tagging-workspace-review .review-controls button:last-child {
-  background: var(--danger-soft);
-  border-color: var(--danger-border);
-  color: var(--danger);
-}
-.app-analysis .tagging-workspace-review .review-controls button:last-child:hover:not(:disabled) {
-  background-color: var(--danger-soft-hover);
-  border-color: var(--danger);
-}
-.app-analysis .tagging-workspace-review .review-controls button:last-child:active:not(:disabled) {
-  background-color: var(--danger-soft);
-}
-.app-analysis .tagging-workspace-review .review-controls .saved-event-label {
-  color: #80d2e2;
-  text-shadow: 0 1px 12px rgb(80 174 201 / 15%);
-}
-.app-analysis .tagging-workspace-review .review-position {
-  color: #d0e4ee;
-  font-weight: 600;
-}
-.app-analysis .tagging-workspace-review .review-controls .timestamp {
-  background: #0b3b3d;
-  color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgb(63 181 163 / 20%);
-  font-weight: 600;
-}
-.app-analysis .tagging-workspace-review .review-controls .event-summary-text {
-  color: var(--text-primary);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-analysis,
-  .app-analysis .bottom-rail,
-  .app-analysis .tagging-workspace-review .review-controls button {
-    transition: none;
-  }
 }
