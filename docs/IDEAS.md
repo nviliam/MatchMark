@@ -1048,8 +1048,11 @@ seek.backward.large
 
 ### 10. How to use onboarding / help
 
-**Állapot: elkészült / implementált.** A felhasználó a jelenlegi help felületet és
-a négy végleges screenshotot manuálisan is ellenőrizte a release előtt.
+**Állapot: elkészült / implementált, frissítve 2026. november 15-én.**
+A help hét fő blokkban mutatja be az aktuális működést, hat lokális screenshottal.
+A korábbi v1 helpet és annak négy screenshotját a felhasználó a release előtt
+manuálisan is ellenőrizte; ez a történeti ellenőrzés nem vonatkozik automatikusan
+a most kibővített panelre.
 
 - [x] Diszkrét secondary How to use gomb a kezdőképernyő jobb felső részén;
       a fő cardban a Select video és Import session marad együtt, egységes méretezéssel.
@@ -1059,27 +1062,46 @@ a négy végleges screenshotot manuálisan is ellenőrizte a release előtt.
       blokkolása; keyboard-accessible tartalom és jól látható focus-visible.
 - [x] Középre rendezett, legfeljebb 960 px széles dark glass panel, saját belső scrollal;
       mobilon a szöveg és screenshot egymás alá kerül, az analysis responsive szabályai változatlanok.
-- [x] Négy workflow-blokk: Load a video; Tag match events; Assign players and details;
-      Review your events.
-- [x] Négy valódi, lokális screenshot a `src/assets/how-to-use/` mappában:
-      `load-video.png`, `tag-events.png`, `assign-details.png`, `review-events.png`.
-      A manifest mind a négyet használja; nincs aktív placeholder vagy remote image request.
-      Az utolsó kép az Events filtereket és a Review indítását mutatja; az alt szöveg ezt írja le.
+- [x] Hét fő blokk, ebben a sorrendben: Load a video; Tag match events;
+      Assign players and details; Review your events; Add or edit players;
+      Save and restore a session; Keyboard shortcuts and Quick Seek.
+- [x] A Players blokk bemutatja a roster játékosainak hozzáadását, szerkesztését,
+      törlését és későbbi eventekhez rendelését.
+- [x] Külön Session blokk dokumentálja a Session → Export session helyi JSON-backupot,
+      a Session → Import session adat-visszaállítást és a Reattach video lépést.
+      A videó nincs a JSON-ban; csak elemzési adatok és videómetadata kerül bele.
+      A rövid workflow: Analyze → Export session → Close the browser → Import session later
+      → Reattach the original video → Continue analysis.
+- [x] Hat valódi, lokális screenshot a `src/assets/how-to-use/` mappában:
+      `load-video.png`, `tag-events.png`, `assign-details.png`, `review-events.png`,
+      `players.png`, `session.png`. A manifest mind a hatot használja; nincs aktív
+      placeholder vagy remote image request. A két új kép a Players és Session
+      panelt mutatja, a meglévő képekkel azonos layouttal és képsarkítással.
+      A `review-events.png` az Events filtereket és a Review indítását mutatja,
+      nem az aktív Review módot; az alt szöveg ezt írja le.
 - [x] Reszponzív, eredeti képarányú, lazy loadinggal betöltődő képek;
       a fájlnevek és cseréjük az assetmappa README-jében dokumentálva.
-- [x] Keyboard shortcuts & Quick Seek blokk keycap badge-ekkel:
+- [x] Keyboard shortcuts and Quick Seek blokk keycap badge-ekkel:
       2 / 3 / 4 → +1.2 / +1.5 / +2.0 s; Shift+2 / Shift+3 / Shift+4 ugyanez visszafelé.
-      Az event shortcutokhoz a gombokon látható badge-ekre és a Settingsre utal, nem duplikálja a mappinget.
+      Az event shortcutokhoz a gombokon látható badge-ekre és a Shortcuts panelre utal,
+      nem duplikálja a mappinget. A help szövegében nincs régi Settings-hivatkozás.
 - [x] Ctrl+Enter (Windows/Linux) és Cmd+Enter (macOS): Save current event;
       a leírás jelzi, hogy csak a menthető végső lépésben használható.
-- [x] Külön, visszafogott amber Important blokk jelzi, hogy nincs automatikus mentés;
-      Export session segítségével helyi, később importálható biztonsági másolat készíthető.
-      Refresh vagy ablakbezárás továbbra is törli a memóriában lévő sessiont.
+- [x] Az autosave figyelmeztetés kizárólag a Session blokkon belül jelenik meg:
+      „MatchMark does not save sessions automatically yet. Export your session before
+      closing or refreshing the page.” A külön Important blokk megszűnt.
+      Automatikus sessionmentés továbbra sincs; a későbbi folytatás alapja a kézi
+      JSON export/import és az eredeti helyi videó újracsatolása.
+- [x] A tartalmi bővítés nem változtatta meg a help Close/Escape/fókuszkezelését,
+      a session-, Players-, shortcut-, reattach- vagy Review-logikát.
 
-Release-ellenőrzés: a teljes csomag 98 automatizált tesztet tartalmaz, köztük
-a help megnyitás/Close/Escape/focus-return, tartalom, shortcutleírások, warning,
-a négy valódi kép és a fallback kezelésének regresszióival. A komponens- és
-videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyettesítik.
+Aktuális ellenőrzés: **164/164 automatizált teszt sikeres**, lint, build és külön
+strict TypeScript-ellenőrzés sikeres. A help tesztjei lefedik a hét blokk sorrendjét,
+a Players-leírást, mind a hat képet és fallbackjüket, a Sessionben szereplő egyetlen
+autosave warningot, az Important és régi Settings-hivatkozás hiányát, a shortcutokat,
+valamint a megnyitás/Close/Escape/focus-return működését. A komponens- és videótesztek
+szimuláltak; a böngészős manuális ellenőrzést nem helyettesítik. A korábbi 98-as
+tesztszám a történeti v1 release-hez tartozik.
 
 ### 11. Tartós adatmentés – local-first alap, opcionális backend
 
