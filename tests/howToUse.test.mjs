@@ -117,7 +117,7 @@ test("help contains all six sections, exact Quick Seek pairs, platform Save shor
     "1. Load a video", "2. Tag match events", "3. Assign players and details", "4. Review your events",
     "5. Keyboard shortcuts & Quick Seek", "Important",
   ]);
-  assert(text(tree).includes("Event shortcuts are displayed on the event buttons and can be customized in Settings."));
+  assert(text(tree).includes("Event shortcuts are displayed on the event buttons and can be customized in Shortcuts."));
   const rows = nodes(tree, n => n.props?.className === "how-to-use-shortcut-row");
   assert.deepEqual(rows.map(text), [
     "2Forward 1.2 s", "Shift+2Rewind 1.2 s", "3Forward 1.5 s", "Shift+3Rewind 1.5 s",

@@ -13,7 +13,7 @@ function setup() {
     revokeObjectURL(url) { released.push(url); },
   } });
   const ctx = h.context(true);
-  const components = Object.fromEntries(["VideoPlayer", "EventButtons", "EventForm", "PlayersPanel", "EventsPanel", "ShortcutSettings"]
+  const components = Object.fromEntries(["VideoPlayer", "EventButtons", "EventForm", "PlayersPanel", "EventsPanel", "SessionPanel"]
     .map(name => [name, h.load(`src/components/${name}.tsx`).default]));
   h.load("src/utils/session.ts").downloadSession = session => exported = session;
   const update = () => tree = h.render(components.VideoPlayer, {
@@ -33,11 +33,11 @@ function setup() {
     nodes(tree, node => node.type === "button" && text(node) === "Resume analysis")[0].props.onClick(); update();
   };
   const snapshot = () => {
-    component("EventButtons").props.onOpenSettings(); update();
-    component("ShortcutSettings").props.onExportSession(); update();
+    component("EventButtons").props.onOpenSession(); update();
+    component("SessionPanel").props.onExportSession(); update();
     const result = JSON.parse(JSON.stringify(exported));
     delete result.exportedAt;
-    component("ShortcutSettings").props.onClose(); update();
+    component("SessionPanel").props.onClose(); update();
     return result;
   };
   update(); select("old.mp4"); ready();

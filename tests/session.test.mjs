@@ -83,12 +83,12 @@ test("download uses UTF-8 JSON, clicks the named file and releases its temporary
   }
 });
 
-test("Settings exposes export; VideoPlayer exports current saved state without playback or workflow mutations", () => {
+test("Session panel exposes export; VideoPlayer exports current saved state without playback or workflow mutations", () => {
   const { h, utils } = fixture();
   const downloads = [];
   utils.downloadSession = session => downloads.push(session);
   const VideoPlayer = h.load("src/components/VideoPlayer.tsx").default;
-  const Settings = h.load("src/components/ShortcutSettings.tsx").default;
+  const Settings = h.load("src/components/SessionPanel.tsx").default;
   const Buttons = h.load("src/components/EventButtons.tsx").default;
   const Form = h.load("src/components/EventForm.tsx").default;
   const shortcuts = h.load("src/config/eventShortcuts.ts").DEFAULT_EVENT_SHORTCUTS;
@@ -99,11 +99,11 @@ test("Settings exposes export; VideoPlayer exports current saved state without p
   update();
   nodes(tree, n => n.type === "input")[0].props.onChange({ currentTarget: { files: [{ name: "game.mp4", size: 456, type: "video/mp4" }], value: "" } });
   update(); nodes(tree, n => n.type === "video")[0].props.onLoadedMetadata(); update();
-  component(Buttons).props.onOpenSettings(); update();
+  component(Buttons).props.onOpenSession(); update();
   let panel = h.render(Settings, component(Settings).props);
-  assert(text(panel).includes("import a local backup."));
+  assert(text(panel).includes("import a previously saved session."));
   const exportButton = nodes(panel, n => n.type === "button" && text(n) === "Export session")[0];
-  assert(exportButton); assert.equal(exportButton.props.disabled, false);
+  assert(exportButton); assert(!exportButton.props.disabled);
   h.media.currentTime = 23.75; h.media.paused = false;
   exportButton.props.onClick(); update();
   assert.equal(downloads[0].events.length, 0);
@@ -114,7 +114,7 @@ test("Settings exposes export; VideoPlayer exports current saved state without p
   component(Settings).props.onClose(); update();
   component(Buttons).props.onSelect("custom"); update();
   component(Form).props.onSave(undefined, { type: "custom", description: "Saved only" }); update();
-  component(Buttons).props.onOpenSettings(); update();
+  component(Buttons).props.onOpenSession(); update();
   component(Settings).props.onExportSession(); update();
   assert.equal(downloads[1].events.length, 1);
   assert.equal(downloads[1].events[0].description, "Saved only");
@@ -124,8 +124,8 @@ test("Settings exposes export; VideoPlayer exports current saved state without p
   component(Settings).props.onClose(); update();
   component(Buttons).props.onSelect("shot"); update();
   assert(component(Form));
-  // An active draft cannot open Settings or become a saved event implicitly.
-  component(Buttons).props.onOpenSettings(); update();
+  // An active draft cannot open Session or become a saved event implicitly.
+  component(Buttons).props.onOpenSession(); update();
   assert.equal(component(Settings), undefined);
   assert.equal(downloads.length, 2);
   h.dispose(ctx);

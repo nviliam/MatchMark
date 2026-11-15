@@ -78,7 +78,7 @@ test("Players form shows textual validation, adds valid input, resets fields and
 
 function setup() {
   const h = createHarness(), ctx = h.context(true), components = {};
-  for (const name of ["VideoPlayer", "PlayersPanel", "EventButtons", "EventsPanel", "EventForm", "EventList", "SavedEventSummary", "ReviewControls", "DeleteEventConfirmation", "ShortcutSettings"]) {
+  for (const name of ["VideoPlayer", "PlayersPanel", "EventButtons", "EventsPanel", "EventForm", "EventList", "SavedEventSummary", "ReviewControls", "DeleteEventConfirmation", "ShortcutsPanel"]) {
     components[name] = h.load(`src/components/${name}.tsx`).default;
   }
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
@@ -109,8 +109,8 @@ test("runtime roster starts from independent demo objects and persists across cl
   const roster = s.roster(); assert.equal(new Set(roster.map(p => p.id)).size, roster.length);
   s.close(); s.open(); assert.equal(s.roster(), roster);
   s.press("Escape"); assert(!s.component("PlayersPanel")); s.open(); assert.equal(s.roster(), roster);
-  s.buttons().onOpenSettings(); s.update(); assert(s.component("ShortcutSettings")); assert(!s.component("PlayersPanel"));
-  s.open(); assert(!s.component("ShortcutSettings"));
+  s.buttons().onOpenShortcuts(); s.update(); assert(s.component("ShortcutsPanel")); assert(!s.component("PlayersPanel"));
+  s.open(); assert(!s.component("ShortcutsPanel"));
   s.h.media.currentTime = 42.5; s.buttons().onExit(); s.update(); assert(!s.component("PlayersPanel"));
   s.resume(); assert(!s.component("PlayersPanel")); assert.equal(s.h.media.currentTime, 42.5); assert(s.h.media.paused);
   s.open(); assert.equal(s.roster(), roster);
@@ -323,7 +323,7 @@ test("saved edits survive Exit/Resume, new video and errors while unsaved edits 
   const s = setup(); s.open(); const p = mountPlayers(s); p.edit();
   p.change("playerName", "Saved name"); p.submit(); const savedRoster = s.roster();
   for (const close of [() => s.close(), () => { s.buttons().onExit(); s.update(); s.resume(); },
-    () => { s.buttons().onOpenSettings(); s.update(); }]) {
+    () => { s.buttons().onOpenShortcuts(); s.update(); }]) {
     p.edit(); p.change("playerName", "Unsaved"); close(); p.dispose();
     assert(!s.component("PlayersPanel")); s.open(); p.remount();
     assert.equal(s.roster(), savedRoster); assert.equal(p.input("playerName").props.value, "");
@@ -486,7 +486,7 @@ test("unconfirmed deletes are discarded on X, overlay switch, Exit/Resume, video
   const s = setup(); s.open(); const p = mountPlayers(s), roster = s.roster();
   for (const close of [
     () => { nodes(p.tree, n => n.props?.["aria-label"] === "Close players")[0].props.onClick(); s.update(); },
-    () => { s.buttons().onOpenSettings(); s.update(); },
+    () => { s.buttons().onOpenShortcuts(); s.update(); },
     () => { s.buttons().onExit(); s.update(); s.resume(); },
     () => { s.buttons().onExit(); s.update(); s.upload(); s.ready(); },
     () => { nodes(s.tree, n => n.type === "video")[0].props.onError(); s.update(); s.upload(); s.ready(); },

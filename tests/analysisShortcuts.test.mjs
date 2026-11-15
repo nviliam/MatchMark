@@ -89,7 +89,7 @@ test("Quick Seek ignores unavailable or failed media and non-finite duration", (
 
 test("actual settings capture listener consumes key configuration before both analysis listeners", () => {
   const s = setup(), ctx = s.h.context();
-  const Settings = s.h.load("src/components/ShortcutSettings.tsx").default;
+  const Settings = s.h.load("src/components/ShortcutsPanel.tsx").default;
   let tree, changed;
   const update = () => tree = s.h.render(Settings, {
     shortcuts: s.options.shortcuts, onChange: value => changed = value, onClose() {},

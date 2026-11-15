@@ -85,7 +85,7 @@ test("matching candidate requires Continue; probe URLs release on unmount and st
 function workspaceSetup() {
   const released = [], allocated = []; let serial = 0, exported, active = false, tree;
   const h = createHarness(undefined, { URL: { createObjectURL(value) { allocated.push(value); return `blob:active-${++serial}`; }, revokeObjectURL(url) { released.push(url); } } });
-  const names = ["VideoPlayer", "SessionImport", "VideoReattachment", "EventButtons", "EventForm", "EventsPanel", "ReviewControls", "PlayersPanel", "ShortcutSettings", "SavedEventSummary", "DeleteEventConfirmation"];
+  const names = ["VideoPlayer", "SessionImport", "VideoReattachment", "EventButtons", "EventForm", "EventsPanel", "ReviewControls", "PlayersPanel", "SessionPanel", "SavedEventSummary", "DeleteEventConfirmation"];
   const components = Object.fromEntries(names.map(name => [name, h.load(`src/components/${name}.tsx`).default]));
   const utils = h.load("src/utils/session.ts"), { parseSession } = h.load("src/utils/sessionImport.ts");
   utils.downloadSession = value => exported = value;
@@ -114,9 +114,9 @@ test("export/import/validate/apply/reattach supports tagging, Review, CRUD and m
   nodes(s.tree, n => n.type === "video")[0].props.onLoadedMetadata(); s.update();
   assert(s.active); assert.equal(s.h.media.currentTime, 0); assert.equal(s.component("VideoReattachment"), undefined);
   assert(!text(s.tree).includes("Session imported."));
-  s.component("EventButtons").props.onOpenSettings(); s.update(); s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update(); s.component("SessionPanel").props.onExportSession(); s.update();
   for (const key of ["events", "players", "nextPlayerId", "nextEventId", "video", "createdAt", "match"]) assert.deepEqual(plain(s.exported[key]), before[key], key);
-  s.component("ShortcutSettings").props.onClose(); s.update();
+  s.component("SessionPanel").props.onClose(); s.update();
   s.component("EventButtons").props.onOpenEvents(); s.update();
   s.component("EventsPanel").props.onEventTypeChange("pass"); s.update();
   assert.equal(s.component("EventsPanel").props.events.length, 1);
@@ -144,7 +144,7 @@ test("export/import/validate/apply/reattach supports tagging, Review, CRUD and m
   s.component("EventForm").props.onSave(7, { type: "pass", subtype: "long-ball", outcome: "incomplete" }); s.update();
   assert.equal(s.component("SavedEventSummary").props.event.id, 12);
   s.component("SavedEventSummary").props.onDelete(); s.update(); s.component("DeleteEventConfirmation").props.onConfirm(); s.update();
-  s.component("EventButtons").props.onOpenSettings(); s.update(); s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update(); s.component("SessionPanel").props.onExportSession(); s.update();
   assert.deepEqual(plain(s.exported.events), before.events); assert.equal(s.exported.nextEventId, 13); assert.equal(s.exported.nextPlayerId, 21);
   s.h.dispose(s.ctx); assert.equal(s.released.length, s.allocated.length);
 });
@@ -165,7 +165,7 @@ test("mismatch accepted metadata replaces only video reference in the next expor
   const s = workspaceSetup(), selected = { fileName: "different.webm", fileSize: 2, duration: 900 };
   s.component("VideoReattachment").props.onAttach({ name: selected.fileName, type: "video/webm", size: 2 }, selected); s.update();
   s.h.media.duration = 900; nodes(s.tree, n => n.type === "video")[0].props.onLoadedMetadata(); s.update();
-  s.component("EventButtons").props.onOpenSettings(); s.update(); s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update(); s.component("SessionPanel").props.onExportSession(); s.update();
   assert.deepEqual(plain(s.exported.video), selected); assert.deepEqual(plain(s.exported.events), plain(s.session.events));
   assert.deepEqual(plain(s.exported.match), { homeTeam: "Home" });
   s.h.dispose(s.ctx);

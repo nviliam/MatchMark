@@ -149,7 +149,7 @@ test("Custom filters combine type/player with AND, excluding unassigned events o
 
 function workspaceSetup() {
   const h = createHarness(), ctx = h.context(true), components = {};
-  for (const name of ["VideoPlayer", "EventButtons", "EventForm", "EventsPanel", "EventList", "SavedEventSummary", "ReviewControls", "DeleteEventConfirmation", "PlayersPanel", "ShortcutSettings"]) {
+  for (const name of ["VideoPlayer", "EventButtons", "EventForm", "EventsPanel", "EventList", "SavedEventSummary", "ReviewControls", "DeleteEventConfirmation", "PlayersPanel", "ShortcutsPanel"]) {
     components[name] = h.load(`src/components/${name}.tsx`).default;
   }
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
@@ -199,11 +199,11 @@ test("Custom keyboard/click share timestamp and workflow; guards, typing safety,
   const edit = s.component("EventForm").props.pending;
   s.press("f"); assert.equal(s.component("EventForm").props.pending, edit); s.press("Escape");
   s.component("SavedEventSummary").props.onDelete(); s.update(); s.press("f"); assert(!s.component("EventForm")); s.press("Escape");
-  s.buttons().onOpenSettings(); s.update(); s.press("f"); assert(!s.component("EventForm"));
-  const settingsProps = s.component("ShortcutSettings").props;
-  assert(text(s.h.render(s.components.ShortcutSettings, settingsProps)).includes("Custom"));
+  s.buttons().onOpenShortcuts(); s.update(); s.press("f"); assert(!s.component("EventForm"));
+  const settingsProps = s.component("ShortcutsPanel").props;
+  assert(text(s.h.render(s.components.ShortcutsPanel, settingsProps)).includes("Custom"));
   settingsProps.onChange({ ...settingsProps.shortcuts, custom: "." }); s.update();
-  s.component("ShortcutSettings").props.onClose(); s.update();
+  s.component("ShortcutsPanel").props.onClose(); s.update();
   assert(nodes(ui(), n => n.type === "button" && n.props["aria-keyshortcuts"] === ".")[0]);
   s.press("f"); assert(!s.component("EventForm")); s.press("."); assert(s.component("EventForm"));
   s.press("Escape"); s.buttons().onExit(); s.update(); s.press("."); assert(!s.component("EventForm"));

@@ -36,7 +36,7 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   const Form = h.load("src/components/EventForm.tsx").default;
   const Summary = h.load("src/components/SavedEventSummary.tsx").default;
   const Delete = h.load("src/components/DeleteEventConfirmation.tsx").default;
-  const Settings = h.load("src/components/ShortcutSettings.tsx").default;
+  const Settings = h.load("src/components/ShortcutsPanel.tsx").default;
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
   let active = false, tree;
   const shortcuts = { ...DEFAULT_EVENT_SHORTCUTS, shot: "h" };
@@ -99,11 +99,11 @@ test("filter state survives panel lifecycle, seek uses exact timestamps, and wor
   nodes(combinedRows, n => n.type === "button")[0].props.onClick(); update();
   assert.equal(h.media.currentTime, 45.125); assert(h.media.paused); assert(!component(Panel));
   open(); count(2);
-  component(Buttons).props.onOpenSettings(); update(); assert(component(Settings)); assert(!component(Panel));
+  component(Buttons).props.onOpenShortcuts(); update(); assert(component(Settings)); assert(!component(Panel));
   const settingsUI = h.render(Settings, component(Settings).props);
   nodes(settingsUI, n => n.props?.["aria-label"] === "Close keyboard shortcuts")[0].props.onClick(); update();
   assert(!component(Settings));
-  component(Buttons).props.onOpenSettings(); update();
+  component(Buttons).props.onOpenShortcuts(); update();
   open(); assert.equal(component(Panel).props.selectedEventType, "shot");
   component(Buttons).props.onExit(); update();
   nodes(tree, n => n.type === "button" && text(n) === "Resume analysis")[0].props.onClick(); update();

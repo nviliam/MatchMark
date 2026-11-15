@@ -18,16 +18,20 @@ type Props = {
   eventsDisabled: boolean;
   isEventsOpen: boolean;
   eventsButtonRef: Ref<HTMLButtonElement>;
-  onOpenSettings: () => void;
-  isSettingsOpen: boolean;
-  settingsButtonRef: Ref<HTMLButtonElement>;
+  onOpenShortcuts: () => void;
+  isShortcutsOpen: boolean;
+  shortcutsButtonRef: Ref<HTMLButtonElement>;
+  onOpenSession: () => void;
+  isSessionOpen: boolean;
+  sessionButtonRef: Ref<HTMLButtonElement>;
   onOpenPlayers: () => void;
   isPlayersOpen: boolean;
   playersButtonRef: Ref<HTMLButtonElement>;
 };
 
 export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
-  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef, onOpenSettings, isSettingsOpen, settingsButtonRef,
+  onOpenEvents, eventsDisabled, isEventsOpen, eventsButtonRef, onOpenShortcuts, isShortcutsOpen, shortcutsButtonRef,
+  onOpenSession, isSessionOpen, sessionButtonRef,
   onOpenPlayers, isPlayersOpen, playersButtonRef }: Props) {
   return (
     <>
@@ -45,15 +49,18 @@ export default function EventButtons({ disabled, shortcuts, onSelect, onExit,
           ))}
           {rail.position === "top" && (
             <div className="analysis-controls">
-              <button ref={playersButtonRef} type="button" disabled={eventsDisabled}
-                aria-expanded={isPlayersOpen} aria-controls={isPlayersOpen ? "players-panel" : undefined}
-                aria-haspopup="dialog" onClick={onOpenPlayers}>Players</button>
               <button ref={eventsButtonRef} type="button" disabled={eventsDisabled}
                 aria-expanded={isEventsOpen} aria-controls={isEventsOpen ? "events-panel" : undefined}
                 aria-haspopup="dialog" onClick={onOpenEvents}>Events</button>
-              <button ref={settingsButtonRef} type="button" disabled={eventsDisabled}
-                aria-expanded={isSettingsOpen} aria-controls={isSettingsOpen ? "shortcut-settings" : undefined}
-                aria-haspopup="dialog" onClick={onOpenSettings}>Settings</button>
+              <button ref={playersButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isPlayersOpen} aria-controls={isPlayersOpen ? "players-panel" : undefined}
+                aria-haspopup="dialog" onClick={onOpenPlayers}>Players</button>
+              <button ref={shortcutsButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isShortcutsOpen} aria-controls={isShortcutsOpen ? "shortcuts-panel" : undefined}
+                aria-haspopup="dialog" onClick={onOpenShortcuts}>Shortcuts</button>
+              <button ref={sessionButtonRef} type="button" disabled={eventsDisabled}
+                aria-expanded={isSessionOpen} aria-controls={isSessionOpen ? "session-panel" : undefined}
+                aria-haspopup="dialog" onClick={onOpenSession}>Session</button>
               <button className="analysis-exit" type="button" onClick={onExit}>Exit</button>
             </div>
           )}

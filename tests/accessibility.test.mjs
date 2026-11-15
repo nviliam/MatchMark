@@ -132,7 +132,8 @@ test("non-modal panels retain named close buttons, while visible Review controls
   for (const [name, props] of [
     ["EventsPanel", { ...common, totalEventCount: 0, selectedEventType: "all", selectedPlayerId: "all" }],
     ["PlayersPanel", common],
-    ["ShortcutSettings", { shortcuts: h.load("src/config/eventShortcuts.ts").DEFAULT_EVENT_SHORTCUTS, onChange() {}, onClose() {} }],
+    ["ShortcutsPanel", { shortcuts: h.load("src/config/eventShortcuts.ts").DEFAULT_EVENT_SHORTCUTS, onChange() {}, onClose() {} }],
+    ["SessionPanel", { onExportSession() {}, onImportSession() {}, exportError: "", onClose() {} }],
   ]) {
     const ctx = h.context(), Component = h.load(`src/components/${name}.tsx`).default;
     const tree = h.render(Component, props, ctx);

@@ -29,7 +29,7 @@ All types require a player except Custom, which allows an unassigned note. Event
 ## Session Workflow
 
 1. Choose a local video, tag events and manage the roster.
-2. Select **Settings → Export session** before closing the browser.
+2. Select **Session → Export session** before closing the browser.
 3. Later, use **Import session** and confirm replacement of the current analysis.
 4. Choose **Reattach video** and select the original local file.
 5. Review the comparison, then select **Continue analysis** or explicitly accept a mismatch with **Use this video anyway**.

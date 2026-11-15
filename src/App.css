@@ -208,7 +208,7 @@
 }
 .action-rail-top {
   position: relative;
-  padding-inline: 4px 300px;
+  padding-inline: 4px 360px;
 }
 .analysis-controls {
   position: absolute;
@@ -501,6 +501,7 @@ body:has(.app-analysis) {
   }
   .analysis-controls {
     position: static;
+    flex-wrap: wrap;
     transform: none;
     flex-basis: 100%;
     order: -1;

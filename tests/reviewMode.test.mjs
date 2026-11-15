@@ -7,7 +7,7 @@ function setup() {
   const load = name => h.load(`src/components/${name}.tsx`).default;
   const Player = load("VideoPlayer"), Panel = load("EventsPanel"), Buttons = load("EventButtons");
   const Form = load("EventForm"), Summary = load("SavedEventSummary"), Review = load("ReviewControls");
-  const Delete = load("DeleteEventConfirmation"), Settings = load("ShortcutSettings");
+  const Delete = load("DeleteEventConfirmation"), Settings = load("ShortcutsPanel");
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
   let active = false, tree;
   const update = () => tree = h.render(Player, {
@@ -170,7 +170,7 @@ test("draft/edit/delete and shortcut-capture Escape priorities remain separate f
   s.press("Escape"); assert(s.component(s.Summary));
   s.component(s.Summary).props.onDelete(); s.update(); s.buttons().onOpenEvents(); s.update();
   assert(!s.component(s.Panel)); s.press("Escape"); assert(s.component(s.Summary));
-  s.buttons().onOpenSettings(); s.update();
+  s.buttons().onOpenShortcuts(); s.update();
   const ctx = s.h.context();
   let settings = s.h.render(s.Settings, s.component(s.Settings).props, ctx);
   nodes(settings, node => node.type === "button" && node.props["aria-label"] === "Change Shot shortcut")[0].props.onClick();

@@ -1084,11 +1084,16 @@ videótesztek szimuláltak; a felhasználó manuális ellenőrzését nem helyet
 ### 11. Tartós adatmentés – local-first alap, opcionális backend
 
 **Állapot: részben elkészült – Phase 1, Phase 2 és Phase 3 implementálva.**
-A Settings panel Export session gombja a mentett eventeket és az aktuális rostert
+A Session panel Export session gombja a mentett eventeket és az aktuális rostert
 verziózott JSON-fájlként tölti le, üres eseménylistával is. Az Import session
 runtime validáció és explicit megerősítés után teljes sessioncserét végez;
 refresh után a runtime adatok továbbra is elvesznek. Exit/Resume csak az aktuális oldal memóriáját őrzi meg.
 A meglévő localStorage kizárólag az event shortcutokat tárolja.
+
+Az elemzői menü sorrendje: Events → Players → Shortcuts → Session. A korábbi közös
+Settings helyett a `ShortcutsPanel` kezeli a billentyűk szerkesztését és resetjét,
+a `SessionPanel` pedig az Export session / Import session műveleteket. A két panel
+kölcsönösen kizárja egymást; az Escape prioritása és a nyitógombra visszatérő fókusz megmaradt.
 
 #### 11.1 Helyi session- és rostermentés – első prioritás
 
@@ -1097,7 +1102,7 @@ A meglévő localStorage kizárólag az event shortcutokat tárolja.
       metadata, videónév/méret/időtartam, roster, saved events, nextPlayerId, nextEventId.
       A videó, draftok, UI-state és shortcutbeállítások nem kerülnek exportba.
 - [x] Phase 2 – JSON import + runtime validation + sessionadatok visszaállítása.
-      Settingsből és videó nélküli kezdőnézetből is elérhető. Hibánál és Cancelnél
+      A Session panelből és videó nélküli kezdőnézetből is elérhető. Hibánál és Cancelnél
       a jelenlegi munka érintetlen marad; megerősítés után a régi videót lecsatoljuk.
 - [x] Phase 3 – video re-attachment, metadata mismatch warning és importált session folytatása.
 - [ ] Phase 4 – IndexedDB autosave + recovery.

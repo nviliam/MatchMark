@@ -147,7 +147,7 @@ export default function HowToUsePanel({ onClose }: Props) {
           </p>
           <p>
             Event shortcuts are displayed on the event buttons and can be
-            customized in Settings.
+            customized in Shortcuts.
           </p>
           <div className="how-to-use-shortcut-grid">
             {quickSeek.map(({ key, seconds }) => (

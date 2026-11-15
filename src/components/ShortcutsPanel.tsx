@@ -6,19 +6,14 @@ import {
 } from "../config/eventShortcuts";
 import { getEventLabel } from "../utils/events";
 import PanelCloseIcon from "./PanelCloseIcon";
-import SessionImport from "./SessionImport";
-import type { MatchMarkSession } from "../types/session";
 
 type Props = {
   shortcuts: EventShortcuts;
   onChange: (shortcuts: EventShortcuts) => void;
   onClose: () => void;
-  onExportSession?: () => void;
-  exportError?: string;
-  onImportSession?: (session: MatchMarkSession) => void;
 };
 
-export default function ShortcutSettings({ shortcuts, onChange, onClose, onExportSession, exportError, onImportSession }: Props) {
+export default function ShortcutsPanel({ shortcuts, onChange, onClose }: Props) {
   const [waitingFor, setWaitingFor] = useState<EventType | null>(null);
   const [error, setError] = useState("");
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -76,30 +71,24 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose, onExpor
   }
 
   return (
-    <section className="shortcut-settings" id="shortcut-settings" role="dialog"
-      aria-labelledby="shortcut-settings-title" aria-describedby="shortcut-settings-hint">
-      <header className="shortcut-settings-header">
-        <h2 id="shortcut-settings-title">Keyboard shortcuts</h2>
+    <section className="shortcuts-panel" id="shortcuts-panel" role="dialog"
+      aria-labelledby="shortcuts-panel-title" aria-describedby="shortcuts-panel-hint">
+      <header className="shortcuts-panel-header">
+        <h2 id="shortcuts-panel-title">Keyboard shortcuts</h2>
         <button className="panel-close-button" ref={closeButtonRef} type="button" aria-label="Close keyboard shortcuts" onClick={onClose}>
           <PanelCloseIcon />
         </button>
       </header>
-      <p className="shortcut-settings-hint" id="shortcut-settings-hint">
+      <p className="shortcuts-panel-hint" id="shortcuts-panel-hint">
         Select a shortcut, then press a key. Esc cancels key capture.
       </p>
-      <div className="shortcut-settings-content">
-        {onExportSession && <div className="session-export">
-          <button type="button" disabled={waitingFor !== null} onClick={onExportSession}>Export session</button>
-          <p className="shortcut-settings-hint">Download saved events and players as JSON, or import a local backup.</p>
-          {exportError && <p className="error-message" role="alert">{exportError}</p>}
-        </div>}
-        {onImportSession && <SessionImport onImport={onImportSession} disabled={waitingFor !== null} />}
-        <ul className="shortcut-settings-list" aria-label="Event shortcuts">
+      <div className="shortcuts-panel-content">
+        <ul className="shortcuts-panel-list" aria-label="Event shortcuts">
           {EVENT_SHORTCUT_TYPES.map((type) => (
             <li key={type}>
               <span>{getEventLabel(type)}</span>
               <button type="button" aria-label={`Change ${getEventLabel(type)} shortcut`}
-                aria-pressed={waitingFor === type} aria-describedby={waitingFor === type ? "shortcut-settings-status" : undefined}
+                aria-pressed={waitingFor === type} aria-describedby={waitingFor === type ? "shortcuts-panel-status" : undefined}
                 onClick={() => { setWaitingFor(type); setError(""); }}>
                 {waitingFor === type ? "Press a key…" : <kbd>{formatShortcutKey(shortcuts[type])}</kbd>}
               </button>
@@ -107,8 +96,8 @@ export default function ShortcutSettings({ shortcuts, onChange, onClose, onExpor
           ))}
         </ul>
       </div>
-      <div className="shortcut-settings-footer">
-        <p id="shortcut-settings-status" role="status" aria-live="polite">
+      <div className="shortcuts-panel-footer">
+        <p id="shortcuts-panel-status" role="status" aria-live="polite">
           {error || (waitingFor ? `Waiting for a key for ${getEventLabel(waitingFor)}.` : "Changes apply immediately.")}
         </p>
         <button type="button" onClick={resetDefaults}>Reset to defaults</button>

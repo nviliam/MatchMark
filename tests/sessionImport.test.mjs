@@ -144,7 +144,7 @@ test("file UI stages valid data, reports errors and only applies on explicit con
 
 function videoSetup(transform = source => source) {
   const h = createHarness(transform), ctx = h.context(true);
-  const names = ["VideoPlayer", "EventButtons", "EventForm", "ShortcutSettings", "SessionImport", "SavedEventSummary", "DeleteEventConfirmation", "VideoReattachment"];
+  const names = ["VideoPlayer", "EventButtons", "EventForm", "SessionPanel", "SessionImport", "SavedEventSummary", "DeleteEventConfirmation", "VideoReattachment"];
   const components = Object.fromEntries(names.map(name => [name, h.load(`src/components/${name}.tsx`).default]));
   let tree, active = false, exported;
   h.load("src/utils/session.ts").downloadSession = value => exported = value;
@@ -159,8 +159,8 @@ function videoSetup(transform = source => source) {
 
 test("confirmed import restores data, detaches video, resets workflow and protects against normal video selection", () => {
   const { session } = setup(); const s = videoSetup(); s.upload(); s.save();
-  s.component("EventButtons").props.onOpenSettings(); s.update();
-  s.component("ShortcutSettings").props.onImportSession(session); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update();
+  s.component("SessionPanel").props.onImportSession(session); s.update();
   assert.equal(nodes(s.tree, n => n.type === "video").length, 0);
   assert(text(s.tree).includes("Session imported.")); assert(s.component("VideoReattachment"));
   assert.equal(nodes(s.tree, n => n.type === "input" && n.props.accept?.includes("video/mp4")).length, 0);
@@ -168,21 +168,21 @@ test("confirmed import restores data, detaches video, resets workflow and protec
   for (const key of ["players", "events", "nextPlayerId", "nextEventId", "video", "match", "createdAt"]) {
     assert.equal(JSON.stringify(s.exported[key]), JSON.stringify(session[key]), key);
   }
-  assert.equal(s.component("EventForm"), undefined); assert.equal(s.component("ShortcutSettings"), undefined);
+  assert.equal(s.component("EventForm"), undefined); assert.equal(s.component("SessionPanel"), undefined);
   s.h.dispose(s.ctx);
 });
 
 test("invalid import and cancelled confirmation preserve existing video, events and roster", async () => {
   const { session } = setup(); const s = videoSetup(); s.upload(); s.save();
-  s.component("EventButtons").props.onOpenSettings(); s.update();
-  s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update();
+  s.component("SessionPanel").props.onExportSession(); s.update();
   const before = JSON.stringify(s.exported); s.h.media.currentTime = 24; s.h.media.paused = false;
   const Import = s.h.load("src/components/SessionImport.tsx").default, ctx = s.h.context(); let tree;
-  const update = () => tree = s.h.render(Import, { onImport: s.component("ShortcutSettings").props.onImportSession }, ctx);
+  const update = () => tree = s.h.render(Import, { onImport: s.component("SessionPanel").props.onImportSession }, ctx);
   const read = async content => { await nodes(tree, n => n.type === "input")[0].props.onChange({ currentTarget: { files: [{ text: async () => content }], value: "" } }); update(); };
   update(); await read("invalid"); await read(JSON.stringify(session));
   nodes(tree, n => n.type === "button" && text(n) === "Cancel")[0].props.onClick(); update();
-  s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("SessionPanel").props.onExportSession(); s.update();
   const old = JSON.parse(before), current = JSON.parse(JSON.stringify(s.exported)); delete old.exportedAt; delete current.exportedAt;
   assert.deepEqual(current, old); assert.equal(s.h.media.currentTime, 24); assert.equal(s.h.media.paused, false);
   assert.equal(nodes(s.tree, n => n.type === "video").length, 1);
@@ -201,7 +201,7 @@ test("imported sparse IDs resume at 9 and deletion never reuses the allocated ID
   s.component("SavedEventSummary").props.onDelete(); s.update();
   s.component("DeleteEventConfirmation").props.onConfirm(); s.update(); s.save();
   assert.equal(s.component("SavedEventSummary").props.event.id, 10);
-  s.component("EventButtons").props.onOpenSettings(); s.update(); s.component("ShortcutSettings").props.onExportSession(); s.update();
+  s.component("EventButtons").props.onOpenSession(); s.update(); s.component("SessionPanel").props.onExportSession(); s.update();
   assert.equal(s.exported.nextEventId, 11);
   s.h.dispose(s.ctx);
 });

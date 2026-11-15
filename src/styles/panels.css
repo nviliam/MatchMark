@@ -1,5 +1,5 @@
 .events-panel,
-.shortcut-settings,
+:is(.shortcuts-panel, .session-panel),
 .players-panel {
   /* Shared smoked glass skin; geometry and scrolling remain unchanged. */
   /* Keep secondary copy legible over bright frames with the lighter glass. */
@@ -33,7 +33,7 @@
   border-radius: 15px 15px 0 0;
 }
 .events-panel-header,
-.shortcut-settings-header,
+:is(.shortcuts-panel-header, .session-panel-header),
 .players-panel-header {
   display: flex;
   align-items: center;
@@ -45,7 +45,7 @@
   background: var(--panel-control-bg);
 }
 .events-panel-header h2,
-.shortcut-settings-header h2,
+:is(.shortcuts-panel-header, .session-panel-header) h2,
 .players-panel-header h2 {
   font-size: 0.8rem;
 }
@@ -80,17 +80,17 @@
 }
 .events-panel-content,
 .players-panel-content,
-.shortcut-settings-content {
+:is(.shortcuts-panel-content, .session-panel-content) {
   scrollbar-color: var(--panel-scroll-thumb) transparent;
 }
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-track {
+:is(.events-panel-content, .players-panel-content, .shortcuts-panel-content, .session-panel-content)::-webkit-scrollbar-track {
   background: transparent;
 }
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb {
+:is(.events-panel-content, .players-panel-content, .shortcuts-panel-content, .session-panel-content)::-webkit-scrollbar-thumb {
   background: var(--panel-scroll-thumb);
   border-radius: 8px;
 }
-:is(.events-panel-content, .players-panel-content, .shortcut-settings-content)::-webkit-scrollbar-thumb:hover {
+:is(.events-panel-content, .players-panel-content, .shortcuts-panel-content, .session-panel-content)::-webkit-scrollbar-thumb:hover {
   background: var(--panel-scroll-hover);
 }
 .add-player-form { display: grid; gap: 8px; margin-bottom: 12px; font-size: 0.8rem; }
@@ -211,32 +211,32 @@
 
 @media (max-width: 899px) {
   .events-panel,
-  .shortcut-settings,
+  :is(.shortcuts-panel, .session-panel),
   .players-panel {
     width: min(360px, calc(100% - 16px));
   }
 }
 
 /* Shortcut editing is an overlay: only its list scrolls, never the cockpit. */
-.shortcut-settings-hint {
+:is(.shortcuts-panel-hint, .session-panel-hint) {
   padding: 8px 10px;
   font-size: 0.75rem;
 }
-.shortcut-settings-content {
+:is(.shortcuts-panel-content, .session-panel-content) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 10px;
 }
-.shortcut-settings-list {
+.shortcuts-panel-list {
   display: grid;
   gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.shortcut-settings-list li {
+.shortcuts-panel-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -245,7 +245,7 @@
   background: var(--panel-row-bg);
   border-radius: 8px;
 }
-.shortcut-settings-list button {
+.shortcuts-panel-list button {
   min-height: 36px;
   min-width: 48px;
   padding: 4px 8px;
@@ -254,29 +254,29 @@
   border-color: var(--badge-border);
   color: var(--badge-text);
 }
-.shortcut-settings-list button:hover:not(:disabled) {
+.shortcuts-panel-list button:hover:not(:disabled) {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.shortcut-settings-list button[aria-pressed="true"] {
+.shortcuts-panel-list button[aria-pressed="true"] {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.shortcut-settings-list kbd {
+.shortcuts-panel-list kbd {
   font: inherit;
   font-weight: 700;
 }
-.shortcut-settings-footer {
+.shortcuts-panel-footer {
   flex-shrink: 0;
   display: grid;
   gap: 8px;
   padding: 8px 10px;
   border-top: 1px solid var(--border);
 }
-.shortcut-settings-footer p {
+.shortcuts-panel-footer p {
   font-size: 0.75rem;
 }
-.shortcut-settings-footer button {
+.shortcuts-panel-footer button {
   min-height: 36px;
   padding: 4px 8px;
   font-size: 0.75rem;
@@ -285,14 +285,14 @@
 /* Extra room on the left only: preserve right-aligned actions and Events spacing. */
 .players-panel-header,
 .players-panel-content,
-.shortcut-settings-header,
-.shortcut-settings-hint,
-.shortcut-settings-content,
-.shortcut-settings-footer {
+:is(.shortcuts-panel-header, .session-panel-header),
+:is(.shortcuts-panel-hint, .session-panel-hint),
+:is(.shortcuts-panel-content, .session-panel-content),
+.shortcuts-panel-footer {
   padding-left: 12px;
 }
 .roster-list li,
-.shortcut-settings-list li {
+.shortcuts-panel-list li {
   padding-left: 4px;
 }
 

@@ -11,7 +11,8 @@ import PlayersPanel from "./PlayersPanel";
 import EventButtons from "./EventButtons";
 import EventForm from "./EventForm";
 import EventsPanel from "./EventsPanel";
-import ShortcutSettings from "./ShortcutSettings";
+import ShortcutsPanel from "./ShortcutsPanel";
+import SessionPanel from "./SessionPanel";
 import SavedEventSummary from "./SavedEventSummary";
 import DeleteEventConfirmation from "./DeleteEventConfirmation";
 import ReviewControls from "./ReviewControls";
@@ -46,7 +47,7 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const [resumeTime, setResumeTime] = useState<number | null>(null);
   const [showSavedEvent, setShowSavedEvent] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [overlay, setOverlay] = useState<"events" | "settings" | "players" | null>(null);
+  const [overlay, setOverlay] = useState<"events" | "players" | "shortcuts" | "session" | null>(null);
   const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
   const filteredEvents = useMemo(() => getFilteredEvents(events, filters), [events, filters]);
   // Review owns an index only; the existing filtered list remains its source of truth.
@@ -55,12 +56,14 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
   const isReviewMode = reviewIndex !== null;
   const currentReviewEvent = reviewIndex !== null ? filteredEvents[reviewIndex] : undefined;
   const isEventsOpen = overlay === "events";
-  const isSettingsOpen = overlay === "settings";
+  const isShortcutsOpen = overlay === "shortcuts";
+  const isSessionOpen = overlay === "session";
   const isPlayersOpen = overlay === "players";
   const savedEvent = showSavedEvent ? events.at(-1) : undefined;
   const resumeButtonRef = useRef<HTMLButtonElement | null>(null);
   const eventsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const shortcutsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const sessionButtonRef = useRef<HTMLButtonElement | null>(null);
   const playersButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusAttachedVideo = useRef(false);
   const workflowDisabled = !videoUrl || !isVideoReady || !isAnalysisActive
@@ -111,19 +114,29 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
     setOverlay("events");
   }
 
-  const handleCloseSettings = useCallback(() => {
+  const handleCloseShortcuts = useCallback(() => {
     setOverlay(null);
-    settingsButtonRef.current?.focus();
+    shortcutsButtonRef.current?.focus();
   }, []);
 
-  function handleOpenSettings() {
+  function handleOpenShortcuts() {
+    if (eventsDisabled) return;
+    setOverlay("shortcuts");
+  }
+
+  const handleCloseSession = useCallback(() => {
+    setOverlay(null);
+    sessionButtonRef.current?.focus();
+  }, []);
+
+  function handleOpenSession() {
     if (eventsDisabled) return;
     setExportError("");
-    setOverlay("settings");
+    setOverlay("session");
   }
 
   function handleExportSession() {
-    if (!importedVideo && (eventsDisabled || !isSettingsOpen)) return;
+    if (!importedVideo && (eventsDisabled || !isSessionOpen)) return;
     try {
       downloadSession(createSessionSnapshot({
         ...session.getSessionData(), exportedAt: new Date().toISOString(),
@@ -225,14 +238,15 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
       // Shortcut capture consumes Escape in its capture listener before this handler.
       if (pending || pendingDeleteId !== null) handleCancel();
       else if (isReviewMode) handleExitReview();
-      else if (isSettingsOpen) handleCloseSettings();
+      else if (isShortcutsOpen) handleCloseShortcuts();
+      else if (isSessionOpen) handleCloseSession();
       else if (isPlayersOpen) handleClosePlayers();
       else handleCloseEvents();
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [pending, pendingDeleteId, overlay, isSettingsOpen, isAnalysisActive, isReviewMode,
-    handleCancel, handleCloseEvents, handleCloseSettings, handleExitReview, isPlayersOpen, handleClosePlayers]);
+  }, [pending, pendingDeleteId, overlay, isShortcutsOpen, isSessionOpen, isAnalysisActive, isReviewMode,
+    handleCancel, handleCloseEvents, handleCloseShortcuts, handleCloseSession, handleExitReview, isPlayersOpen, handleClosePlayers]);
 
   function handleExit() {
     const video = videoRef.current;
@@ -362,7 +376,8 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
             {!isReviewMode && <EventButtons disabled={eventActionsDisabled} shortcuts={eventShortcuts}
               onSelect={handleEvent} onExit={handleExit} onOpenEvents={handleOpenEvents}
               eventsDisabled={eventsDisabled} isEventsOpen={isEventsOpen} eventsButtonRef={eventsButtonRef}
-              onOpenSettings={handleOpenSettings} isSettingsOpen={isSettingsOpen} settingsButtonRef={settingsButtonRef}
+              onOpenShortcuts={handleOpenShortcuts} isShortcutsOpen={isShortcutsOpen} shortcutsButtonRef={shortcutsButtonRef}
+              onOpenSession={handleOpenSession} isSessionOpen={isSessionOpen} sessionButtonRef={sessionButtonRef}
               onOpenPlayers={handleOpenPlayers} isPlayersOpen={isPlayersOpen} playersButtonRef={playersButtonRef} />}
             <div className="video-stage">
               <video key={videoUrl} ref={videoRef} src={videoUrl}
@@ -398,9 +413,12 @@ function VideoPlayer({ isAnalysisActive, onAnalysisActiveChange, eventShortcuts,
                   }}
                   onClose={handleCloseEvents} onSeek={seekToEvent} onStartReview={handleStartReview} />
               )}
-              {isSettingsOpen && isAnalysisActive && (
-                <ShortcutSettings shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseSettings}
-                  onExportSession={handleExportSession} exportError={exportError} onImportSession={handleImportSession} />
+              {isShortcutsOpen && isAnalysisActive && (
+                <ShortcutsPanel shortcuts={eventShortcuts} onChange={onEventShortcutsChange} onClose={handleCloseShortcuts} />
+              )}
+              {isSessionOpen && isAnalysisActive && (
+                <SessionPanel onExportSession={handleExportSession} exportError={exportError}
+                  onImportSession={handleImportSession} onClose={handleCloseSession} />
               )}
               {isPlayersOpen && isAnalysisActive && (
                 <PlayersPanel players={players} events={events} onAdd={handleAddPlayer} onUpdate={handleUpdatePlayer}

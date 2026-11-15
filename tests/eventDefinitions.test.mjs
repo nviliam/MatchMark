@@ -265,7 +265,7 @@ test("one definition edit updates workflow ordering/options, all summaries, filt
   const { createEventDetails } = h.load("src/utils/events.ts");
   assert.deepEqual(JSON.parse(JSON.stringify(createEventDetails("shot", "goal", "foot"))), { type: "shot", outcome: "goal", bodyPart: "foot" });
   const { DEFAULT_EVENT_SHORTCUTS } = h.load("src/config/eventShortcuts.ts");
-  const Settings = h.load("src/components/ShortcutSettings.tsx").default;
+  const Settings = h.load("src/components/ShortcutsPanel.tsx").default;
   const settings = h.render(Settings, { shortcuts: DEFAULT_EVENT_SHORTCUTS });
   assert.equal(nodes(settings, n => n.props?.["aria-label"] === "Change Attempt shortcut").length, 1);
   const Panel = h.load("src/components/EventsPanel.tsx").default;
