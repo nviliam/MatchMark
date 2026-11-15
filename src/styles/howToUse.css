@@ -101,10 +101,76 @@ body:has(.how-to-use-panel[open]) {
   border-radius: 10px;
   background: var(--panel-row-bg);
 }
-.how-to-use-screenshot img {
+.how-to-use-screenshot-button {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.how-to-use-screenshot-button:hover img {
+  opacity: 0.9;
+}
+.how-to-use-screenshot-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.how-to-use-screenshot-button img {
   display: block;
   width: 100%;
   height: auto;
+}
+.screenshot-preview {
+  position: fixed;
+  inset: 0;
+  width: calc(100vw - 24px);
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--text-primary);
+}
+.screenshot-preview[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.screenshot-preview::backdrop {
+  background: rgb(2 8 13 / 92%);
+}
+.screenshot-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.screenshot-preview-header p {
+  min-width: 0;
+}
+.screenshot-preview-close {
+  flex-shrink: 0;
+}
+.screenshot-preview-content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.screenshot-preview-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 140px);
+  object-fit: contain;
+  margin: auto;
 }
 .how-to-use-screenshot-missing {
   display: grid;

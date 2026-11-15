@@ -52,3 +52,17 @@ jeleníti meg őket.
 
 Vizuális ellenőrzéskor nézzük meg a desktop kétoszlopos és a mobil egymás alatti
 elrendezést, a modal belső görgetését és a screenshotok olvashatóságát.
+
+Mind a hat képet az `ExpandableScreenshot` jeleníti meg. A thumbnail gombbal
+nyitható, a nagy kép külön natív modális dialogban látható. A thumbnail helye és
+mérete változatlan; a preview ugyanazt a képfájlt és alt szöveget használja.
+
+A handler-tesztek nem helyettesítik az alábbi manuális böngészős ellenőrzést:
+
+- Egérrel, Enterrel és Space-szel is megnyitható mind a hat screenshot.
+- Az előnézetbe kerül a fókusz, a Tab/Shift+Tab nem lép ki az aktív modalból.
+- A Close gomb és az Escape csak a képelőnézetet zárja; a help nyitva marad,
+  és a fókusz ugyanarra a screenshot gombra tér vissza. Egy következő Escape
+  a helpet zárja, és a How to use launcher kapja vissza a fókuszt.
+- Desktopon és mobilon is arányos, viewporton belüli a kép; a szükséges görgetés
+  a preview belsejében működik, és a Close végig elérhető marad.

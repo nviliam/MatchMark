@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import ExpandableScreenshot from "./ExpandableScreenshot";
 import {
   howToUseScreenshots,
   type HowToUseScreenshotId,
@@ -125,21 +126,8 @@ export default function HowToUsePanel({ onClose }: Props) {
               <h3 id={`how-to-use-${step.id}`}>{step.title}</h3>
               <p>{step.description}</p>
             </div>
-            <figure className="how-to-use-screenshot">
-              {howToUseScreenshots[step.id] ? (
-                <img
-                  src={howToUseScreenshots[step.id]}
-                  alt={step.screenshotAlt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                <figcaption className="how-to-use-screenshot-missing">
-                  {step.screenshotAlt}
-                  <span>Screenshot to be added.</span>
-                </figcaption>
-              )}
-            </figure>
+            <ExpandableScreenshot id={step.id} src={howToUseScreenshots[step.id]}
+              alt={step.screenshotAlt} title={step.title.replace(/^\d+\.\s*/, "")} />
           </section>
         ))}
         <section
@@ -172,21 +160,9 @@ export default function HowToUsePanel({ onClose }: Props) {
               Export your session before closing or refreshing the page.
             </p>
           </div>
-          <figure className="how-to-use-screenshot">
-            {howToUseScreenshots.session ? (
-              <img
-                src={howToUseScreenshots.session}
-                alt="MatchMark Session panel with Export session and Import session buttons"
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <figcaption className="how-to-use-screenshot-missing">
-                MatchMark Session panel with Export session and Import session buttons
-                <span>Screenshot to be added.</span>
-              </figcaption>
-            )}
-          </figure>
+          <ExpandableScreenshot id="session" src={howToUseScreenshots.session}
+            alt="MatchMark Session panel with Export session and Import session buttons"
+            title="Save and restore a session" />
         </section>
         <section
           className="how-to-use-shortcuts"

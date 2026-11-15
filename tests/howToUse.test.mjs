@@ -11,8 +11,18 @@ function mountPanel(h, props = {}, modal = {
   const Panel = h.load("src/components/HowToUsePanel.tsx").default;
   const ctx = h.context();
   ctx.refs[0] = { current: modal };
-  const tree = h.render(Panel, { onClose() {}, ...props }, ctx);
-  return { tree, modal, ctx, Panel };
+  const rawTree = h.render(Panel, { onClose() {}, ...props }, ctx);
+  const Screenshot = h.load("src/components/ExpandableScreenshot.tsx").default;
+  // Render initial thumbnail markup for content checks only. Dialog/focus behavior
+  // is tested separately as handlers, and native stacking still needs a browser.
+  function expandThumbnails(node) {
+    if (!node || typeof node !== "object") return node;
+    if (Array.isArray(node)) return node.map(expandThumbnails);
+    if (node.type === Screenshot) return h.render(Screenshot, node.props, h.context());
+    return node.props ? { ...node, props: { ...node.props, children: expandThumbnails(node.props.children) } } : node;
+  }
+  const tree = expandThumbnails(rawTree);
+  return { tree, rawTree, modal, ctx, Panel };
 }
 
 test("landing separates How to use from Select video and Import session, and omits help from analysis/Resume", () => {
