@@ -16,14 +16,14 @@ const steps: readonly {
     id: "load-video",
     title: "1. Load a video",
     description:
-      "Select a local match video from your device. For the most reliable playback, use MP4 (H.264).",
+      "Select a local match video from your device. For the most reliable playback, use MP4 (H.264). The video stays on your device and is not uploaded.",
     screenshotAlt: "MatchMark start screen with the Select video button",
   },
   {
     id: "tag-events",
     title: "2. Tag match events",
     description:
-      "Use the event buttons or their keyboard shortcuts while watching the match to create tagged events.",
+      "Press an event button or its keyboard shortcut to capture the current video timestamp. Complete the details, then choose Save to keep the event.",
     screenshotAlt:
       "MatchMark tagging workspace with the video and top, left and right event rails",
   },
@@ -31,7 +31,7 @@ const steps: readonly {
     id: "assign-details",
     title: "3. Assign players and details",
     description:
-      "Add the relevant player and complete the event-specific details before saving the event.",
+      "Select a player and complete the event-specific options. Custom events need a description and can have no player. At the final step, choose Save or press Ctrl+Enter (Windows/Linux) or Cmd+Enter (macOS).",
     screenshotAlt:
       "MatchMark event form with player selection and event-specific details",
   },
@@ -39,9 +39,17 @@ const steps: readonly {
     id: "review-events",
     title: "4. Review your events",
     description:
-      "Filter your tagged events and open Review mode to move through them quickly on the video timeline.",
+      "Open Events to filter by event type and player. Start Review and use Previous / Next to move through the filtered events. Click an event in Events to jump to its timestamp.",
     screenshotAlt:
       "MatchMark Events panel with event and player filters and the Review events button",
+  },
+  {
+    id: "players",
+    title: "5. Add or edit players",
+    description:
+      "Open the Players panel to add, edit or remove players from the current roster. Players can then be assigned to tagged events during the analysis.",
+    screenshotAlt:
+      "MatchMark Players panel with the Add player form and roster Edit and Delete buttons",
   },
 ];
 
@@ -135,11 +143,57 @@ export default function HowToUsePanel({ onClose }: Props) {
           </section>
         ))}
         <section
+          className="how-to-use-step how-to-use-session"
+          aria-labelledby="how-to-use-session-title"
+        >
+          <div className="how-to-use-session-copy">
+            <h3 id="how-to-use-session-title">6. Save and restore a session</h3>
+            <p>
+              Use Session → Export session to save your current analysis as a local JSON file.
+            </p>
+            <p>
+              Later, use Session → Import session to restore your events, player roster
+              and session data. Import session is also available on the start screen.
+            </p>
+            <p>
+              After importing, choose Reattach video and select the original local video
+              to continue the analysis.
+            </p>
+            <p>
+              <strong>The video itself is not stored in the session file.</strong>{" "}
+              The session file contains analysis data and video metadata only.
+            </p>
+            <p aria-label="Session workflow">
+              Analyze → Export session → Close the browser → Import session later →
+              Reattach the original video → Continue analysis
+            </p>
+            <p className="how-to-use-session-warning">
+              <strong>MatchMark does not save sessions automatically yet.</strong>{" "}
+              Export your session before closing or refreshing the page.
+            </p>
+          </div>
+          <figure className="how-to-use-screenshot">
+            {howToUseScreenshots.session ? (
+              <img
+                src={howToUseScreenshots.session}
+                alt="MatchMark Session panel with Export session and Import session buttons"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <figcaption className="how-to-use-screenshot-missing">
+                MatchMark Session panel with Export session and Import session buttons
+                <span>Screenshot to be added.</span>
+              </figcaption>
+            )}
+          </figure>
+        </section>
+        <section
           className="how-to-use-shortcuts"
           aria-labelledby="how-to-use-shortcuts-title"
         >
           <h3 id="how-to-use-shortcuts-title">
-            5. Keyboard shortcuts &amp; Quick Seek
+            7. Keyboard shortcuts and Quick Seek
           </h3>
           <p>
             Use keyboard shortcuts to reduce mouse movement and keep your focus
@@ -192,19 +246,6 @@ export default function HowToUsePanel({ onClose }: Props) {
               enabled.
             </p>
           </div>
-        </section>
-        <section
-          className="how-to-use-warning"
-          aria-labelledby="how-to-use-warning-title"
-        >
-          <h3 id="how-to-use-warning-title">Important</h3>
-          <p>
-            Automatic saving is not available yet. Export a session to save your
-            analysis locally. Import it later and reattach the original video to continue.
-          </p>
-          <p>
-            Refreshing or closing the browser still clears unsaved runtime data.
-          </p>
         </section>
       </div>
     </dialog>

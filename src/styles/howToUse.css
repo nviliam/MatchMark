@@ -118,6 +118,16 @@ body:has(.how-to-use-panel[open]) {
   color: var(--text-muted);
   font-size: 0.75rem;
 }
+.how-to-use-session {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--badge-border);
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+.how-to-use-session-copy > p + p {
+  margin-top: 10px;
+}
 .how-to-use-shortcuts {
   padding-top: 20px;
 }
@@ -173,18 +183,14 @@ body:has(.how-to-use-panel[open]) {
 .how-to-use-save-shortcuts {
   margin-top: 12px;
 }
-.how-to-use-warning {
-  margin-top: 24px;
-  padding: 18px;
+.how-to-use-session-warning {
+  padding: 12px;
   border: 1px solid rgb(226 178 89 / 28%);
   border-radius: 12px;
   background: rgb(139 101 29 / 12%);
 }
-.how-to-use-warning h3 {
+.how-to-use-session-warning strong {
   color: #e3bc77;
-}
-.how-to-use-warning p + p {
-  margin-top: 8px;
 }
 @media (max-width: 640px) {
   .how-to-use-panel {

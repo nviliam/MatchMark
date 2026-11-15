@@ -1,6 +1,6 @@
 # How to use – valódi MatchMark screenshotok
 
-Az útmutató a felhasználó által bemásolt négy valódi, lokális MatchMark screenshotot
+Az útmutató a felhasználó által bemásolt hat valódi, lokális MatchMark screenshotot
 használja. A `screenshots.ts` manifest importálja és rendeli őket a megfelelő lépéshez.
 Nincs külső kép-URL vagy generált mockup.
 
@@ -12,6 +12,8 @@ Bekötött fájlok (a kis- és nagybetűk pontosan számítanak):
 | `tag-events.png` | `tag-events` | Analysis/tagging: videó, top/left/right event railek és Pass type lépés. |
 | `assign-details.png` | `assign-details` | Az alsó EventForm Player lépése. |
 | `review-events.png` | `review-events` | Events panel: szűrők, mentett események és a Review indítógomb. |
+| `players.png` | `players` | Players panel: Add player űrlap, roster és Edit/Delete gombok. |
+| `session.png` | `session` | Session panel: Export session és Import session gombok. |
 
 A negyedik kép a Review indítását mutatja, nem az aktív Broadcast Review módot.
 Az alt szöveg is ezt írja le. Ha később aktív Review screenshot váltja fel,
@@ -27,14 +29,18 @@ import loadVideo from "./load-video.png";
 import tagEvents from "./tag-events.png";
 import assignDetails from "./assign-details.png";
 import reviewEvents from "./review-events.png";
+import players from "./players.png";
+import session from "./session.png";
 
-export type HowToUseScreenshotId = "load-video" | "tag-events" | "assign-details" | "review-events";
+export type HowToUseScreenshotId = "load-video" | "tag-events" | "assign-details" | "review-events" | "players" | "session";
 
 export const howToUseScreenshots: Partial<Record<HowToUseScreenshotId, string>> = {
   "load-video": loadVideo,
   "tag-events": tagEvents,
   "assign-details": assignDetails,
   "review-events": reviewEvents,
+  players,
+  session,
 };
 ```
 
